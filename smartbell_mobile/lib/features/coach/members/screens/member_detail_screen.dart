@@ -43,17 +43,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     final dio      = DioClient.instance.dio;
 
     try {
-      // Checkins this month
-      try {
-        final ciRes  = await dio.get(ApiConstants.checkinsByMember(memberId));
-        final ciData = ciRes.data;
-        final ciList = ciData is List ? ciData : (ciData is Map ? (ciData['content'] ?? []) : []);
-        final now    = DateTime.now();
-        _visitCount  = (ciList as List).where((c) {
-          try { final d = DateTime.parse(c['checkInTime'] ?? c['date'] ?? ''); return d.month == now.month && d.year == now.year; } catch (_) { return false; }
-        }).length;
-      } catch (_) {}
-
+      _visitCount = 0;
       // Subscription days left
       try {
         final userId = (m['userId'] ?? m['user']?['id'] ?? 0).toInt();

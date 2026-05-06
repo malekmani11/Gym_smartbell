@@ -43,9 +43,6 @@ class ApiConstants {
   static String unreadNotifications(int uid) =>
       '/notifications/user/$uid/unread';
 
-  // Checkins
-  static String checkinsByMember(int id) => '/checkins/member/$id';
-
   // Statistics
   static const String statistics = '/statistics';
 

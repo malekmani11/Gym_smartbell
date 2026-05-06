@@ -1,0 +1,21 @@
+﻿course_id,name,coach_id,coach_name,day_of_week,start_time,end_time,max_participants,current_participants,course_type,room
+1,CrossFit WOD,1,Mohamed Harrabi,MONDAY,08:00,09:00,20,18,CrossFit,Salle A
+2,CrossFit WOD,7,Youssef Miled,TUESDAY,08:00,09:00,20,18,CrossFit,Salle A
+3,CrossFit Advanced,1,Mohamed Harrabi,WEDNESDAY,18:00,19:30,15,15,CrossFit,Salle A
+4,CrossFit WOD,7,Youssef Miled,FRIDAY,07:00,08:00,20,14,CrossFit,Salle A
+5,CrossFit Weekend,1,Mohamed Harrabi,SATURDAY,09:00,10:30,18,10,CrossFit,Salle A
+6,Yoga Flow,2,Salma Driri,MONDAY,09:00,10:30,15,10,Yoga,Studio Yoga
+7,Yoga Débutant,8,Nour Ayari,WEDNESDAY,10:00,11:30,12,9,Yoga,Studio Yoga
+8,Yoga Avancé,2,Salma Driri,FRIDAY,18:30,20:00,12,11,Yoga,Studio Yoga
+9,Yoga Weekend,8,Nour Ayari,SATURDAY,10:00,11:30,15,9,Yoga,Studio Yoga
+10,Cardio HIIT,3,Ahmed Khalil,TUESDAY,17:00,18:00,25,18,Cardio,Salle B
+11,Cardio HIIT,9,Slim Farhat,THURSDAY,17:00,18:00,25,22,Cardio,Salle B
+12,Cardio Endurance,3,Ahmed Khalil,SATURDAY,08:00,09:30,20,13,Cardio,Salle B
+13,Powerlifting,4,Rania Belhaj,MONDAY,19:00,20:30,10,5,Powerlifting,Salle C
+14,Powerlifting,10,Sara Guesmi,WEDNESDAY,19:00,20:30,10,6,Powerlifting,Salle C
+15,Powerlifting,4,Rania Belhaj,FRIDAY,19:00,20:30,10,10,Powerlifting,Salle C
+16,Boxing Fitness,5,Karim Nasri,TUESDAY,19:00,20:00,16,12,Boxing,Ring Boxe
+17,Boxing Fitness,5,Karim Nasri,THURSDAY,19:00,20:00,16,12,Boxing,Ring Boxe
+18,Boxing Avancé,5,Karim Nasri,SATURDAY,11:00,12:30,12,9,Boxing,Ring Boxe
+19,Dance Fitness,6,Ines Triki,WEDNESDAY,17:00,18:00,20,10,Dance,Salle B
+20,Dance Weekend,6,Ines Triki,SUNDAY,10:00,11:30,18,16,Dance,Salle B

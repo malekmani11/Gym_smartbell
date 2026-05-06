@@ -37,6 +37,9 @@ import '../../screens/admin/admin_messages_screen.dart';
 // Coach messaging
 import '../../features/coach/messaging/screens/coach_messages_screen.dart';
 
+// Subscription
+import '../../features/adherent/subscription/screens/member_subscription_screen.dart';
+
 // Machines / QR scanner
 import '../../features/adherent/machines/qr_scanner_screen.dart';
 
@@ -101,7 +104,7 @@ GoRouter createAppRouter(AuthProvider auth, bool showOnboarding) => GoRouter(
         // Keep subscription & payments routes (from old shell)
         GoRoute(path: '/member/coaches',      builder: (_, __) => const AdherentCoachesScreen()),
         GoRoute(path: '/member/progress',     builder: (_, __) => const ProgressScreen()),
-        GoRoute(path: '/member/subscription', builder: (_, __) => const _PlaceholderPage(title: 'Abonnement')),
+        GoRoute(path: '/member/subscription', builder: (_, __) => const MemberSubscriptionScreen()),
         GoRoute(path: '/member/payments',     builder: (_, __) => const _PlaceholderPage(title: 'Paiements')),
       ],
     ),

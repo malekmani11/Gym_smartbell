@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymAdmin — Tableau de bord</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F1EA;color:#1A1A18;height:100%;display:flex;font-size:14px;line-height:1.5}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar{width:220px;min-width:220px;background:#1A1A18;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;overflow-y:auto;z-index:100}
+.sidebar-logo{padding:20px 16px 16px;border-bottom:0.5px solid #2A2A28}
+.logo-inner{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:#C8960C;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:20px;height:20px;fill:#fff}
+.logo-text{display:flex;flex-direction:column}
+.logo-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em}
+.logo-sub{font-size:9px;color:#C8960C;font-weight:600;letter-spacing:0.15em;margin-top:1px}
+
+.nav-section{padding:14px 10px 6px}
+.nav-section-label{font-size:9px;color:#555550;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;color:#AAA;font-size:13px;font-weight:500;transition:background 0.15s,color 0.15s;position:relative;user-select:none}
+.nav-item:hover{background:#2A2A28;color:#ddd}
+.nav-item.active{background:#2D2600;color:#C8960C}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:0.7}
+.nav-item.active svg{opacity:1}
+.nav-item:hover svg{opacity:0.85}
+.badge{margin-left:auto;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;line-height:16px}
+.badge-red{background:#E53935;color:#fff}
+.badge-gold{background:#C8960C;color:#fff}
+.badge-blue{background:#1976D2;color:#fff}
+
+.sidebar-user{margin-top:auto;padding:14px 12px;border-top:0.5px solid #2A2A28;display:flex;align-items:center;gap:10px}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:#2D2600;border:1.5px solid #C8960C;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#C8960C;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:600;color:#eee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:#777;margin-top:1px}
+.user-status{width:8px;height:8px;border-radius:50%;background:#4CAF50;flex-shrink:0;box-shadow:0 0 0 2px #1A1A18}
+
+/* ── MAIN ────────────────────────────────────────────── */
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOPBAR ──────────────────────────────────────────── */
+.topbar{height:56px;background:#fff;border-bottom:0.5px solid #E5E2D9;display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar-titles{flex:1;min-width:0}
+.topbar-title{font-size:16px;font-weight:600;color:#1A1A18}
+.topbar-sub{font-size:11px;color:#AAA;margin-top:1px}
+.search-bar{display:flex;align-items:center;gap:8px;background:#F4F1EA;border:0.5px solid #DDD8CD;border-radius:8px;padding:6px 12px;width:220px;cursor:text}
+.search-bar input{border:none;background:transparent;font-size:13px;color:#333;outline:none;width:100%}
+.search-bar input::placeholder{color:#BBB}
+.search-bar svg{width:14px;height:14px;flex-shrink:0;color:#BBB;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:0.5px solid #E5E2D9;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background 0.15s}
+.icon-btn:hover{background:#F4F1EA}
+.icon-btn svg{width:16px;height:16px;fill:none;stroke:#555;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.notif-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#E53935;border:1.5px solid #fff}
+.btn-action{background:#C8960C;color:#fff;border:none;border-radius:8px;padding:0 14px;height:34px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s;letter-spacing:0.02em}
+.btn-action:hover{background:#b5820a}
+
+/* ── CONTENT ─────────────────────────────────────────── */
+.content{padding:20px 24px 32px;display:flex;flex-direction:column;gap:18px}
+
+.section-title{font-size:13px;font-weight:500;color:#1A1A18;margin-bottom:12px}
+
+/* ── CARDS ───────────────────────────────────────────── */
+.card{background:#fff;border:0.5px solid #E5E2D9;border-radius:12px;padding:18px}
+
+/* ── KPI GRID ────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi-card{background:#fff;border:0.5px solid #E5E2D9;border-radius:12px;padding:16px 18px}
+.kpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.kpi-label{font-size:11px;font-weight:600;color:#AAA;letter-spacing:0.08em;text-transform:uppercase}
+.kpi-icon-box{width:32px;height:32px;border-radius:7px;background:#FFF8E7;border:0.5px solid #F0E4B0;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-icon-box svg{width:16px;height:16px;fill:none;stroke:#C8960C;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kpi-value{font-size:28px;font-weight:500;color:#1A1A18;line-height:1;margin-bottom:6px;letter-spacing:-0.01em}
+.kpi-trend{display:flex;align-items:center;gap:5px;font-size:11px;color:#4CAF50;font-weight:500;margin-bottom:12px}
+.kpi-trend svg{width:12px;height:12px;flex-shrink:0}
+.kpi-trend-text{color:#AAA;font-weight:400}
+.sparkline-wrap{height:28px;overflow:hidden}
+.sparkline-wrap svg{width:100%;height:28px;overflow:visible}
+
+/* ── CHARTS ──────────────────────────────────────────── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:500;color:#1A1A18}
+.chart-total{font-size:18px;font-weight:600;color:#C8960C}
+.chart-total-green{font-size:18px;font-weight:600;color:#4CAF50}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:80px}
+.bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:opacity 0.15s;cursor:pointer}
+.bar:hover{opacity:0.8}
+.bar-label{font-size:10px;color:#AAA;font-weight:500}
+.bar-gold{background:#F5E6B8}
+.bar-gold.active{background:#C8960C}
+.bar-green{background:#C8E6C9}
+.bar-green.active{background:#4CAF50}
+
+/* ── LOWER GRID ──────────────────────────────────────── */
+.lower-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+
+/* ── TABLE ───────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;color:#AAA;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:0 12px 10px;text-align:left;white-space:nowrap}
+td{padding:10px 12px;border-top:0.5px solid #F0EDE6;font-size:13px;vertical-align:middle}
+tr:first-child td{border-top:none}
+tbody tr:hover td{background:#FAFAF8}
+.member-cell{display:flex;align-items:center;gap:10px}
+.member-avatar{width:30px;height:30px;border-radius:50%;background:#FFF8E7;border:0.5px solid #F0E4B0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#C8960C;flex-shrink:0}
+.member-name{font-size:13px;font-weight:500;color:#1A1A18}
+.member-email{font-size:11px;color:#AAA}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;border:0.5px solid}
+.pill-active{background:#F1F8F2;color:#388E3C;border-color:#B2DFDB}
+.pill-expired{background:#FFF3F3;color:#E53935;border-color:#FFCDD2}
+.pill-pending{background:#FFF8E7;color:#C8960C;border-color:#F0E4B0}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.expiry-soon{color:#E53935;font-weight:500}
+
+/* ── HEATMAP ─────────────────────────────────────────── */
+.heatmap-grid{display:grid;grid-template-columns:44px repeat(7,1fr);gap:3px;align-items:center}
+.heatmap-day{font-size:10px;color:#AAA;font-weight:600;text-align:center;padding-bottom:4px}
+.heatmap-hour{font-size:10px;color:#AAA;font-weight:500;text-align:right;padding-right:6px;white-height:nowrap}
+.heatmap-cell{height:22px;border-radius:4px;cursor:pointer;transition:opacity 0.1s}
+.heatmap-cell:hover{opacity:0.75}
+.h0{background:#F4F1EA}
+.h1{background:#F5E6B8}
+.h2{background:#EFD07A}
+.h3{background:#C8960C}
+.heatmap-legend{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:#AAA}
+.legend-row{display:flex;align-items:center;gap:5px;margin-left:auto}
+.legend-cell{width:14px;height:14px;border-radius:3px}
+
+/* ── BOTTOM GRID ─────────────────────────────────────── */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.course-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:0.5px solid #F0EDE6}
+.course-row:first-child{border-top:none;padding-top:0}
+.course-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.course-name{font-size:13px;font-weight:500;color:#1A1A18;flex:1}
+.course-meta{font-size:11px;color:#AAA}
+.course-slots{font-size:11px;color:#AAA;white-space:nowrap}
+.slots-full{color:#E53935}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:0.5px solid #F0EDE6}
+.activity-item:first-child{border-top:none;padding-top:0}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.activity-text{flex:1;font-size:13px;color:#333;line-height:1.4}
+.activity-name{font-weight:500;color:#1A1A18}
+.activity-time{font-size:10px;color:#AAA;white-space:nowrap;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-inner">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M6.5 6.5h1v11h-1zM16.5 6.5h1v11h-1zM3 10h18v4H3z"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">GymAdmin</span>
+        <span class="logo-sub">PREMIUM</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-item active" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Membres
+      <span class="badge badge-red">3</span>
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M17 11l2 2 4-4"/></svg>
+      Coachs
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Abonnements
+      <span class="badge badge-red">5</span>
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M9 4v5M15 4v5"/></svg>
+      Cours
+      <span class="badge badge-gold">2</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Gestion</div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Paiement
+      <span class="badge badge-red">4</span>
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Salles
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      Statistiques
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4l3 3"/></svg>
+      Notifications
+    </div>
+    <div class="nav-item" onclick="setActive(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Plaintes
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">MA</div>
+    <div class="user-info">
+      <div class="user-name">Malek Admin</div>
+      <div class="user-role">Administrateur</div>
+    </div>
+    <div class="user-status"></div>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ════════════════════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-titles">
+      <div class="topbar-title">Tableau de bord</div>
+      <div class="topbar-sub">Bienvenue · Mis à jour il y a 2 min</div>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Rechercher un membre, cours…">
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" title="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </div>
+      <div class="icon-btn" title="Paramètres">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+      <button class="btn-action">+ Action Rapide</button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- KPI CARDS -->
+    <div>
+      <div class="section-title">Indicateurs clés</div>
+      <div class="kpi-grid">
+
+        <!-- Membres -->
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Total membres</div>
+            <div class="kpi-icon-box">
+              <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-trend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            +2 ce mois
+            <span class="kpi-trend-text">· membres enregistrés</span>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,24 20,20 40,18 60,14 80,10 100,6 120,4" fill="none" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Revenus -->
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Revenus du mois</div>
+            <div class="kpi-icon-box">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value">99 <span style="font-size:16px;color:#AAA;font-weight:400">DT</span></div>
+          <div class="kpi-trend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            +12%
+            <span class="kpi-trend-text">· vs mois précédent</span>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,22 20,18 40,20 60,12 80,8 100,10 120,4" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Abonnements -->
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Abonnements actifs</div>
+            <div class="kpi-icon-box">
+              <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-trend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Tous actifs
+            <span class="kpi-trend-text">· aucune expiration</span>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,20 20,18 40,16 60,14 80,12 100,10 120,8" fill="none" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Présence -->
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Taux de présence</div>
+            <div class="kpi-icon-box">
+              <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value">100<span style="font-size:16px;color:#AAA;font-weight:400">%</span></div>
+          <div class="kpi-trend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Excellent
+            <span class="kpi-trend-text">· taux actifs/total</span>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,14 20,12 40,10 60,8 80,6 100,4 120,2" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+
+      <!-- Revenue Chart -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Revenus 6 mois</div>
+            <div style="font-size:11px;color:#AAA;margin-top:2px">Chiffre d'affaires mensuel</div>
+          </div>
+          <div class="chart-total" id="rev-total">99 DT</div>
+        </div>
+        <div class="bar-chart" id="rev-chart">
+          <div class="bar-group"><div class="bar bar-gold" style="height:38%"></div><div class="bar-label">Déc</div></div>
+          <div class="bar-group"><div class="bar bar-gold" style="height:55%"></div><div class="bar-label">Jan</div></div>
+          <div class="bar-group"><div class="bar bar-gold" style="height:44%"></div><div class="bar-label">Fév</div></div>
+          <div class="bar-group"><div class="bar bar-gold" style="height:68%"></div><div class="bar-label">Mar</div></div>
+          <div class="bar-group"><div class="bar bar-gold" style="height:52%"></div><div class="bar-label">Avr</div></div>
+          <div class="bar-group"><div class="bar bar-gold active" style="height:100%"></div><div class="bar-label" style="color:#C8960C;font-weight:600">Mai</div></div>
+        </div>
+      </div>
+
+      <!-- Members Chart -->
+      <div class="card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Nouveaux membres</div>
+            <div style="font-size:11px;color:#AAA;margin-top:2px">Acquisitions mensuelles</div>
+          </div>
+          <div class="chart-total-green">+2</div>
+        </div>
+        <div class="bar-chart">
+          <div class="bar-group"><div class="bar bar-green" style="height:50%"></div><div class="bar-label">Déc</div></div>
+          <div class="bar-group"><div class="bar bar-green" style="height:75%"></div><div class="bar-label">Jan</div></div>
+          <div class="bar-group"><div class="bar bar-green" style="height:38%"></div><div class="bar-label">Fév</div></div>
+          <div class="bar-group"><div class="bar bar-green" style="height:88%"></div><div class="bar-label">Mar</div></div>
+          <div class="bar-group"><div class="bar bar-green" style="height:63%"></div><div class="bar-label">Avr</div></div>
+          <div class="bar-group"><div class="bar bar-green active" style="height:100%"></div><div class="bar-label" style="color:#4CAF50;font-weight:600">Mai</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MEMBERS TABLE + HEATMAP -->
+    <div class="lower-grid">
+
+      <!-- Members Table -->
+      <div class="card">
+        <div class="section-title">Membres récents</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Abonnement</th>
+              <th>Statut</th>
+              <th>Expiration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar">RM</div><div><div class="member-name">rami kouraychi</div><div class="member-email">rami@gym.com</div></div></div></td>
+              <td style="font-size:12px;color:#555">hhh</td>
+              <td><span class="pill pill-active"><span class="pill-dot"></span>Actif</span></td>
+              <td><span style="font-size:12px;color:#AAA">01/12/2025</span></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar">SM</div><div><div class="member-name">Sarah Membre</div><div class="member-email">sarah@gym.com</div></div></div></td>
+              <td style="font-size:12px;color:#555">Standard</td>
+              <td><span class="pill pill-active"><span class="pill-dot"></span>Actif</span></td>
+              <td><span style="font-size:12px;color:#AAA">15/06/2025</span></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar">AK</div><div><div class="member-name">Ahmed Karim</div><div class="member-email">ahmed@gym.com</div></div></div></td>
+              <td style="font-size:12px;color:#555">Premium</td>
+              <td><span class="pill pill-pending"><span class="pill-dot"></span>En attente</span></td>
+              <td><span class="expiry-soon" style="font-size:12px">03/05/2025</span></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar">LB</div><div><div class="member-name">Leila Ben Ali</div><div class="member-email">leila@gym.com</div></div></div></td>
+              <td style="font-size:12px;color:#555">Standard</td>
+              <td><span class="pill pill-expired"><span class="pill-dot"></span>Expiré</span></td>
+              <td><span class="expiry-soon" style="font-size:12px">28/04/2025</span></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar">MT</div><div><div class="member-name">Mohamed Trabelsi</div><div class="member-email">med@gym.com</div></div></div></td>
+              <td style="font-size:12px;color:#555">Elite</td>
+              <td><span class="pill pill-active"><span class="pill-dot"></span>Actif</span></td>
+              <td><span style="font-size:12px;color:#AAA">30/09/2025</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="card">
+        <div class="section-title">Affluence horaire</div>
+        <div id="heatmap"></div>
+        <div class="heatmap-legend">
+          <span>Affluence</span>
+          <div class="legend-row">
+            <div class="legend-cell" style="background:#F4F1EA;border:0.5px solid #DDD8CD"></div><span>Vide</span>
+            <div class="legend-cell" style="background:#F5E6B8"></div><span>Faible</span>
+            <div class="legend-cell" style="background:#EFD07A"></div><span>Moyen</span>
+            <div class="legend-cell" style="background:#C8960C"></div><span>Élevé</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM: COURSES + ACTIVITY -->
+    <div class="bottom-grid">
+
+      <!-- Courses -->
+      <div class="card">
+        <div class="section-title">Cours de la semaine</div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#C8960C"></div>
+          <div style="flex:1"><div class="course-name">CrossFit WOD</div><div class="course-meta">Marc Leroux · Lun & Mer 18h00</div></div>
+          <div class="course-slots">18<span style="color:#DDD">/20</span></div>
+        </div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#4CAF50"></div>
+          <div style="flex:1"><div class="course-name">Yoga Flow</div><div class="course-meta">Julie Vincent · Mar & Jeu 18h30</div></div>
+          <div class="course-slots">12<span style="color:#DDD">/15</span></div>
+        </div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#1976D2"></div>
+          <div style="flex:1"><div class="course-name">Powerlifting</div><div class="course-meta">Thomas Durand · Mer 19h00</div></div>
+          <div class="course-slots">8<span style="color:#DDD">/10</span></div>
+        </div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#E53935"></div>
+          <div style="flex:1"><div class="course-name">HIIT Cardio</div><div class="course-meta">Sarah Gilles · Ven 19h30</div></div>
+          <div class="course-slots slots-full">25<span style="color:#DDD">/25</span></div>
+        </div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#9C27B0"></div>
+          <div style="flex:1"><div class="course-name">Pilates Core</div><div class="course-meta">Emma Blanc · Sam 10h00</div></div>
+          <div class="course-slots">14<span style="color:#DDD">/18</span></div>
+        </div>
+        <div class="course-row">
+          <div class="course-dot" style="background:#FF9800"></div>
+          <div style="flex:1"><div class="course-name">Boxe Cardio</div><div class="course-meta">Karim Nasri · Sam 11h30</div></div>
+          <div class="course-slots">22<span style="color:#DDD">/25</span></div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div class="card">
+        <div class="section-title">Activité récente</div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#4CAF50"></div>
+          <div class="activity-text">
+            <span class="activity-name">rami kouraychi</span> a renouvelé son abonnement <strong>hhh</strong>
+          </div>
+          <div class="activity-time">il y a 2 min</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#1976D2"></div>
+          <div class="activity-text">
+            Paiement de <strong>99 DT</strong> reçu — abonnement Standard
+          </div>
+          <div class="activity-time">il y a 15 min</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#C8960C"></div>
+          <div class="activity-text">
+            <span class="activity-name">Sarah Membre</span> s'est inscrite au cours <strong>Yoga Flow</strong>
+          </div>
+          <div class="activity-time">il y a 34 min</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#E53935"></div>
+          <div class="activity-text">
+            Abonnement de <span class="activity-name">Ahmed Karim</span> expire dans <strong>3 jours</strong>
+          </div>
+          <div class="activity-time">il y a 1h</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#9C27B0"></div>
+          <div class="activity-text">
+            Nouveau coach <span class="activity-name">Emma Blanc</span> ajoutée — <strong>Pilates Core</strong>
+          </div>
+          <div class="activity-time">il y a 2h</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#FF9800"></div>
+          <div class="activity-text">
+            Salle <strong>B2</strong> réservée pour CrossFit samedi
+          </div>
+          <div class="activity-time">il y a 3h</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#4CAF50"></div>
+          <div class="activity-text">
+            <span class="activity-name">Mohamed Trabelsi</span> a effectué <strong>14 séances</strong> ce mois
+          </div>
+          <div class="activity-time">hier</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ── NAV ACTIVE ───────────────────────────────────────────
+function setActive(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── HEATMAP ──────────────────────────────────────────────
+(function buildHeatmap(){
+  const days  = ['L','M','M','J','V','S','D'];
+  const hours = ['07h','09h','11h','13h','15h','17h','19h','21h'];
+  // 0=vide 1=faible 2=moyen 3=élevé
+  const data  = [
+    [0,1,2,1,2,3,1],
+    [1,2,3,2,3,3,2],
+    [0,1,1,1,1,2,1],
+    [1,2,2,3,2,3,2],
+    [2,3,3,3,3,3,3],
+    [3,3,2,2,3,2,2],
+    [2,3,3,3,3,2,1],
+    [1,2,2,2,3,1,0],
+  ];
+  const cls   = ['h0','h1','h2','h3'];
+  const wrap  = document.getElementById('heatmap');
+  const grid  = document.createElement('div');
+  grid.className = 'heatmap-grid';
+
+  // Header row
+  grid.appendChild(document.createElement('div')); // empty corner
+  days.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='heatmap-day';
+    el.textContent=d;
+    grid.appendChild(el);
+  });
+
+  // Data rows
+  data.forEach((row,hi)=>{
+    const lbl=document.createElement('div');
+    lbl.className='heatmap-hour';
+    lbl.textContent=hours[hi];
+    grid.appendChild(lbl);
+    row.forEach(v=>{
+      const cell=document.createElement('div');
+      cell.className='heatmap-cell '+cls[v];
+      cell.title=hours[hi]+' · '+['Vide','Faible','Moyen','Élevé'][v];
+      grid.appendChild(cell);
+    });
+  });
+
+  wrap.appendChild(grid);
+})();
+
+// ── BAR HOVER TOOLTIP ────────────────────────────────────
+document.querySelectorAll('.bar').forEach(bar=>{
+  bar.addEventListener('mouseenter',function(){
+    this.style.opacity='0.75';
+  });
+  bar.addEventListener('mouseleave',function(){
+    this.style.opacity='1';
+  });
+});
+</script>
+</body>
+</html>

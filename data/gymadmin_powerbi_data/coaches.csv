@@ -1,0 +1,11 @@
+﻿coach_id,first_name,last_name,speciality,status,monthly_salary,full_name,email,hire_date,rating
+1,Mohamed,Harrabi,CrossFit,ACTIVE,1800,Mohamed Harrabi,mohamed.harrabi@gymadmin.tn,2023-02-24,4.3
+2,Salma,Driri,Yoga,ACTIVE,1500,Salma Driri,salma.driri@gymadmin.tn,2025-09-26,4.8
+3,Ahmed,Khalil,Cardio,ACTIVE,1600,Ahmed Khalil,ahmed.khalil@gymadmin.tn,2023-07-20,4.5
+4,Rania,Belhaj,Powerlifting,ACTIVE,1700,Rania Belhaj,rania.belhaj@gymadmin.tn,2025-09-22,4.3
+5,Karim,Nasri,Boxing,ACTIVE,1550,Karim Nasri,karim.nasri@gymadmin.tn,2023-10-03,4.1
+6,Ines,Triki,Dance,ACTIVE,1450,Ines Triki,ines.triki@gymadmin.tn,2024-01-21,3.9
+7,Youssef,Miled,CrossFit,ABSENT,1800,Youssef Miled,youssef.miled@gymadmin.tn,2024-01-10,3.9
+8,Nour,Ayari,Yoga,ACTIVE,1500,Nour Ayari,nour.ayari@gymadmin.tn,2025-06-20,4.0
+9,Slim,Farhat,Cardio,ACTIVE,1600,Slim Farhat,slim.farhat@gymadmin.tn,2023-03-26,3.8
+10,Sara,Guesmi,Powerlifting,ACTIVE,1650,Sara Guesmi,sara.guesmi@gymadmin.tn,2023-08-21,5.0

@@ -1,0 +1,41 @@
+﻿equipment_id,name,category,purchase_date,last_maintenance_date,status,purchase_price,room
+1,Presse à cuisses #1,Machines,2025-11-27,2026-01-21,OPERATIONAL,4000,Salle B
+2,Haltères 20kg #2,Musculation,2025-07-02,2026-02-25,MAINTENANCE,150,Salle B
+3,Barre olympique #3,Musculation,2025-02-20,2026-02-08,OPERATIONAL,300,Salle C
+4,Vélo elliptique #4,Cardio,2025-12-03,2026-04-10,OPERATIONAL,1800,Salle B
+5,Haltères 20kg #5,Musculation,2022-02-04,2023-03-04,OPERATIONAL,150,Salle C
+6,Barre olympique #6,Musculation,2023-05-09,2025-05-06,OPERATIONAL,300,Salle A
+7,Banc de musculation #7,Musculation,2025-02-10,2026-01-06,OPERATIONAL,600,Salle B
+8,Tapis de course #8,Cardio,2025-01-21,2025-09-29,OPERATIONAL,2500,Salle B
+9,Haltères 20kg #9,Musculation,2023-10-03,2025-03-06,OPERATIONAL,150,Studio Yoga
+10,Banc de musculation #10,Musculation,2025-12-27,2026-04-10,OPERATIONAL,600,Ring Boxe
+11,Rameur #11,Cardio,2023-06-18,2026-03-20,OPERATIONAL,2200,Salle C
+12,Corde à sauter #12,Cardio,2021-10-12,2022-05-17,OPERATIONAL,30,Salle C
+13,Rameur #13,Cardio,2022-11-19,2025-04-21,OPERATIONAL,2200,Studio Yoga
+14,Vélo elliptique #14,Cardio,2025-07-23,2026-01-18,OPERATIONAL,1800,Salle B
+15,Vélo elliptique #15,Cardio,2022-02-04,2023-04-15,BROKEN,1800,Salle B
+16,Tapis de course #16,Cardio,2021-06-14,2022-07-30,MAINTENANCE,2500,Salle C
+17,Poulie haute/basse #17,Machines,2023-06-28,2026-02-12,OPERATIONAL,3200,Ring Boxe
+18,Banc de musculation #18,Musculation,2023-01-08,2026-02-28,OPERATIONAL,600,Ring Boxe
+19,Barre olympique #19,Musculation,2025-06-25,2025-12-21,OPERATIONAL,300,Salle A
+20,Vélo elliptique #20,Cardio,2023-10-23,2024-12-24,OPERATIONAL,1800,Ring Boxe
+21,Corde à sauter #21,Cardio,2021-11-24,2025-12-26,BROKEN,30,Salle C
+22,Presse à cuisses #22,Machines,2021-11-08,2023-07-16,MAINTENANCE,4000,Salle A
+23,Barre olympique #23,Musculation,2022-08-26,2026-02-06,OPERATIONAL,300,Salle A
+24,Vélo elliptique #24,Cardio,2022-02-20,2025-04-30,OPERATIONAL,1800,Salle A
+25,Vélo elliptique #25,Cardio,2024-01-08,2025-01-26,OPERATIONAL,1800,Salle C
+26,Vélo elliptique #26,Cardio,2022-04-29,2024-05-13,OPERATIONAL,1800,Studio Yoga
+27,Poulie haute/basse #27,Machines,2022-11-04,2024-06-26,OPERATIONAL,3200,Salle A
+28,Banc de musculation #28,Musculation,2025-03-05,2026-03-19,BROKEN,600,Salle A
+29,Cage à squat #29,Musculation,2025-11-24,2026-02-06,BROKEN,3500,Salle A
+30,Poulie haute/basse #30,Machines,2024-07-13,2025-08-14,OPERATIONAL,3200,Ring Boxe
+31,Rameur #31,Cardio,2023-02-10,2025-12-08,MAINTENANCE,2200,Salle C
+32,Cage à squat #32,Musculation,2023-09-18,2026-03-05,OPERATIONAL,3500,Salle C
+33,Presse à cuisses #33,Machines,2022-03-27,2023-08-14,MAINTENANCE,4000,Studio Yoga
+34,Tapis de course #34,Cardio,2023-07-27,2025-02-02,OPERATIONAL,2500,Ring Boxe
+35,Corde à sauter #35,Cardio,2022-04-29,2022-08-14,OPERATIONAL,30,Salle A
+36,Banc de musculation #36,Musculation,2021-09-23,2023-03-15,OPERATIONAL,600,Salle C
+37,Poulie haute/basse #37,Machines,2025-11-14,2026-02-13,OPERATIONAL,3200,Salle A
+38,Poulie haute/basse #38,Machines,2021-12-16,2024-01-27,OPERATIONAL,3200,Studio Yoga
+39,Presse à cuisses #39,Machines,2024-09-18,2025-04-25,OPERATIONAL,4000,Studio Yoga
+40,Cage à squat #40,Musculation,2022-12-01,2026-03-19,OPERATIONAL,3500,Salle B

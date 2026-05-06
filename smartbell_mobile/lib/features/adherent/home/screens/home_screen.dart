@@ -71,26 +71,8 @@ class _AdherentHomeScreenState extends State<AdherentHomeScreen>
     final dio = DioClient.instance.dio;
 
     try {
-      // Load checkins
-      try {
-        final memberRes = await dio.get(ApiConstants.memberByUser(user.id));
-        final memberData = memberRes.data is Map ? memberRes.data : {};
-        final memberId = (memberData['id'] ?? 0).toInt();
-        if (memberId > 0) {
-          final ciRes = await dio.get(ApiConstants.checkinsByMember(memberId));
-          final ciData = ciRes.data;
-          final ciList = ciData is List ? ciData : (ciData is Map ? (ciData['content'] ?? []) : []);
-          final now = DateTime.now();
-          _checkinsThisMonth = (ciList as List).where((c) {
-            try {
-              final d = DateTime.parse(c['checkInTime'] ?? c['date'] ?? '');
-              return d.month == now.month && d.year == now.year;
-            } catch (_) { return false; }
-          }).length;
-        }
-      } catch (_) {}
-
       _loyaltyPoints = 0;
+      _checkinsThisMonth = 0;
 
       // Load subscription
       try {

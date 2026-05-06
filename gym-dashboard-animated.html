@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GymPro — Dashboard</title>
+<style>
+/* ── RESET & BASE ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg1:#0D1117;--bg2:#161B27;--bg3:#1E2535;
+  --brd:rgba(255,255,255,0.07);--brd2:rgba(255,255,255,0.12);
+  --gold:#D4A017;--goldf:#F0C040;
+  --blue:#4F8EF7;--violet:#A855F7;--green:#10B981;--red:#EF4444;--amber:#F59E0B;
+  --txt:#F0EEF8;--muted:#8A8FA8;--hint:#555C74;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg1);color:var(--txt);font-size:13px;line-height:1.5;overflow:hidden}
+
+/* ── KEYFRAMES ────────────────────────────────────────── */
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeInUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 4px 14px rgba(212,160,23,.45)}50%{box-shadow:0 4px 22px rgba(212,160,23,.75)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* ── LAYOUT ───────────────────────────────────────────── */
+.shell{display:flex;height:700px;overflow:hidden;position:relative}
+
+/* ── SIDEBAR ──────────────────────────────────────────── */
+.sb{
+  width:215px;min-width:215px;background:var(--bg2);
+  border-right:1px solid var(--brd);
+  display:flex;flex-direction:column;
+  animation:slideInLeft .5s ease both;
+  z-index:20;flex-shrink:0;
+}
+/* logo */
+.sb-logo{padding:16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--brd)}
+.logo-ico{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--gold),var(--goldf));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  animation:pulse 3s ease-in-out infinite;
+}
+.logo-ico svg{width:21px;height:21px;fill:#fff}
+.logo-txt .ln{font-size:15px;font-weight:800;background:linear-gradient(90deg,var(--gold),var(--goldf));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.02em}
+.logo-txt .ls{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+
+/* nav */
+.sb-nav{padding:10px 8px;flex:1;overflow-y:auto}
+.sb-nav::-webkit-scrollbar{width:3px}.sb-nav::-webkit-scrollbar-thumb{background:var(--brd2)}
+.sec-lbl{font-size:9px;color:var(--hint);font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:10px 8px 6px}
+.ni{
+  display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;
+  color:var(--muted);font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .15s,color .15s,transform .15s;
+  border:1px solid transparent;margin-bottom:2px;
+  animation:fadeInUp .4s ease both;
+}
+.ni:hover{background:var(--bg3);color:var(--txt);transform:translateX(3px)}
+.ni.on{
+  background:rgba(212,160,23,.12);color:var(--gold);
+  border-color:rgba(212,160,23,.2);
+}
+.ni svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ni .lbl{flex:1}
+.badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.bd-red{background:rgba(239,68,68,.2);color:var(--red)}
+.bd-gold{background:rgba(212,160,23,.2);color:var(--gold)}
+.bd-blue{background:rgba(79,142,247,.2);color:var(--blue)}
+
+/* user */
+.sb-user{padding:12px 14px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:10px}
+.u-av{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),var(--goldf));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#000;
+}
+.u-info .un{font-size:12px;font-weight:600;color:var(--txt)}
+.u-info .ur{font-size:10px;color:var(--muted)}
+.u-dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-left:auto;flex-shrink:0;animation:blink 2s ease-in-out infinite;box-shadow:0 0 6px var(--green)}
+
+/* ── MAIN ─────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ── TOPBAR ───────────────────────────────────────────── */
+.topbar{
+  height:54px;background:var(--bg2);border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;gap:12px;padding:0 18px;flex-shrink:0;
+  animation:slideDown .5s .1s ease both;z-index:10;
+}
+.tb-title{font-size:15px;font-weight:700;color:var(--txt)}
+.tb-sub{font-size:10px;color:var(--muted)}
+.search{
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg3);border:1px solid var(--brd2);
+  border-radius:8px;padding:5px 11px;
+  transition:border-color .2s,box-shadow .2s;margin-left:auto;width:200px;
+}
+.search:focus-within{border-color:rgba(212,160,23,.4);box-shadow:0 0 0 3px rgba(212,160,23,.08)}
+.search input{background:transparent;border:none;outline:none;color:var(--txt);font-size:12px;width:100%}
+.search input::placeholder{color:var(--hint)}
+.search svg{width:13px;height:13px;stroke:var(--hint);fill:none;flex-shrink:0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb-actions{display:flex;align-items:center;gap:8px}
+.ib{
+  width:32px;height:32px;border-radius:7px;background:var(--bg3);border:1px solid var(--brd2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;
+  transition:transform .15s,background .15s;
+}
+.ib:hover{transform:scale(1.08);background:rgba(255,255,255,.08)}
+.ib svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nd{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 2s ease-in-out infinite;border:1.5px solid var(--bg2)}
+.btn-act{
+  background:linear-gradient(135deg,var(--gold),var(--goldf));color:#000;
+  border:none;border-radius:8px;padding:0 14px;height:32px;
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+  transition:transform .15s,box-shadow .15s;letter-spacing:.02em;
+}
+.btn-act:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(212,160,23,.45)}
+
+/* ── CONTENT ──────────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:4px}
+
+/* ── CARD BASE ────────────────────────────────────────── */
+.card{
+  background:var(--bg2);border:1px solid var(--brd);border-radius:12px;padding:16px;
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+  animation:fadeInUp .5s ease both;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--brd2);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.card2{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:14px}
+
+/* ── GRID HELPERS ─────────────────────────────────────── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gtop{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}
+
+/* ── BANNER ───────────────────────────────────────────── */
+.banner{
+  background:linear-gradient(135deg,#1A2A6C 0%,#2563EB 55%,#1D4ED8 100%);
+  border-radius:12px;padding:18px 22px;position:relative;overflow:hidden;
+  border:1px solid rgba(79,142,247,.25);animation-delay:.2s;
+}
+.banner::before{content:'';position:absolute;width:180px;height:180px;border-radius:50%;border:1px solid rgba(255,255,255,.1);top:-60px;right:-40px}
+.banner::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;border:1px solid rgba(255,255,255,.07);bottom:-30px;right:80px}
+.banner-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
+.banner-sub{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:14px}
+.banner-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:11px;color:#fff;font-weight:600}
+.bc-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+
+/* ── MINI STATS ───────────────────────────────────────── */
+.mstat{position:relative;overflow:hidden;padding-bottom:14px}
+.ms-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.ms-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ms-val{font-size:26px;font-weight:700;color:var(--txt);line-height:1;margin-bottom:5px}
+.ms-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(16,185,129,.15);color:var(--green)}
+.ms-bar{position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px}
+.ms-spark{margin-top:10px}
+
+/* ── KPI CARDS ────────────────────────────────────────── */
+.kc{position:relative;overflow:hidden;padding-top:20px}
+.kc-bar{position:absolute;top:0;left:0;right:0;height:2px;border-radius:2px 2px 0 0;transform:scaleX(0);transform-origin:left;transition:transform .8s ease}
+.kc-bar.show{transform:scaleX(1)}
+.kc-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.kc-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.kc-val{font-size:28px;font-weight:700;color:var(--txt);line-height:1;margin-bottom:5px}
+.kc-trend{font-size:11px;color:var(--green);font-weight:500;margin-bottom:10px}
+.spark-wrap{height:26px}
+.spark-wrap svg{width:100%;height:26px;overflow:visible}
+
+/* ── TABS ─────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:14px}
+.tab{flex:1;text-align:center;padding:5px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:background .15s,color .15s}
+.tab.on{background:var(--bg2);color:var(--txt)}
+
+/* ── BAR CHART ────────────────────────────────────────── */
+.chart-title-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.ct-name{font-size:12px;font-weight:600;color:var(--txt)}
+.ct-total{font-size:17px;font-weight:700;color:var(--blue)}
+.bar-area{display:flex;align-items:flex-end;gap:6px;height:80px}
+.bar{flex:1;border-radius:4px 4px 0 0;transform:scaleY(0);transform-origin:bottom;transition:transform .6s cubic-bezier(.34,1.56,.64,1);cursor:pointer;position:relative}
+.bar:hover{filter:brightness(1.25)}
+.bar.show{transform:scaleY(1)}
+.bar-dim{background:rgba(79,142,247,.25)}
+.bar-act{background:linear-gradient(180deg,#74AAFF 0%,var(--blue) 100%)}
+.bar-labels{display:flex;gap:6px;margin-top:7px}
+.bl{flex:1;text-align:center;font-size:10px;color:var(--muted);font-weight:500}
+.bl.on{color:var(--blue);font-weight:700}
+
+/* ── DONUT ────────────────────────────────────────────── */
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-svg{flex-shrink:0}
+.donut-ctr{text-align:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.donut-num{font-size:19px;font-weight:800;color:var(--txt)}
+.donut-sub{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-top:1px}
+.d-pos{position:relative;width:90px;height:90px}
+.d-pos svg{position:absolute;top:0;left:0}
+.donut-leg{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;flex:1}
+.dl{display:flex;align-items:center;gap:6px;font-size:11px}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-name{color:var(--muted);flex:1}
+.dl-pct{font-weight:700;color:var(--txt)}
+
+/* ── TABLE ────────────────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:10px;color:var(--hint);font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:0 10px 10px;text-align:left;white-space:nowrap}
+.tbl td{padding:9px 10px;border-top:1px solid var(--brd);font-size:12px;vertical-align:middle}
+.tbl tr:first-child td{border-top:none}
+.tbl tbody tr:hover td{background:rgba(255,255,255,.025)}
+.t-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.t-name{font-size:12px;font-weight:600;color:var(--txt)}
+.t-email{font-size:10px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.pill-g{background:rgba(16,185,129,.15);color:var(--green)}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* ── ACTIVITY ─────────────────────────────────────────── */
+.act-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--brd);animation:fadeInUp .5s ease both}
+.act-item:first-child{border-top:none;padding-top:0}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-txt{flex:1;font-size:12px;color:var(--muted);line-height:1.5}
+.act-txt b{color:var(--txt)}
+.act-time{font-size:10px;color:var(--hint);white-space:nowrap;margin-top:2px}
+
+/* ── SECTION LABEL ────────────────────────────────────── */
+.slbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="logo-ico">
+      <svg viewBox="0 0 24 24"><path d="M6.5 6.5h1v11h-1zM16.5 6.5h1v11h-1zM3 10.5h18v3H3z"/></svg>
+    </div>
+    <div class="logo-txt">
+      <div class="ln">GymPro</div>
+      <div class="ls">PREMIUM</div>
+    </div>
+  </div>
+
+  <div class="sb-nav">
+    <div class="ni on" style="animation-delay:.05s">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="lbl">Dashboard</span>
+    </div>
+    <div class="ni" style="animation-delay:.1s">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span class="lbl">Membres</span>
+      <span class="badge bd-red">3</span>
+    </div>
+    <div class="ni" style="animation-delay:.15s">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><polyline points="15 3 17 5 21 1"/></svg>
+      <span class="lbl">Coachs</span>
+    </div>
+    <div class="ni" style="animation-delay:.2s">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span class="lbl">Abonnements</span>
+      <span class="badge bd-blue">5</span>
+    </div>
+    <div class="ni" style="animation-delay:.25s">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M9 4v5M15 4v5"/></svg>
+      <span class="lbl">Cours</span>
+      <span class="badge bd-gold">7</span>
+    </div>
+
+    <div class="sec-lbl">Gestion</div>
+    <div class="ni" style="animation-delay:.3s">
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      <span class="lbl">Paiement</span>
+      <span class="badge bd-red">4</span>
+    </div>
+    <div class="ni" style="animation-delay:.35s">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="lbl">Salles</span>
+    </div>
+    <div class="ni" style="animation-delay:.4s">
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <span class="lbl">Statistiques</span>
+    </div>
+    <div class="ni" style="animation-delay:.45s">
+      <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span class="lbl">Notifications</span>
+    </div>
+    <div class="ni" style="animation-delay:.5s">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span class="lbl">Plaintes</span>
+    </div>
+  </div>
+
+  <div class="sb-user">
+    <div class="u-av">MA</div>
+    <div class="u-info">
+      <div class="un">Malek Admin</div>
+      <div class="ur">Administrateur</div>
+    </div>
+    <div class="u-dot"></div>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="tb-title">Tableau de bord</div>
+      <div class="tb-sub">Mis à jour il y a 2 min</div>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Rechercher un membre, cours…">
+    </div>
+    <div class="tb-actions">
+      <div class="ib" title="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="nd"></span>
+      </div>
+      <div class="ib" title="Paramètres">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+      <button class="btn-act">+ Action Rapide</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ROW 1 : Banner + 3 mini-stats -->
+    <div class="gtop">
+
+      <!-- Banner -->
+      <div class="card banner" style="animation-delay:.2s">
+        <div class="banner-title">Bienvenue, Malek 👋</div>
+        <div class="banner-sub">Voici l'état de votre salle ce lundi matin.</div>
+        <div class="banner-chip"><span class="bc-dot"></span> Système opérationnel · Toutes les salles actives</div>
+      </div>
+
+      <!-- Mini stat 1 — Coachs -->
+      <div class="card mstat" style="animation-delay:.25s">
+        <div class="ms-ico" style="background:rgba(79,142,247,.15);color:var(--blue)">🏋️</div>
+        <div class="ms-lbl">Coachs actifs</div>
+        <div class="ms-val"><span class="counter" data-target="2">0</span></div>
+        <div class="ms-badge">↑ Tous dispo</div>
+        <svg class="ms-spark" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <polyline id="sp1" points="0,22 0,22" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="ms-bar" style="background:linear-gradient(90deg,var(--blue),transparent)"></div>
+      </div>
+
+      <!-- Mini stat 2 — Cours -->
+      <div class="card mstat" style="animation-delay:.3s">
+        <div class="ms-ico" style="background:rgba(168,85,247,.15);color:var(--violet)">📅</div>
+        <div class="ms-lbl">Cours actifs</div>
+        <div class="ms-val"><span class="counter" data-target="7">0</span></div>
+        <div class="ms-badge">↑ +2 ce mois</div>
+        <svg class="ms-spark" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <polyline id="sp2" points="0,22 0,22" fill="none" stroke="var(--violet)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="ms-bar" style="background:linear-gradient(90deg,var(--violet),transparent)"></div>
+      </div>
+
+      <!-- Mini stat 3 — Recouvrement -->
+      <div class="card mstat" style="animation-delay:.35s">
+        <div class="ms-ico" style="background:rgba(16,185,129,.15);color:var(--green)">💰</div>
+        <div class="ms-lbl">Recouvrement</div>
+        <div class="ms-val"><span class="counter" data-target="100">0</span>%</div>
+        <div class="ms-badge">↑ Excellent</div>
+        <svg class="ms-spark" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <polyline id="sp3" points="0,22 0,22" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="ms-bar" style="background:linear-gradient(90deg,var(--green),transparent)"></div>
+      </div>
+
+    </div>
+
+    <!-- ROW 2 : KPI Cards -->
+    <div class="g4">
+
+      <!-- KPI 1 -->
+      <div class="card kc" style="animation-delay:.3s">
+        <div class="kc-bar" style="background:linear-gradient(90deg,var(--blue),var(--violet))"></div>
+        <div class="kc-ico" style="background:rgba(79,142,247,.15)">👥</div>
+        <div class="kc-lbl">Total membres</div>
+        <div class="kc-val"><span class="counter" data-target="2">0</span></div>
+        <div class="kc-trend">↑ +2 ce mois</div>
+        <div class="spark-wrap">
+          <svg viewBox="0 0 100 26" preserveAspectRatio="none">
+            <polyline id="sp4" points="0,26 0,26" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- KPI 2 -->
+      <div class="card kc" style="animation-delay:.35s">
+        <div class="kc-bar" style="background:linear-gradient(90deg,var(--gold),var(--goldf))"></div>
+        <div class="kc-ico" style="background:rgba(212,160,23,.15)">💵</div>
+        <div class="kc-lbl">Revenus du mois</div>
+        <div class="kc-val"><span class="counter" data-target="99">0</span> <span style="font-size:14px;color:var(--muted);font-weight:400">DT</span></div>
+        <div class="kc-trend">↑ +12% vs dernier</div>
+        <div class="spark-wrap">
+          <svg viewBox="0 0 100 26" preserveAspectRatio="none">
+            <polyline id="sp5" points="0,26 0,26" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- KPI 3 -->
+      <div class="card kc" style="animation-delay:.4s">
+        <div class="kc-bar" style="background:linear-gradient(90deg,var(--green),#34D399)"></div>
+        <div class="kc-ico" style="background:rgba(16,185,129,.15)">🪪</div>
+        <div class="kc-lbl">Abonnements actifs</div>
+        <div class="kc-val"><span class="counter" data-target="2">0</span></div>
+        <div class="kc-trend">↑ Tous actifs</div>
+        <div class="spark-wrap">
+          <svg viewBox="0 0 100 26" preserveAspectRatio="none">
+            <polyline id="sp6" points="0,26 0,26" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- KPI 4 -->
+      <div class="card kc" style="animation-delay:.45s">
+        <div class="kc-bar" style="background:linear-gradient(90deg,var(--amber),#FCD34D)"></div>
+        <div class="kc-ico" style="background:rgba(245,158,11,.15)">📊</div>
+        <div class="kc-lbl">Taux de présence</div>
+        <div class="kc-val"><span class="counter" data-target="100">0</span><span style="font-size:14px;color:var(--muted);font-weight:400">%</span></div>
+        <div class="kc-trend">↑ Excellent</div>
+        <div class="spark-wrap">
+          <svg viewBox="0 0 100 26" preserveAspectRatio="none">
+            <polyline id="sp7" points="0,26 0,26" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 3 : Bar Chart + Donut + Table -->
+    <div style="display:grid;grid-template-columns:1.4fr 1fr 1.6fr;gap:12px">
+
+      <!-- Bar Chart -->
+      <div class="card" style="animation-delay:.4s">
+        <div class="tabs">
+          <div class="tab on">Revenus</div>
+          <div class="tab">Membres</div>
+          <div class="tab">Cours</div>
+        </div>
+        <div class="chart-title-row">
+          <div class="ct-name">6 derniers mois</div>
+          <div class="ct-total">99 DT</div>
+        </div>
+        <div class="bar-area">
+          <div class="bar bar-dim" style="height:40%"></div>
+          <div class="bar bar-dim" style="height:58%"></div>
+          <div class="bar bar-dim" style="height:45%"></div>
+          <div class="bar bar-dim" style="height:70%"></div>
+          <div class="bar bar-dim" style="height:54%"></div>
+          <div class="bar bar-act" style="height:100%"></div>
+        </div>
+        <div class="bar-labels">
+          <span class="bl">Déc</span>
+          <span class="bl">Jan</span>
+          <span class="bl">Fév</span>
+          <span class="bl">Mar</span>
+          <span class="bl">Avr</span>
+          <span class="bl on">Mai</span>
+        </div>
+      </div>
+
+      <!-- Donut Chart -->
+      <div class="card" style="animation-delay:.45s;display:flex;flex-direction:column">
+        <div class="slbl" style="margin-bottom:14px">Répartition cours</div>
+        <div class="donut-wrap" style="flex:1;align-items:center">
+          <div class="d-pos">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <!-- track -->
+              <circle cx="45" cy="45" r="40" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+              <!-- CrossFit 40% = 100/251 -->
+              <circle id="d1" cx="45" cy="45" r="40" fill="none" stroke="var(--blue)" stroke-width="10"
+                stroke-dasharray="0 251" stroke-dashoffset="0" transform="rotate(-90 45 45)"
+                style="stroke-linecap:butt"/>
+              <!-- Yoga 24% = 60/251 -->
+              <circle id="d2" cx="45" cy="45" r="40" fill="none" stroke="var(--violet)" stroke-width="10"
+                stroke-dasharray="0 251" stroke-dashoffset="0" transform="rotate(-90 45 45)"
+                style="stroke-linecap:butt"/>
+              <!-- Cardio 16% = 40/251 -->
+              <circle id="d3" cx="45" cy="45" r="40" fill="none" stroke="var(--green)" stroke-width="10"
+                stroke-dasharray="0 251" stroke-dashoffset="0" transform="rotate(-90 45 45)"
+                style="stroke-linecap:butt"/>
+              <!-- Autres 20% = 51/251 -->
+              <circle id="d4" cx="45" cy="45" r="40" fill="none" stroke="var(--amber)" stroke-width="10"
+                stroke-dasharray="0 251" stroke-dashoffset="0" transform="rotate(-90 45 45)"
+                style="stroke-linecap:butt"/>
+            </svg>
+            <div class="donut-ctr">
+              <div class="donut-num">7</div>
+              <div class="donut-sub">cours</div>
+            </div>
+          </div>
+          <div class="donut-leg">
+            <div class="dl"><div class="dl-dot" style="background:var(--blue)"></div><span class="dl-name">CrossFit</span><span class="dl-pct">40%</span></div>
+            <div class="dl"><div class="dl-dot" style="background:var(--violet)"></div><span class="dl-name">Yoga</span><span class="dl-pct">24%</span></div>
+            <div class="dl"><div class="dl-dot" style="background:var(--green)"></div><span class="dl-name">Cardio</span><span class="dl-pct">16%</span></div>
+            <div class="dl"><div class="dl-dot" style="background:var(--amber)"></div><span class="dl-name">Autres</span><span class="dl-pct">20%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members Table -->
+      <div class="card" style="animation-delay:.5s">
+        <div class="slbl">Membres récents</div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Abonnement</th>
+              <th>Statut</th>
+              <th>Expire</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px">
+                <div class="t-av" style="background:linear-gradient(135deg,#4F8EF7,#A855F7)">AK</div>
+                <div><div class="t-name">Ahmed Karim</div><div class="t-email">ahmed@gym.com</div></div>
+              </div></td>
+              <td style="color:var(--muted)">Mensuel</td>
+              <td><span class="pill pill-g"><span class="pill-dot"></span>Actif</span></td>
+              <td style="color:var(--muted);font-size:11px">30 Mai</td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px">
+                <div class="t-av" style="background:linear-gradient(135deg,#10B981,#34D399)">SB</div>
+                <div><div class="t-name">Sara Ben Ali</div><div class="t-email">sara@gym.com</div></div>
+              </div></td>
+              <td style="color:var(--muted)">Trimestriel</td>
+              <td><span class="pill pill-g"><span class="pill-dot"></span>Actif</span></td>
+              <td style="color:var(--muted);font-size:11px">15 Juin</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ROW 4 : Activity -->
+    <div class="card" style="animation-delay:.55s">
+      <div class="slbl">Activité récente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0 24px">
+        <div class="act-item" style="animation-delay:.7s">
+          <div class="act-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+          <div><div class="act-txt"><b>Ahmed Karim</b> a souscrit à un nouvel abonnement Mensuel</div>
+          <div class="act-time">il y a 5 min</div></div>
+        </div>
+        <div class="act-item" style="animation-delay:.8s">
+          <div class="act-dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>
+          <div><div class="act-txt">Cours <b>CrossFit WOD</b> complet — 20/20 places</div>
+          <div class="act-time">il y a 22 min</div></div>
+        </div>
+        <div class="act-item" style="animation-delay:.9s">
+          <div class="act-dot" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></div>
+          <div><div class="act-txt">Paiement de <b>49 DT</b> en attente — abonnement Standard</div>
+          <div class="act-time">il y a 1h</div></div>
+        </div>
+        <div class="act-item" style="animation-delay:1s">
+          <div class="act-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+          <div><div class="act-txt"><b>Sara Ben Ali</b> s'est inscrite au cours <b>Yoga Flow</b></div>
+          <div class="act-time">il y a 2h</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+/* ── COUNTER ──────────────────────────────────────────── */
+function animateCounter(el, target, duration = 1200) {
+  const start = performance.now();
+  function step(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.floor(ease * target);
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── SPARKLINE ────────────────────────────────────────── */
+function animateSpark(id, pts, delay = 600) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let i = 0;
+  function addPt() {
+    if (i >= pts.length) return;
+    const current = pts.slice(0, i + 1).map(p => p.join(',')).join(' ');
+    el.setAttribute('points', current);
+    i++;
+    setTimeout(addPt, 60);
+  }
+  setTimeout(addPt, delay);
+}
+
+/* ── DONUT ────────────────────────────────────────────── */
+const segs = [
+  { id:'d1', dash:100, offset:0    },
+  { id:'d2', dash:60,  offset:-100 },
+  { id:'d3', dash:40,  offset:-160 },
+  { id:'d4', dash:51,  offset:-200 },
+];
+
+/* ── INIT ─────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+
+  // 1. Counters
+  setTimeout(() => {
+    document.querySelectorAll('.counter').forEach(el => {
+      animateCounter(el, parseInt(el.dataset.target));
+    });
+  }, 300);
+
+  // 2. Sparklines
+  animateSpark('sp1', [[0,20],[20,16],[40,12],[60,9],[80,6],[100,3]]);
+  animateSpark('sp2', [[0,20],[20,17],[40,15],[60,12],[80,9],[100,6]]);
+  animateSpark('sp3', [[0,22],[20,18],[40,14],[60,10],[80,6],[100,2]]);
+  animateSpark('sp4', [[0,26],[20,22],[40,18],[60,12],[80,7],[100,3]]);
+  animateSpark('sp5', [[0,24],[20,20],[40,17],[60,12],[80,7],[100,3]], 700);
+  animateSpark('sp6', [[0,22],[20,19],[40,16],[60,12],[80,8],[100,4]], 700);
+  animateSpark('sp7', [[0,24],[20,18],[40,13],[60,8],[80,4],[100,1]], 700);
+
+  // 3. Bars
+  document.querySelectorAll('.bar').forEach((b, i) => {
+    setTimeout(() => b.classList.add('show'), 500 + i * 80);
+  });
+
+  // 4. KPI accent bars
+  document.querySelectorAll('.kc-bar').forEach((b, i) => {
+    setTimeout(() => b.classList.add('show'), 400 + i * 100);
+  });
+
+  // 5. Donut
+  segs.forEach((s, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(s.id);
+      if (!el) return;
+      el.style.transition = 'stroke-dasharray .8s ease';
+      el.setAttribute('stroke-dasharray', s.dash + ' ' + (251 - s.dash));
+      el.setAttribute('stroke-dashoffset', s.offset);
+    }, 600 + i * 150);
+  });
+});
+
+/* ── TABS ─────────────────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', function () {
+    this.closest('.tabs').querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    this.classList.add('on');
+  });
+});
+
+/* ── NAV ACTIVE ───────────────────────────────────────── */
+document.querySelectorAll('.ni').forEach(n => {
+  n.addEventListener('click', function () {
+    document.querySelectorAll('.ni').forEach(x => x.classList.remove('on'));
+    this.classList.add('on');
+  });
+});
+</script>
+</body>
+</html>
