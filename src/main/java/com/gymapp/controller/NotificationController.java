@@ -1,14 +1,14 @@
 package com.gymapp.controller;
 
+import com.gymapp.dto.BroadcastNotificationRequest;
 import com.gymapp.dto.NotificationDTO;
-import com.gymapp.entity.enums.NotificationType;
 import com.gymapp.service.NotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -17,42 +17,63 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<NotificationDTO> createNotification(
-            @PathVariable Long userId,
-            @RequestParam String title,
-            @RequestParam String message,
-            @RequestParam NotificationType type) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(notificationService.createNotification(userId, title, message, type));
+    // ── Admin ────────────────────────────────────────────────────────────────
+
+    @GetMapping
+    public ResponseEntity<List<NotificationDTO>> getAllNotifications() {
+        return ResponseEntity.ok(notificationService.getAllNotifications());
     }
+
+    @PostMapping
+    public ResponseEntity<List<NotificationDTO>> broadcast(@RequestBody BroadcastNotificationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(notificationService.broadcast(request));
+    }
+
+    @GetMapping("/unread/count")
+    public ResponseEntity<Long> getAdminUnreadCount() {
+        return ResponseEntity.ok(notificationService.countAllUnreadByAdmin());
+    }
+
+    @PatchMapping("/{broadcastId}/read")
+    public ResponseEntity<Void> markAsReadByAdmin(@PathVariable Long broadcastId) {
+        notificationService.markAsReadByAdmin(broadcastId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/mark-all-read")
+    public ResponseEntity<Void> markAllAsReadByAdmin() {
+        notificationService.markAllAsReadByAdmin();
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{broadcastId}")
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long broadcastId) {
+        notificationService.deleteNotification(broadcastId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllNotifications() {
+        notificationService.deleteAllNotifications();
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Membre / Coach (mobile) ───────────────────────────────────────────────
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<NotificationDTO>> getNotifications(
-            @PathVariable Long userId, Pageable pageable) {
-        return ResponseEntity.ok(notificationService.getNotifications(userId, pageable));
+    public ResponseEntity<List<NotificationDTO>> getNotificationsForUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(notificationService.getNotificationsForUser(userId));
     }
 
-    @GetMapping("/user/{userId}/unread")
-    public ResponseEntity<Page<NotificationDTO>> getUnreadNotifications(
-            @PathVariable Long userId, Pageable pageable) {
-        return ResponseEntity.ok(notificationService.getUnreadNotifications(userId, pageable));
+    @PatchMapping("/{broadcastId}/read/user/{userId}")
+    public ResponseEntity<Void> markAsReadByUser(@PathVariable Long broadcastId,
+                                                  @PathVariable Long userId) {
+        notificationService.markAsReadByUser(broadcastId, userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/user/{userId}/unread/count")
-    public ResponseEntity<Long> getUnreadCount(@PathVariable Long userId) {
-        return ResponseEntity.ok(notificationService.getUnreadCount(userId));
-    }
-
-    @PatchMapping("/{notificationId}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId) {
-        notificationService.markAsRead(notificationId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/user/{userId}/read-all")
-    public ResponseEntity<Void> markAllAsRead(@PathVariable Long userId) {
-        notificationService.markAllAsRead(userId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Long> getUnreadCountForUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(notificationService.countUnreadForUser(userId));
     }
 }

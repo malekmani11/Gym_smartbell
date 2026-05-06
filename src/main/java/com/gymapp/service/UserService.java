@@ -13,6 +13,8 @@ public interface UserService {
 
     Page<UserDTO> getAllUsers(Pageable pageable);
 
+    Page<UserDTO> getUsersByRole(String roleName, Pageable pageable);
+
     UserDTO updateUser(Long id, UserUpdateDTO updateDTO);
 
     void deleteUser(Long id);

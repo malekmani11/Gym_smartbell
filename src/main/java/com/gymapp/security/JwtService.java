@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -23,6 +24,9 @@ public class JwtService {
     @Value("${application.security.jwt.expiration:86400000}")
     private long jwtExpiration;
 
+    @Value("${application.security.jwt.refresh-expiration:604800000}")
+    private long refreshTokenExpiration; // 7 jours par défaut
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -33,7 +37,11 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> claims = new HashMap<>();
+        userDetails.getAuthorities().stream()
+                .findFirst()
+                .ifPresent(a -> claims.put("role", a.getAuthority()));
+        return generateToken(claims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
@@ -74,5 +82,80 @@ public class JwtService {
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Refresh Token Methods
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * Génère un refresh token opaque (UUID) pour la base de données
+     */
+    public String generateRefreshToken() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Génère un nouveau access token à partir d'un refresh token
+     */
+    public String generateAccessTokenFromRefreshToken(String email, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        claims.put("type", "access");
+        
+        return Jwts.builder()
+                .claims(claims)
+                .subject(email)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    /**
+     * Vérifie si le refresh token est valide (format JWT)
+     */
+    public boolean isRefreshTokenValid(String refreshToken) {
+        try {
+            return !isRefreshTokenExpired(refreshToken);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie si le refresh token est expiré
+     */
+    private boolean isRefreshTokenExpired(String token) {
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * Extrait l'email du refresh token
+     */
+    public String extractEmailFromRefreshToken(String refreshToken) {
+        try {
+            return extractUsername(refreshToken);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Retourne la durée d'expiration du refresh token en millisecondes
+     */
+    public long getRefreshTokenExpiration() {
+        return refreshTokenExpiration;
+    }
+
+    /**
+     * Retourne la durée d'expiration du access token en millisecondes
+     */
+    public long getJwtExpiration() {
+        return jwtExpiration;
     }
 }

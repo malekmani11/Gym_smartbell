@@ -23,7 +23,7 @@ public class EntityMapper {
                 .gender(user.getGender())
                 .profileImageUrl(user.getProfileImageUrl())
                 .enabled(user.getEnabled())
-                .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
@@ -31,38 +31,48 @@ public class EntityMapper {
     // ── Member ─────────────────────────────────────────────
 
     public MemberDTO toMemberDTO(Member member) {
-        User user = member.getUser();
+        String activePlan = member.getSubscriptions().stream()
+                .filter(s -> s.getStatus() == com.gymapp.entity.enums.SubscriptionStatus.ACTIVE)
+                .findFirst()
+                .map(s -> s.getPlan().getName())
+                .orElse("Aucun");
+
         return MemberDTO.builder()
                 .id(member.getId())
-                .userId(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
+                .userId(member.getId())
+                .firstName(member.getFirstName())
+                .lastName(member.getLastName())
+                .email(member.getEmail())
+                .phone(member.getPhone())
+                .address(member.getAddress())
+                .dateOfBirth(member.getDateOfBirth())
+                .gender(member.getGender() != null ? member.getGender().name() : null)
                 .emergencyContact(member.getEmergencyContact())
                 .emergencyPhone(member.getEmergencyPhone())
                 .medicalNotes(member.getMedicalNotes())
                 .membershipStatus(member.getMembershipStatus())
                 .joinDate(member.getJoinDate())
+                .planName(activePlan)
+                .profileImageUrl(member.getProfileImageUrl())
                 .build();
     }
 
     // ── Coach ──────────────────────────────────────────────
 
     public CoachDTO toCoachDTO(Coach coach) {
-        User user = coach.getUser();
         return CoachDTO.builder()
                 .id(coach.getId())
-                .userId(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
+                .userId(coach.getId())
+                .firstName(coach.getFirstName())
+                .lastName(coach.getLastName())
+                .email(coach.getEmail())
+                .phone(coach.getPhone())
                 .specialization(coach.getSpecialization())
                 .bio(coach.getBio())
                 .certification(coach.getCertification())
                 .hireDate(coach.getHireDate())
                 .availabilityStatus(coach.getAvailabilityStatus())
+                .profileImageUrl(coach.getProfileImageUrl())
                 .build();
     }
 
@@ -103,6 +113,7 @@ public class EntityMapper {
     // ── Payment ────────────────────────────────────────────
 
     public PaymentDTO toPaymentDTO(Payment payment) {
+        User member = payment.getSubscription().getUser();
         return PaymentDTO.builder()
                 .id(payment.getId())
                 .subscriptionId(payment.getSubscription().getId())
@@ -111,6 +122,8 @@ public class EntityMapper {
                 .paymentMethod(payment.getPaymentMethod())
                 .status(payment.getStatus())
                 .transactionRef(payment.getTransactionRef())
+                .memberName(member.getFirstName() + " " + member.getLastName())
+                .memberEmail(member.getEmail())
                 .build();
     }
 
@@ -132,32 +145,35 @@ public class EntityMapper {
     // ── Course ─────────────────────────────────────────────
 
     public CourseDTO toCourseDTO(Course course) {
-        User coachUser = course.getCoach().getUser();
+        Coach coach = course.getCoach();
+        Salle salle = course.getSalle();
         return CourseDTO.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .description(course.getDescription())
-                .coachId(course.getCoach().getId())
-                .coachName(coachUser.getFirstName() + " " + coachUser.getLastName())
+                .coachId(coach.getId())
+                .coachName(coach.getFirstName() + " " + coach.getLastName())
                 .dayOfWeek(course.getDayOfWeek())
                 .startTime(course.getStartTime())
                 .endTime(course.getEndTime())
                 .maxParticipants(course.getMaxParticipants())
                 .location(course.getLocation())
                 .active(course.getActive())
+                .salleId(salle != null ? salle.getId() : null)
+                .salleName(salle != null ? salle.getName() : null)
                 .build();
     }
 
     // ── Course Reservation ─────────────────────────────────
 
     public CourseReservationDTO toCourseReservationDTO(CourseReservation reservation) {
-        User memberUser = reservation.getMember().getUser();
+        Member member = reservation.getMember();
         return CourseReservationDTO.builder()
                 .id(reservation.getId())
                 .courseId(reservation.getCourse().getId())
                 .courseName(reservation.getCourse().getName())
-                .memberId(reservation.getMember().getId())
-                .memberName(memberUser.getFirstName() + " " + memberUser.getLastName())
+                .memberId(member.getId())
+                .memberName(member.getFirstName() + " " + member.getLastName())
                 .reservationDate(reservation.getReservationDate())
                 .status(reservation.getStatus())
                 .createdAt(reservation.getCreatedAt())
@@ -192,6 +208,10 @@ public class EntityMapper {
                 .eventTitle(reg.getEvent().getTitle())
                 .userId(reg.getUser().getId())
                 .userName(reg.getUser().getFirstName() + " " + reg.getUser().getLastName())
+                .firstName(reg.getUser().getFirstName())
+                .lastName(reg.getUser().getLastName())
+                .email(reg.getUser().getEmail())
+                .profileImageUrl(reg.getUser().getProfileImageUrl())
                 .registrationDate(reg.getRegistrationDate())
                 .status(reg.getStatus())
                 .build();
@@ -200,16 +220,16 @@ public class EntityMapper {
     // ── Training Program ───────────────────────────────────
 
     public TrainingProgramDTO toTrainingProgramDTO(TrainingProgram program) {
-        User coachUser = program.getCoach().getUser();
-        User memberUser = program.getMember().getUser();
+        Coach programCoach = program.getCoach();
+        Member programMember = program.getMember();
         return TrainingProgramDTO.builder()
                 .id(program.getId())
                 .name(program.getName())
                 .description(program.getDescription())
-                .coachId(program.getCoach().getId())
-                .coachName(coachUser.getFirstName() + " " + coachUser.getLastName())
-                .memberId(program.getMember().getId())
-                .memberName(memberUser.getFirstName() + " " + memberUser.getLastName())
+                .coachId(programCoach.getId())
+                .coachName(programCoach.getFirstName() + " " + programCoach.getLastName())
+                .memberId(programMember.getId())
+                .memberName(programMember.getFirstName() + " " + programMember.getLastName())
                 .startDate(program.getStartDate())
                 .endDate(program.getEndDate())
                 .status(program.getStatus())
@@ -272,15 +292,15 @@ public class EntityMapper {
     // ── Nutrition Plan ─────────────────────────────────────
 
     public NutritionPlanDTO toNutritionPlanDTO(NutritionPlan plan) {
-        User memberUser = plan.getMember().getUser();
+        Member planMember = plan.getMember();
         return NutritionPlanDTO.builder()
                 .id(plan.getId())
                 .title(plan.getTitle())
                 .description(plan.getDescription())
                 .createdById(plan.getCreatedBy().getId())
                 .createdByName(plan.getCreatedBy().getFirstName() + " " + plan.getCreatedBy().getLastName())
-                .memberId(plan.getMember().getId())
-                .memberName(memberUser.getFirstName() + " " + memberUser.getLastName())
+                .memberId(planMember.getId())
+                .memberName(planMember.getFirstName() + " " + planMember.getLastName())
                 .startDate(plan.getStartDate())
                 .endDate(plan.getEndDate())
                 .goal(plan.getGoal())
@@ -324,15 +344,17 @@ public class EntityMapper {
 
     // ── Notification ───────────────────────────────────────
 
-    public NotificationDTO toNotificationDTO(Notification notification) {
+    public NotificationDTO toBroadcastDTO(NotificationBroadcast b, boolean isRead) {
         return NotificationDTO.builder()
-                .id(notification.getId())
-                .userId(notification.getUser().getId())
-                .title(notification.getTitle())
-                .message(notification.getMessage())
-                .type(notification.getType())
-                .isRead(notification.getIsRead())
-                .createdAt(notification.getCreatedAt())
+                .id(b.getId())
+                .title(b.getTitle())
+                .message(b.getMessage())
+                .type(b.getType())
+                .isRead(isRead)
+                .createdAt(b.getCreatedAt())
+                .targetAll(b.getTargetAll())
+                .targetRole(b.getTargetRole() != null ? b.getTargetRole().name() : null)
+                .targetUserId(b.getTargetUserId())
                 .build();
     }
 
@@ -342,6 +364,8 @@ public class EntityMapper {
         return ComplaintDTO.builder()
                 .id(complaint.getId())
                 .userId(complaint.getUser().getId())
+                .firstName(complaint.getUser().getFirstName())
+                .lastName(complaint.getUser().getLastName())
                 .userName(complaint.getUser().getFirstName() + " " + complaint.getUser().getLastName())
                 .subject(complaint.getSubject())
                 .description(complaint.getDescription())
@@ -352,18 +376,4 @@ public class EntityMapper {
                 .build();
     }
 
-    // ── CheckIn ────────────────────────────────────────────
-
-    public CheckInDTO toCheckInDTO(CheckIn checkIn) {
-        User memberUser = checkIn.getMember().getUser();
-        return CheckInDTO.builder()
-                .id(checkIn.getId())
-                .memberId(checkIn.getMember().getId())
-                .memberName(memberUser.getFirstName() + " " + memberUser.getLastName())
-                .checkInTime(checkIn.getCheckInTime())
-                .checkOutTime(checkIn.getCheckOutTime())
-                .checkedById(checkIn.getCheckedBy().getId())
-                .checkedByName(checkIn.getCheckedBy().getFirstName() + " " + checkIn.getCheckedBy().getLastName())
-                .build();
-    }
 }

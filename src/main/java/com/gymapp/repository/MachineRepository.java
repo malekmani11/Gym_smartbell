@@ -15,4 +15,6 @@ public interface MachineRepository extends JpaRepository<Machine, Long> {
     List<Machine> findByStatus(MachineStatus status);
 
     Page<Machine> findByLocation(String location, Pageable pageable);
+
+    long countByStatus(MachineStatus status);
 }

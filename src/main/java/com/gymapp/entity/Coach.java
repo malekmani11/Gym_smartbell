@@ -3,6 +3,7 @@ package com.gymapp.entity;
 import com.gymapp.entity.enums.AvailabilityStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -10,20 +11,13 @@ import java.util.Set;
 
 @Entity
 @Table(name = "coaches")
+@PrimaryKeyJoinColumn(name = "user_id")
+@DiscriminatorValue("COACH")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Coach {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+@SuperBuilder
+public class Coach extends User {
 
     @Column(length = 200)
     private String specialization;
@@ -33,7 +27,7 @@ public class Coach {
 
     private String certification;
 
-    @Column(name = "hire_date", nullable = false)
+    @Column(name = "hire_date")
     private LocalDate hireDate;
 
     @Enumerated(EnumType.STRING)

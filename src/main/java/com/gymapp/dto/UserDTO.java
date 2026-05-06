@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Builder
@@ -26,6 +25,6 @@ public class UserDTO {
     private Gender gender;
     private String profileImageUrl;
     private Boolean enabled;
-    private Set<String> roles;
+    private String role;
     private LocalDateTime createdAt;
 }

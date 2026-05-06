@@ -34,4 +34,6 @@ public class PaymentDTO {
 
     private PaymentStatus status;
     private String transactionRef;
+    private String memberName;
+    private String memberEmail;
 }

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +33,21 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventDTO createEvent(EventDTO dto, Long creatorId) {
         log.info("Creating event: {}", dto.getTitle());
+
+        if (dto.getEventDate() != null && !dto.getEventDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("La date de début doit être dans le futur");
+        }
+        if (dto.getEndDate() != null && dto.getEventDate() != null
+                && !dto.getEndDate().isAfter(dto.getEventDate())) {
+            throw new IllegalArgumentException("La date de fin doit être après la date de début");
+        }
+
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (creator.getRole() != Role.ROLE_ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only Admins can create events");
+        }
 
         Event event = Event.builder()
                 .title(dto.getTitle())
@@ -62,18 +77,39 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public Page<EventDTO> getActiveEvents(Pageable pageable) {
-        return eventRepository.findByActiveTrue(pageable).map(mapper::toEventDTO);
+        return eventRepository.findByActiveTrue(pageable).map(event -> {
+            EventDTO dto = mapper.toEventDTO(event);
+            dto.setRegistrationCount(registrationRepository.countByEventId(event.getId()).intValue());
+            return dto;
+        });
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByCreator(Long userId, Pageable pageable) {
-        return eventRepository.findByCreatedById(userId, pageable).map(mapper::toEventDTO);
+        return eventRepository.findByCreatedById(userId, pageable).map(event -> {
+            EventDTO dto = mapper.toEventDTO(event);
+            dto.setRegistrationCount(registrationRepository.countByEventId(event.getId()).intValue());
+            return dto;
+        });
     }
 
     @Override
     public EventDTO updateEvent(Long id, EventDTO dto) {
         log.info("Updating event: {}", id);
+
+        LocalDateTime effectiveStart = dto.getEventDate();
+        LocalDateTime effectiveEnd   = dto.getEndDate();
+        if (effectiveStart == null || effectiveEnd == null) {
+            Event existing = eventRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
+            if (effectiveStart == null) effectiveStart = existing.getEventDate();
+            if (effectiveEnd   == null) effectiveEnd   = existing.getEndDate();
+        }
+        if (effectiveEnd != null && effectiveStart != null && !effectiveEnd.isAfter(effectiveStart)) {
+            throw new IllegalArgumentException("La date de fin doit être après la date de début");
+        }
+
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
 
@@ -114,6 +150,11 @@ public class EventServiceImpl implements EventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
+        // Logic: Coaches and Members can register for events
+        if (user.getRole() != Role.ROLE_COACH && user.getRole() != Role.ROLE_MEMBER) {
+            throw new org.springframework.security.access.AccessDeniedException("Only Coaches and Members can register for events");
+        }
+
         if (registrationRepository.existsByUserIdAndEventId(userId, eventId)) {
             throw new IllegalStateException("User already registered for this event");
         }
@@ -147,5 +188,46 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public Page<EventRegistrationDTO> getRegistrationsByUser(Long userId, Pageable pageable) {
         return registrationRepository.findByUserId(userId, pageable).map(mapper::toEventRegistrationDTO);
+    }
+
+    // ── Nouveaux endpoints ──────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventRegistrationDTO> getEventRegistrations(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+        return registrationRepository.findByEventId(eventId)
+                .stream()
+                .map(mapper::toEventRegistrationDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EventRegistrationDTO registerByEmail(Long eventId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
+        return registerForEvent(eventId, user.getId());
+    }
+
+    @Override
+    public void unregisterByEmail(Long eventId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
+        EventRegistration reg = registrationRepository.findByEventIdAndUserId(eventId, user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Registration not found"));
+        registrationRepository.delete(reg);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventRegistrationDTO> getMyRegistrationsByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
+        return registrationRepository.findByUserId(user.getId())
+                .stream()
+                .map(mapper::toEventRegistrationDTO)
+                .collect(Collectors.toList());
     }
 }

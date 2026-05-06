@@ -19,4 +19,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByDayOfWeekAndActiveTrue(DayOfWeek dayOfWeek);
 
     Page<Course> findByCoachIdAndActiveTrue(Long coachId, Pageable pageable);
+
+    List<Course> findBySalleIdAndDayOfWeekAndActiveTrue(Long salleId, DayOfWeek dayOfWeek);
+
+    List<Course> findBySalleId(Long salleId);
+
+    boolean existsBySalleId(Long salleId);
 }

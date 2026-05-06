@@ -19,6 +19,10 @@ public class EventRegistrationDTO {
     private String eventTitle;
     private Long userId;
     private String userName;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String profileImageUrl;
     private LocalDateTime registrationDate;
     private RegistrationStatus status;
 }

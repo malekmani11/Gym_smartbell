@@ -24,4 +24,8 @@ public interface CourseReservationRepository extends JpaRepository<CourseReserva
             @Param("status") ReservationStatus status);
 
     Boolean existsByMemberIdAndCourseIdAndReservationDate(Long memberId, Long courseId, LocalDate date);
+
+    Long countByCourseIdAndStatus(Long courseId, ReservationStatus status);
+
+    Long countByCourseIdAndStatusAndReservationDate(Long courseId, ReservationStatus status, LocalDate reservationDate);
 }

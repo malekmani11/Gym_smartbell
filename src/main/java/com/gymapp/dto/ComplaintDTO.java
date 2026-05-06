@@ -18,6 +18,8 @@ public class ComplaintDTO {
     private Long id;
     private Long userId;
     private String userName;
+    private String firstName;
+    private String lastName;
 
     @NotBlank(message = "Subject is required")
     private String subject;

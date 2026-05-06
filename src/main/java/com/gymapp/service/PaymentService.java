@@ -21,4 +21,8 @@ public interface PaymentService {
     PaymentDTO updatePaymentStatus(Long id, PaymentStatus status);
 
     BigDecimal getRevenueBetween(LocalDateTime start, LocalDateTime end);
+
+    com.gymapp.dto.PaymentStatsDTO getStats();
+
+    Page<PaymentDTO> getAll(com.gymapp.entity.enums.PaymentStatus status, Pageable pageable);
 }

@@ -17,5 +17,7 @@ public interface SubscriptionService {
 
     SubscriptionDTO cancelSubscription(Long id);
 
+    Page<SubscriptionDTO> getAll(Pageable pageable);
+
     void checkAndExpireSubscriptions();
 }

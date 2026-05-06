@@ -3,27 +3,30 @@ package com.gymapp.entity;
 import com.gymapp.entity.enums.MembershipStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "members")
+@DiscriminatorValue("MEMBER")
+@PrimaryKeyJoinColumn(name = "user_id")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Member {
+@SuperBuilder
+public class Member extends User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "membership_status", nullable = false)
+    @Builder.Default
+    private MembershipStatus membershipStatus = MembershipStatus.INACTIVE;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "join_date")
+    private LocalDate joinDate;
 
     @Column(name = "emergency_contact", length = 100)
     private String emergencyContact;
@@ -33,14 +36,6 @@ public class Member {
 
     @Column(name = "medical_notes", columnDefinition = "TEXT")
     private String medicalNotes;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "membership_status", nullable = false)
-    @Builder.Default
-    private MembershipStatus membershipStatus = MembershipStatus.INACTIVE;
-
-    @Column(name = "join_date", nullable = false)
-    private LocalDate joinDate;
 
     // ── Relationships ──────────────────────────────────────
 
@@ -56,7 +51,4 @@ public class Member {
     @Builder.Default
     private Set<NutritionPlan> nutritionPlans = new HashSet<>();
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<CheckIn> checkIns = new HashSet<>();
 }

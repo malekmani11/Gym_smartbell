@@ -1,6 +1,7 @@
 package com.gymapp.controller;
 
 import com.gymapp.dto.PaymentDTO;
+import com.gymapp.dto.PaymentStatsDTO;
 import com.gymapp.entity.enums.PaymentStatus;
 import com.gymapp.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +44,17 @@ public class PaymentController {
     public ResponseEntity<PaymentDTO> updatePaymentStatus(
             @PathVariable Long id, @RequestParam PaymentStatus status) {
         return ResponseEntity.ok(paymentService.updatePaymentStatus(id, status));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<PaymentDTO>> getAll(
+            @RequestParam(required = false) PaymentStatus status,
+            Pageable pageable) {
+        return ResponseEntity.ok(paymentService.getAll(status, pageable));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<PaymentStatsDTO> getStats() {
+        return ResponseEntity.ok(paymentService.getStats());
     }
 }

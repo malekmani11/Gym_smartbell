@@ -39,6 +39,11 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getSubscriptionsByStatus(status, pageable));
     }
 
+    @GetMapping
+    public ResponseEntity<Page<SubscriptionDTO>> getAllSubscriptions(Pageable pageable) {
+        return ResponseEntity.ok(subscriptionService.getAll(pageable));
+    }
+
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<SubscriptionDTO> cancelSubscription(@PathVariable Long id) {
         return ResponseEntity.ok(subscriptionService.cancelSubscription(id));

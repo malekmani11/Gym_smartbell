@@ -45,4 +45,7 @@ public class CourseDTO {
     private String location;
     private Boolean active;
     private Integer currentParticipants;
+
+    private Long   salleId;
+    private String salleName;
 }

@@ -105,6 +105,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<SubscriptionDTO> getAll(Pageable pageable) {
+        return subscriptionRepository.findAll(pageable).map(mapper::toSubscriptionDTO);
+    }
+
+    @Override
     public void checkAndExpireSubscriptions() {
         log.info("Checking for expired subscriptions...");
         List<Subscription> expired = subscriptionRepository

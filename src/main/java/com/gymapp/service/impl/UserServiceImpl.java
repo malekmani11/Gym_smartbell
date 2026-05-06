@@ -77,6 +77,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getUsersByRole(String roleName, Pageable pageable) {
+        log.debug("Fetching users with role: {}", roleName);
+        return userRepository.findByRole(com.gymapp.entity.Role.valueOf(roleName), pageable).map(mapper::toUserDTO);
+    }
+
+    @Override
     public void deleteUser(Long id) {
         log.warn("Deleting user with id: {}", id);
         if (!userRepository.existsById(id)) {

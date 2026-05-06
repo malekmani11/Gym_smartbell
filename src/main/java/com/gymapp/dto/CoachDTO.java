@@ -25,4 +25,5 @@ public class CoachDTO {
     private String certification;
     private LocalDate hireDate;
     private AvailabilityStatus availabilityStatus;
+    private String profileImageUrl;
 }

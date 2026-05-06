@@ -32,7 +32,7 @@ public class Course {
     private Coach coach;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false)
+    @Column(name = "day_of_week", nullable = false, length = 10)
     private DayOfWeek dayOfWeek;
 
     @Column(name = "start_time", nullable = false)
@@ -46,6 +46,10 @@ public class Course {
 
     @Column(length = 100)
     private String location;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "salle_id")
+    private Salle salle;
 
     @Column(nullable = false)
     @Builder.Default

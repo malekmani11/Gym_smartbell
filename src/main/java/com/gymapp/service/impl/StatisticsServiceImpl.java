@@ -2,6 +2,8 @@ package com.gymapp.service.impl;
 
 import com.gymapp.dto.StatisticsDTO;
 import com.gymapp.entity.enums.ComplaintStatus;
+import com.gymapp.entity.enums.Gender;
+import com.gymapp.entity.enums.MachineStatus;
 import com.gymapp.entity.enums.MembershipStatus;
 import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.repository.*;
@@ -16,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,18 +29,18 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private final MemberRepository memberRepository;
     private final CoachRepository coachRepository;
-    private final CheckInRepository checkInRepository;
     private final PaymentRepository paymentRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final CourseRepository courseRepository;
     private final EventRepository eventRepository;
     private final ComplaintRepository complaintRepository;
+    private final MachineRepository machineRepository;
 
     @Override
     public StatisticsDTO getGymStatistics() {
         log.debug("Generating gym statistics");
 
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
         LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime startOfYear = LocalDate.now().withDayOfYear(1).atStartOfDay();
@@ -44,13 +48,30 @@ public class StatisticsServiceImpl implements StatisticsService {
         BigDecimal revenueMonth = paymentRepository.sumCompletedPaymentsBetween(startOfMonth, endOfDay);
         BigDecimal revenueYear = paymentRepository.sumCompletedPaymentsBetween(startOfYear, endOfDay);
 
+        // Trends (Last 6 months)
+        List<BigDecimal> revenueTrend = new ArrayList<>();
+        List<Long> memberTrend = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            LocalDateTime start = LocalDate.now().minusMonths(i).withDayOfMonth(1).atStartOfDay();
+            LocalDateTime end = LocalDate.now().minusMonths(i).with(java.time.temporal.TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX);
+            
+            BigDecimal rev = paymentRepository.sumCompletedPaymentsBetween(start, end);
+            revenueTrend.add(rev != null ? rev : BigDecimal.ZERO);
+            
+            // Count members who joined during this specific month
+            long newMembers = memberRepository.findAll().stream()
+                .filter(m -> m.getCreatedAt() != null && !m.getCreatedAt().isBefore(start) && !m.getCreatedAt().isAfter(end))
+                .count();
+            memberTrend.add(newMembers);
+        }
+
+        long totalMembers = memberRepository.count();
+        long activeMembers = memberRepository.findByMembershipStatus(MembershipStatus.ACTIVE, Pageable.unpaged()).getTotalElements();
+
         return StatisticsDTO.builder()
-                .totalMembers(memberRepository.count())
-                .activeMembers(memberRepository.findByMembershipStatus(MembershipStatus.ACTIVE, Pageable.unpaged())
-                        .getTotalElements())
+                .totalMembers(totalMembers)
+                .activeMembers(activeMembers)
                 .totalCoaches(coachRepository.count())
-                .totalCheckInsToday(checkInRepository.countCheckInsBetween(startOfDay, endOfDay))
-                .totalCheckInsThisMonth(checkInRepository.countCheckInsBetween(startOfMonth, endOfDay))
                 .revenueThisMonth(revenueMonth != null ? revenueMonth : BigDecimal.ZERO)
                 .revenueThisYear(revenueYear != null ? revenueYear : BigDecimal.ZERO)
                 .activeSubscriptions(subscriptionRepository.findByStatus(SubscriptionStatus.ACTIVE, Pageable.unpaged())
@@ -61,6 +82,13 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .totalEvents((long) eventRepository.findByActiveTrue(Pageable.unpaged()).getTotalElements())
                 .openComplaints(
                         complaintRepository.findByStatus(ComplaintStatus.OPEN, Pageable.unpaged()).getTotalElements())
+                .attendanceRate(totalMembers > 0 ? (double) activeMembers / totalMembers * 100 : 0.0)
+                .brokenMachinesCount(machineRepository.countByStatus(MachineStatus.OUT_OF_SERVICE) + machineRepository.countByStatus(MachineStatus.MAINTENANCE))
+                .revenueTrend(revenueTrend)
+                .memberTrend(memberTrend)
+                .maleCount(memberRepository.countByGender(Gender.MALE))
+                .femaleCount(memberRepository.countByGender(Gender.FEMALE))
+                .expiringSoonCount(subscriptionRepository.countByStatusAndEndDateBetween(SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now().plusDays(7)))
                 .build();
     }
 }

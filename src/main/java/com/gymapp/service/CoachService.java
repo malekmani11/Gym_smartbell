@@ -9,6 +9,8 @@ public interface CoachService {
 
     CoachDTO createCoach(Long userId, CoachDTO dto);
 
+    CoachDTO createCoachDirect(CoachDTO dto);
+
     CoachDTO getCoachById(Long id);
 
     CoachDTO getCoachByUserId(Long userId);

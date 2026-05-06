@@ -1,6 +1,7 @@
 package com.gymapp.controller;
 
 import com.gymapp.dto.ComplaintDTO;
+import com.gymapp.dto.RespondComplaintRequest;
 import com.gymapp.entity.enums.ComplaintStatus;
 import com.gymapp.service.ComplaintService;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +49,7 @@ public class ComplaintController {
     @PatchMapping("/{id}/respond")
     public ResponseEntity<ComplaintDTO> respondToComplaint(
             @PathVariable Long id,
-            @RequestParam String response,
-            @RequestParam ComplaintStatus status) {
-        return ResponseEntity.ok(complaintService.respondToComplaint(id, response, status));
+            @RequestBody RespondComplaintRequest req) {
+        return ResponseEntity.ok(complaintService.respondToComplaint(id, req.getResponse(), req.getStatus()));
     }
 }

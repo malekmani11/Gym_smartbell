@@ -1,21 +1,33 @@
 package com.gymapp.service;
 
+import com.gymapp.dto.BroadcastNotificationRequest;
 import com.gymapp.dto.NotificationDTO;
-import com.gymapp.entity.enums.NotificationType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface NotificationService {
 
-    NotificationDTO createNotification(Long userId, String title, String message, NotificationType type);
+    // ── Admin (panel de gestion) ──────────────────────────────────────────────
 
-    Page<NotificationDTO> getNotifications(Long userId, Pageable pageable);
+    List<NotificationDTO> getAllNotifications();
 
-    Page<NotificationDTO> getUnreadNotifications(Long userId, Pageable pageable);
+    List<NotificationDTO> broadcast(BroadcastNotificationRequest request);
 
-    Long getUnreadCount(Long userId);
+    void markAsReadByAdmin(Long broadcastId);
 
-    void markAsRead(Long notificationId);
+    void markAllAsReadByAdmin();
 
-    void markAllAsRead(Long userId);
+    long countAllUnreadByAdmin();
+
+    void deleteNotification(Long broadcastId);
+
+    void deleteAllNotifications();
+
+    // ── Membre / Coach (mobile & self-service) ────────────────────────────────
+
+    List<NotificationDTO> getNotificationsForUser(Long userId);
+
+    void markAsReadByUser(Long broadcastId, Long userId);
+
+    long countUnreadForUser(Long userId);
 }

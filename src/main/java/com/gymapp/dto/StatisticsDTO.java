@@ -16,8 +16,6 @@ public class StatisticsDTO {
     private Long totalMembers;
     private Long activeMembers;
     private Long totalCoaches;
-    private Long totalCheckInsToday;
-    private Long totalCheckInsThisMonth;
     private BigDecimal revenueThisMonth;
     private BigDecimal revenueThisYear;
     private Long activeSubscriptions;
@@ -25,4 +23,13 @@ public class StatisticsDTO {
     private Long totalCourses;
     private Long totalEvents;
     private Long openComplaints;
+
+    // Advanced KPIs
+    private Double attendanceRate;
+    private Long brokenMachinesCount;
+    private java.util.List<BigDecimal> revenueTrend;
+    private java.util.List<Long> memberTrend;
+    private Long maleCount;
+    private Long femaleCount;
+    private Long expiringSoonCount;
 }

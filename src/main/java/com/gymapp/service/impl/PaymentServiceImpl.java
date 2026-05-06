@@ -81,4 +81,36 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal revenue = paymentRepository.sumCompletedPaymentsBetween(start, end);
         return revenue != null ? revenue : BigDecimal.ZERO;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.gymapp.dto.PaymentStatsDTO getStats() {
+        LocalDateTime now          = LocalDateTime.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime startOfPrev  = startOfMonth.minusMonths(1);
+        LocalDateTime endOfPrev    = startOfMonth.minusSeconds(1);
+
+        BigDecimal thisMonth = paymentRepository.sumCompletedPaymentsBetween(startOfMonth, now);
+        BigDecimal prevMonth = paymentRepository.sumCompletedPaymentsBetween(startOfPrev, endOfPrev);
+        BigDecimal total     = paymentRepository.sumAllCompleted();
+
+        return com.gymapp.dto.PaymentStatsDTO.builder()
+                .revenueThisMonth(thisMonth != null ? thisMonth : BigDecimal.ZERO)
+                .revenuePrevMonth(prevMonth != null ? prevMonth : BigDecimal.ZERO)
+                .completedCount(paymentRepository.countByStatus(com.gymapp.entity.enums.PaymentStatus.COMPLETED))
+                .pendingCount(paymentRepository.countByStatus(com.gymapp.entity.enums.PaymentStatus.PENDING))
+                .failedCount(paymentRepository.countByStatus(com.gymapp.entity.enums.PaymentStatus.FAILED))
+                .refundedCount(paymentRepository.countByStatus(com.gymapp.entity.enums.PaymentStatus.REFUNDED))
+                .totalRevenue(total != null ? total : BigDecimal.ZERO)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentDTO> getAll(PaymentStatus status, Pageable pageable) {
+        if (status != null) {
+            return paymentRepository.findByStatus(status, pageable).map(mapper::toPaymentDTO);
+        }
+        return paymentRepository.findAll(pageable).map(mapper::toPaymentDTO);
+    }
 }

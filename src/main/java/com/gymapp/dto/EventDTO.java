@@ -1,5 +1,6 @@
 package com.gymapp.dto;
 
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -24,7 +25,8 @@ public class EventDTO {
     private Long createdById;
     private String createdByName;
 
-    @NotNull(message = "Event date is required")
+    @NotNull(message = "La date de début est obligatoire")
+    @Future(message = "La date de début doit être dans le futur")
     private LocalDateTime eventDate;
 
     private LocalDateTime endDate;
@@ -33,5 +35,6 @@ public class EventDTO {
     private String imageUrl;
     private Boolean active;
     private Integer currentRegistrations;
+    private Integer registrationCount;
     private LocalDateTime createdAt;
 }

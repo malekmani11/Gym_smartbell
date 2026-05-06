@@ -31,6 +31,14 @@ public class RegisterRequest {
     private String password;
 
     private String phone;
+    private String address;
+    private String dateOfBirth;
+    private String gender;
+    private String emergencyContact;
+    private String emergencyPhone;
+    private String medicalNotes;
 
     private String roleName; // e.g. "ROLE_MEMBER"
+
+    private String specialization; // used when roleName = ROLE_COACH
 }

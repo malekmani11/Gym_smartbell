@@ -15,10 +15,14 @@ import java.time.LocalDateTime;
 public class NotificationDTO {
 
     private Long id;
-    private Long userId;
     private String title;
     private String message;
     private NotificationType type;
     private Boolean isRead;
     private LocalDateTime createdAt;
+
+    /** Informations de ciblage (admin uniquement) */
+    private Boolean targetAll;
+    private String targetRole;
+    private Long targetUserId;
 }

@@ -24,4 +24,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'COMPLETED' AND p.paymentDate BETWEEN :start AND :end")
     BigDecimal sumCompletedPaymentsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    long countByStatus(PaymentStatus status);
+
+    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
+
+    Page<Payment> findByPaymentDateBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);
+
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'COMPLETED'")
+    BigDecimal sumAllCompleted();
 }
