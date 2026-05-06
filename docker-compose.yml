@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: smartbell-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: gym_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./smartbell
+      dockerfile: Dockerfile
+    container_name: smartbell-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/gym_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      FACES_DB_PATH: /app/faces_db
+    volumes:
+      - faces_db:/app/faces_db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./Frontsmartbell
+      dockerfile: Dockerfile
+    container_name: smartbell-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+  kiosk:
+    build:
+      context: ./kiosk
+      dockerfile: Dockerfile
+    container_name: smartbell-kiosk
+    restart: unless-stopped
+    devices:
+      - /dev/video0:/dev/video0
+    environment:
+      BACKEND_URL: http://smartbell-backend:8080
+      CAMERA_INDEX: 0
+      BORNE_EMAIL: borne@smartbell.com
+      BORNE_PASSWORD: ${BORNE_PASSWORD:-Borne@2024!}
+      FACES_DB_PATH: /app/faces_db
+      COOLDOWN_SECONDS: 5
+      DETECTION_THRESHOLD: 0.6
+    volumes:
+      - faces_db:/app/faces_db
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  faces_db:
