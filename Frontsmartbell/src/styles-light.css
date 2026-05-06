@@ -1,0 +1,818 @@
+/* ============================================================
+   GYM ADMIN — LIGHT MODE  (Complete Redesign)
+   ============================================================ */
+
+/* ── CSS Variables ── */
+body.light {
+  --bg-primary:    #f0efe8;
+  --bg-secondary:  #ffffff;
+  --bg-card:       #ffffff;
+  --bg-sidebar:    #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-elevated:   #f9f9f7;
+  --bg-input:      #f5f5f0;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #666666;
+  --text-bright:    #1a1a1a;
+  --text-muted:     #888888;
+  --border-color:   #e8e8e8;
+  --border-subtle:  #eeeeee;
+  --accent:         #f0a500;
+  --card-shadow:    0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* ── Page background & base text ── */
+body.light {
+  background-color: #f0efe8 !important;
+  color: #1a1a1a !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   LAYOUT SHELL  (layout.html has hardcoded bg-[#0A0A0A])
+   ──────────────────────────────────────────────────────────── */
+
+/* Root wrapper div & <main> element — both use bg-[#0A0A0A] inline */
+body.light .bg-\[\#0A0A0A\],
+body.light .bg-\[\#0a0a0a\] {
+  background-color: #f0efe8 !important;
+}
+
+/* <main> — extra safety net */
+body.light main {
+  background-color: #f0efe8 !important;
+}
+
+/* Hide ambient gold glow blobs inside <main> */
+body.light main > div.absolute,
+body.light main > div.pointer-events-none {
+  display: none !important;
+}
+
+/* ── Scrollbar (light) ── */
+body.light ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f0a500 0%, #cc8800 100%);
+}
+body.light ::-webkit-scrollbar-track {
+  background: #f0f0eb;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TYPOGRAPHY
+   ──────────────────────────────────────────────────────────── */
+body.light h1,
+body.light h2,
+body.light h3,
+body.light h4,
+body.light h5,
+body.light p { color: #1a1a1a; }
+
+body.light .text-white,
+body.light .text-gray-100,
+body.light .text-gray-200,
+body.light .text-gray-300 { color: #1a1a1a !important; }
+
+body.light .text-gray-400,
+body.light .text-gray-500 { color: #666666 !important; }
+
+body.light .text-gray-600,
+body.light .text-gray-700 { color: #444444 !important; }
+
+/* Hardcoded hex text colours from component CSS */
+body.light [class*="text-[#e4e4e4]"],
+body.light [class*="text-[#e0e0e0]"],
+body.light [class*="text-[#ccc]"],
+body.light [class*="text-[#E8E0CC]"] { color: #1a1a1a !important; }
+
+body.light [class*="text-[#555]"],
+body.light [class*="text-[#666]"],
+body.light [class*="text-[#777]"],
+body.light [class*="text-[#888]"] { color: #666666 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   CARDS  (premium-card / panel-card / kpi-card)
+   ──────────────────────────────────────────────────────────── */
+body.light .premium-card,
+body.light .panel-card,
+body.light .kpi-card {
+  background: #ffffff !important;
+  border: 1px solid #eeeeee !important;
+  border-top: 1px solid #eeeeee !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+
+body.light .premium-card:hover,
+body.light .panel-card:hover,
+body.light .kpi-card:hover {
+  border-color: #dddddd !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Remove decorative pseudo-elements (gold bar + ambient blob) */
+body.light .premium-card::before,
+body.light .panel-card::before,
+body.light .kpi-card::before,
+body.light .kpi-card::after {
+  display: none !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   BACKGROUND BLOBS / GLOW DECORATIONS  (remove them)
+   Tailwind absolute decorations inside KPI cards
+   ──────────────────────────────────────────────────────────── */
+body.light .absolute.-right-3.-top-3,
+body.light .absolute.inset-0.bg-black\/85,
+body.light .absolute.inset-0.bg-black\/80,
+body.light .absolute.inset-0.bg-black\/70 {
+  opacity: 0 !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   DARK BACKGROUNDS → LIGHT
+   ──────────────────────────────────────────────────────────── */
+body.light .bg-black-bg,
+body.light .bg-black-card,
+body.light .bg-black-sidebar            { background-color: #f5f5f0 !important; }
+
+/* Opacity-modified variants (e.g. bg-black-sidebar/50 in member-alerts header) */
+body.light .bg-black-sidebar\/50,
+body.light .bg-black-sidebar\/30,
+body.light .bg-black-sidebar\/20,
+body.light .bg-black-card\/50,
+body.light .bg-black-bg\/50             { background-color: #f5f5f0 !important; }
+
+/* Hardcoded hex bg colours used across components */
+body.light [class*="bg-[#1a1a1a]"],
+body.light [class*="bg-[#1e1e1e]"],
+body.light [class*="bg-[#141414]"],
+body.light [class*="bg-[#171717]"],
+body.light [class*="bg-[#0F0F0F]"],
+body.light [class*="bg-[#0f0f0f]"],
+body.light [class*="bg-[#0d0b04]"],
+body.light [class*="bg-[#1f1f1f]"],
+body.light [class*="bg-[#0D0D0D]"],
+body.light [class*="bg-[#0d0d0d]"],
+body.light [class*="bg-[#111]"]    { background-color: #f9f9f7 !important; }
+
+/* Hover state variants */
+body.light [class*="hover:bg-[#111]"]:hover { background-color: #f0f0ec !important; }
+
+body.light [class*="bg-[#2a2a2a]"],
+body.light [class*="bg-[#222]"],
+body.light [class*="bg-[#222222]"],
+body.light [class*="bg-[#262626]"] { background-color: #f5f5f0 !important; }
+
+body.light [class*="bg-[#161616]"],
+body.light [class*="bg-[#141210]"] { background-color: #f9f9f7 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   WHITE-ALPHA BACKGROUNDS  (nearly invisible on white cards)
+   ──────────────────────────────────────────────────────────── */
+body.light .bg-white\/3,
+body.light .bg-white\/4  { background-color: #f9f9f7 !important; }
+body.light .bg-white\/5  { background-color: #eeeeee !important; }
+body.light .bg-white\/8  { background-color: #f0f0ec !important; }
+body.light .bg-white\/10 { background-color: #ebebeb !important; }
+
+/* ────────────────────────────────────────────────────────────
+   BORDERS
+   ──────────────────────────────────────────────────────────── */
+body.light .border-white\/5,
+body.light .border-white\/8,
+body.light .border-white\/10,
+body.light .border-white\/20,
+body.light .border-white\/25 { border-color: #e8e8e8 !important; }
+
+body.light [class*="border-[#2a2a2a]"],
+body.light [class*="border-[#2e2e2e]"],
+body.light [class*="border-[#252525]"],
+body.light [class*="border-[#333]"],
+body.light [class*="border-[#222]"],
+body.light [class*="border-[#3a3a3a]"] { border-color: #e8e8e8 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   SIDEBAR
+   ──────────────────────────────────────────────────────────── */
+body.light aside {
+  background-color: #ffffff !important;
+  border-right: 1px solid #eeeeee !important;
+}
+
+/* Nav item text */
+body.light nav a span { color: #444444 !important; }
+body.light nav a i    { color: #666666 !important; }
+
+/* Section separator line */
+body.light nav div.flex-1.h-px {
+  background: #eeeeee !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   HEADER / TOPBAR
+   ──────────────────────────────────────────────────────────── */
+body.light header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #eeeeee !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   PAGE TITLES  (text-3xl/2xl font-bold)
+   member/coach CSS override these to gold — reset in light mode
+   ──────────────────────────────────────────────────────────── */
+body.light h1,
+body.light h1.text-3xl,
+body.light .text-3xl.font-bold.text-white,
+body.light .font-playfair {
+  color: #1a1a1a !important;
+  text-shadow: none !important;
+}
+
+/* KPI values — dark text, no glow */
+body.light .text-3xl.font-bold,
+body.light .text-2xl.font-bold {
+  color: #1a1a1a !important;
+  text-shadow: none !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TABLE
+   ──────────────────────────────────────────────────────────── */
+body.light thead,
+body.light [class*="bg-black-sidebar"] { background-color: #f0f0ec !important; }
+
+body.light th {
+  background-color: #f0f0ec !important;
+  color: #888888 !important;
+  border-color: #e8e8e8 !important;
+}
+
+body.light td {
+  color: #1a1a1a !important;
+  border-color: #e8e8e8 !important;
+}
+
+body.light table tbody tr { background-color: #ffffff !important; }
+body.light table tbody tr:hover { background-color: #f5f5f5 !important; }
+
+body.light .divide-y          > * + * { border-color: #e8e8e8 !important; }
+body.light .divide-white\/5   > * + * { border-color: #e8e8e8 !important; }
+body.light [class*="divide-[#2a2a2a]"] > * + * { border-color: #e8e8e8 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   INPUTS / SELECTS / TEXTAREA
+   ──────────────────────────────────────────────────────────── */
+body.light input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]),
+body.light select,
+body.light textarea {
+  background-color: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+
+body.light input::placeholder,
+body.light textarea::placeholder { color: #aaaaaa !important; }
+
+body.light input:focus,
+body.light select:focus,
+body.light textarea:focus {
+  border-color: #f0a500 !important;
+  box-shadow: 0 0 0 2px rgba(240,165,0,0.15) !important;
+  outline: none !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   COMPLAINTS COMPONENT  (hardcoded dark classes)
+   ──────────────────────────────────────────────────────────── */
+body.light .stat-card {
+  background: #ffffff !important;
+  border: 1px solid #eeeeee !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+
+body.light .stat-card::before { display: none !important; }
+
+body.light .stat-label         { color: #888888 !important; }
+body.light .stat-label--open   { color: #e24b4a !important; }
+body.light .stat-label--ongoing{ color: #534ab7 !important; }
+body.light .stat-label--resolved{ color: #1d9e75 !important; }
+body.light .stat-label--closed { color: #999999 !important; }
+
+body.light .stat-value         { color: #1a1a1a !important; }
+body.light .stat-sub           { color: #999999 !important; }
+
+body.light .complaint-card {
+  background: #ffffff !important;
+  border-color: #eeeeee !important;
+}
+body.light .complaint-card:hover { border-color: #dddddd !important; }
+
+body.light .cpl-title          { color: #1a1a1a !important; }
+body.light .cpl-meta           { color: #666666 !important; }
+body.light .cpl-meta span      { color: #666666 !important; }
+
+body.light .cpl-filter-bar {
+  background: #ffffff !important;
+  border-color: #eeeeee !important;
+}
+body.light .cpl-filter-input,
+body.light .cpl-filter-select {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+
+body.light .cpl-btn {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #666666 !important;
+}
+
+/* Complaint modal */
+body.light .modal-box {
+  background: #ffffff !important;
+  border-color: #e8e8e8 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+}
+body.light .modal-title        { color: #1a1a1a !important; }
+body.light .modal-field-label  { color: #888888 !important; }
+body.light .modal-info-box {
+  background: #f9f9f7 !important;
+  border-color: #eeeeee !important;
+  color: #1a1a1a !important;
+}
+body.light .modal-textarea,
+body.light .modal-select-input {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+body.light .modal-close {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #666666 !important;
+}
+body.light .modal-btn-cancel {
+  border-color: #dddddd !important;
+  color: #666666 !important;
+}
+body.light .modal-grid-value   { color: #1a1a1a !important; }
+
+body.light .modal-overlay {
+  background: rgba(0,0,0,0.30) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MACHINES / FILTER PANELS
+   ──────────────────────────────────────────────────────────── */
+body.light .filters-panel {
+  background: #ffffff !important;
+  border-color: #eeeeee !important;
+}
+body.light .filter-input,
+body.light .filter-select {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+body.light .filter-icon { color: #aaaaaa !important; }
+
+/* ────────────────────────────────────────────────────────────
+   BUTTONS
+   ──────────────────────────────────────────────────────────── */
+/* btn-gold stays the same (#f0a500 bg, dark text) */
+body.light .btn-gold-outline {
+  border-color: #dddddd !important;
+  color: #444444 !important;
+  background: transparent !important;
+}
+body.light .btn-gold-outline:hover {
+  background-color: #f5f5f0 !important;
+  border-color: #cccccc !important;
+}
+
+/* Icon action buttons in tables */
+body.light .w-8.h-8.rounded-lg {
+  background-color: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #555555 !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   STATUS BADGES
+   ──────────────────────────────────────────────────────────── */
+/* Global dark badge → light */
+body.light .badge-active {
+  background: #e8f5e9 !important;
+  color: #2e7d32 !important;
+  border-color: #c8e6c9 !important;
+  box-shadow: none !important;
+}
+body.light .badge-expired {
+  background: #fce4ec !important;
+  color: #c62828 !important;
+  border-color: #f8bbd0 !important;
+  box-shadow: none !important;
+}
+body.light .badge-gold {
+  background: #fff8e1 !important;
+  color: #e65100 !important;
+  border-color: #ffe082 !important;
+  box-shadow: none !important;
+}
+
+/* Tailwind colour badges (members / coaches) */
+body.light .bg-green-500\/15  { background: #e8f5e9 !important; }
+body.light .bg-red-500\/15    { background: #fce4ec !important; }
+body.light .bg-yellow-500\/15 { background: #fff8e1 !important; }
+body.light .bg-blue-500\/15   { background: #e3f2fd !important; }
+body.light .bg-orange-500\/15 { background: #fff3e0 !important; }
+
+body.light .text-green-400  { color: #2e7d32 !important; }
+body.light .text-red-400    { color: #c62828 !important; }
+body.light .text-yellow-400,
+body.light .text-orange-400 { color: #e65100 !important; }
+body.light .text-blue-400   { color: #1565c0 !important; }
+
+body.light .border-green-500\/30  { border-color: #c8e6c9 !important; }
+body.light .border-red-500\/30    { border-color: #f8bbd0 !important; }
+body.light .border-yellow-500\/30,
+body.light .border-orange-500\/20 { border-color: #ffe082 !important; }
+body.light .border-blue-500\/30   { border-color: #bbdefb !important; }
+
+/* ────────────────────────────────────────────────────────────
+   PLAN / SPECIALTY BADGE INLINE
+   ──────────────────────────────────────────────────────────── */
+body.light .plan-badge {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #333333 !important;
+}
+
+/* Inline plan badge that uses bg-black-bg + border-white/10 */
+body.light .inline-flex.items-center.gap-2.px-3.py-1.rounded-md {
+  background-color: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+}
+body.light .inline-flex.items-center.gap-2.px-3.py-1.rounded-md span {
+  color: #333333 !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MEMBER FILTER BAR (members component)
+   ──────────────────────────────────────────────────────────── */
+body.light .member-filter-bar {
+  background: #ffffff !important;
+  border-color: #eeeeee !important;
+}
+body.light .member-filter-input,
+body.light .member-filter-select {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MODALS (fixed z-[100] overlays)
+   ──────────────────────────────────────────────────────────── */
+body.light .fixed.inset-0.z-\[100\] .absolute.inset-0.bg-black\/80,
+body.light .fixed.inset-0.z-\[100\] .absolute.inset-0.bg-black\/70,
+body.light .fixed.inset-0.z-\[100\] .absolute.inset-0.bg-black\/85 {
+  background: rgba(0,0,0,0.30) !important;
+}
+
+body.light .fixed.inset-0.z-\[100\] .premium-card {
+  background: #ffffff !important;
+  border-color: #e8e8e8 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14) !important;
+}
+
+/* Modal form fields */
+body.light .fixed.inset-0.z-\[100\] label { color: #888888 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   DASHBOARD CARDS (kpi-card / panel-card / metric-box)
+   ──────────────────────────────────────────────────────────── */
+body.light .metric-box {
+  background: #f9f9f7 !important;
+  border-color: #eeeeee !important;
+}
+body.light .metric-box:hover {
+  background: #f5f5f0 !important;
+  border-color: #dddddd !important;
+}
+body.light .metric-label { color: #888888 !important; }
+body.light .metric-sub   { color: #888888 !important; }
+
+body.light .dash-root { background-color: #f5f5f0 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   SHIMMER / SKELETON
+   ──────────────────────────────────────────────────────────── */
+body.light .shimmer,
+body.light .skeleton {
+  background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%) !important;
+  background-size: 200% 100% !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MISC DARK UTILITY OVERRIDES
+   ──────────────────────────────────────────────────────────── */
+/* Hover on table rows via Tailwind */
+body.light .hover\:bg-white\/5:hover  { background-color: #f5f5f5 !important; }
+body.light .hover\:bg-white\/10:hover { background-color: #f0f0ec !important; }
+body.light .hover\:bg-white\/\[0\.02\]:hover { background-color: #fafafa !important; }
+
+/* Gold text stays gold */
+body.light .text-gold-main,
+body.light [class*="text-[#D4AF37]"],
+body.light [class*="text-[#F5D77A]"] { color: #cc8800 !important; }
+
+/* Icon containers (w-11 h-11 / w-10 h-10 with bg-black-bg) */
+body.light .w-11.h-11.rounded-2xl.bg-black-bg,
+body.light .w-10.h-10.rounded-full[class*="bg-[#2a2a2a]"] {
+  background-color: #f0f0eb !important;
+  border-color: #e0e0e0 !important;
+}
+
+/* Dark footer of modals */
+body.light .px-6.py-4.border-t[class*="bg-[#0F0F0F]"],
+body.light .px-6.py-4.border-t[class*="bg-[#0f0f0f]"] {
+  background-color: #f9f9f7 !important;
+  border-color: #eeeeee !important;
+}
+
+/* Small dark info panels inside modals */
+body.light .p-3.rounded-xl.bg-black-bg { background-color: #f5f5f0 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   EMPTY STATE  (global pattern)
+   ──────────────────────────────────────────────────────────── */
+body.light .state-box,
+body.light .empty-state {
+  background: #f9f9f7 !important;
+  border: 1px dashed #dddddd !important;
+  border-radius: 12px !important;
+  padding: 48px !important;
+}
+body.light .state-box svg,
+body.light .empty-state svg,
+body.light .state-box i,
+body.light .empty-state i { color: #cccccc !important; }
+body.light .state-box p,
+body.light .empty-state p { color: #999999 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   CRM — stat-pill, crm-column, crm-card
+   ──────────────────────────────────────────────────────────── */
+body.light .stat-pill {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .stat-pill:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+}
+body.light .stat-pill .text-white { color: #1a1a1a !important; text-shadow: none !important; }
+body.light .stat-pill .text-gray-500 { color: #888888 !important; }
+
+body.light .crm-column {
+  background: #f5f5f0 !important;
+  border: 1px solid #e0e0e0 !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+}
+body.light .crm-column.drag-over {
+  border-color: rgba(240,165,0,0.5) !important;
+  background: rgba(240,165,0,0.05) !important;
+}
+body.light .crm-column .text-white { color: #1a1a1a !important; }
+body.light .crm-column .border-white\/5 { border-color: #e0e0e0 !important; }
+
+body.light .crm-card {
+  background: #ffffff !important;
+  border: 1px solid #e8e8e8 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+body.light .crm-card:hover {
+  border-color: #cccccc !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08) !important;
+  transform: translateY(-2px);
+}
+body.light .crm-card .text-white { color: #1a1a1a !important; }
+body.light .crm-card .border-white\/10 { border-color: #e0e0e0 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   REVENUE CHART  (monthly-revenue-chart component)
+   ──────────────────────────────────────────────────────────── */
+body.light .revenue-chart-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .revenue-chart-card:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+}
+body.light .card-title    { color: #1a1a1a !important; }
+body.light .card-subtitle { color: #888888 !important; }
+body.light .total-value   { color: #cc8800 !important; }
+body.light .total-unit    { color: #888888 !important; }
+body.light .accent-bar    { background: linear-gradient(180deg, #f0a500 0%, #cc8800 100%) !important; }
+
+body.light .pill-gold  { background: #fff8e1 !important; border-color: #ffe082 !important; color: #cc8800 !important; }
+body.light .pill-blue  { background: #e3f2fd !important; border-color: #bbdefb !important; color: #1565c0 !important; }
+body.light .pill-green { background: #e8f5e9 !important; border-color: #c8e6c9 !important; color: #2e7d32 !important; }
+body.light .pill-red   { background: #fce4ec !important; border-color: #f8bbd0 !important; color: #c62828 !important; }
+
+body.light .state-text { color: #888888 !important; }
+body.light .retry-btn {
+  border-color: rgba(240,165,0,0.4) !important;
+  color: #cc8800 !important;
+}
+body.light .retry-btn:hover {
+  background: #fff8e6 !important;
+  border-color: rgba(240,165,0,0.6) !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MACHINES — global overrides (component-scoped selectors
+   don't propagate through emulated view encapsulation)
+   ──────────────────────────────────────────────────────────── */
+body.light .machine-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .machine-card:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+
+body.light .machine-input,
+body.light .filter-input,
+body.light .filter-select {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+body.light .machine-input::placeholder,
+body.light .filter-input::placeholder { color: #aaaaaa !important; }
+body.light .filter-input:focus,
+body.light .filter-select:focus,
+body.light .machine-input:focus {
+  border-color: #f0a500 !important;
+  box-shadow: 0 0 0 2px rgba(240,165,0,0.15) !important;
+}
+body.light .filter-select option { background-color: #ffffff !important; color: #1a1a1a !important; }
+
+body.light .action-btn {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #444444 !important;
+}
+body.light .action-btn:hover {
+  background: #fff8e6 !important;
+  border-color: rgba(240,165,0,0.4) !important;
+  color: #f0a500 !important;
+  box-shadow: none !important;
+}
+
+body.light .form-label { color: #888888 !important; }
+
+/* ────────────────────────────────────────────────────────────
+   NOTIFICATIONS — global overrides (CSS vars work for most,
+   but !important ensures nothing dark slips through)
+   ──────────────────────────────────────────────────────────── */
+body.light .border-gray-700 { border-color: #d0d0d0 !important; }
+body.light .bg-gray-700     { background-color: #d0d0d0 !important; }
+body.light .notif-card {
+  background: #ffffff !important;
+  border-color: #ebebeb !important;
+}
+body.light .notif-card.unread {
+  background: #fffdf5 !important;
+  border-left-color: #f0a500 !important;
+}
+body.light .notif-card:hover { border-color: #dddddd !important; }
+
+body.light .filters-bar {
+  background: #ffffff !important;
+  border-color: #ebebeb !important;
+}
+body.light .filter-btn {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #666666 !important;
+}
+body.light .filter-btn.active {
+  background: #f0a500 !important;
+  border-color: #f0a500 !important;
+  color: #1a1a1a !important;
+}
+
+body.light .notif-title   { color: #1a1a1a !important; }
+body.light .notif-time    { color: #888888 !important; }
+body.light .notif-message { color: #666666 !important; }
+body.light .unread-badge  { background: #f0a500 !important; color: #1a1a1a !important; }
+
+body.light .modal-content {
+  background: #ffffff !important;
+  border-color: #e8e8e8 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10) !important;
+}
+body.light .btn-outline {
+  border-color: #e0e0e0 !important;
+  color: #444444 !important;
+  background: transparent !important;
+}
+body.light .form-input,
+body.light .form-select,
+body.light .form-textarea {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   SALLES — kpi-pill & salle-card  (global override because
+   component-scoped body.light selectors don't propagate)
+   ──────────────────────────────────────────────────────────── */
+body.light .kpi-pill,
+body.light .salle-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .kpi-pill:hover,
+body.light .salle-card:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Text inside salle-card */
+body.light .salle-card h3,
+body.light .salle-card .text-white { color: #1a1a1a !important; text-shadow: none !important; }
+body.light .salle-card p.text-gray-500,
+body.light .salle-card .text-gray-600 { color: #888888 !important; }
+body.light .salle-card .border-white\/5 { border-color: #eeeeee !important; }
+body.light .salle-card .bg-white\/5 { background-color: #eeeeee !important; }
+
+/* Text inside kpi-pill */
+body.light .kpi-pill .text-white { color: #1a1a1a !important; text-shadow: none !important; }
+body.light .kpi-pill .text-gray-500 { color: #888888 !important; }
+
+/* Icon action buttons (edit/delete inside salle-card) */
+body.light .icon-btn {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #555555 !important;
+}
+body.light .icon-btn:hover {
+  background: #fff8e6 !important;
+  border-color: rgba(240,165,0,0.4) !important;
+  color: #f0a500 !important;
+  box-shadow: none !important;
+}
+
+/* Filter tab buttons (inactive state) */
+body.light .bg-white\/8 { background-color: #f0f0ec !important; }
+
+/* ────────────────────────────────────────────────────────────
+   BUTTONS — primary hover shadow
+   ──────────────────────────────────────────────────────────── */
+body.light .btn-gold:hover,
+body.light button[class*="bg-[#f0a500]"]:hover,
+body.light button.bg-amber-500:hover {
+  box-shadow: 0 2px 8px rgba(240,165,0,0.35) !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TRANSITIONS  (global — dark ↔ light)
+   ──────────────────────────────────────────────────────────── */
+body,
+body * {
+  transition:
+    background-color 0.3s ease,
+    color            0.3s ease,
+    border-color     0.3s ease,
+    box-shadow       0.3s ease;
+}

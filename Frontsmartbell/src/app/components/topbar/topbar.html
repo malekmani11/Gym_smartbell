@@ -1,0 +1,202 @@
+<header class="h-[72px] w-full px-8 flex items-center justify-between glass border-b border-gold-dark/10 transition-all duration-300 shadow-[0_1px_0_rgba(212,175,55,0.06)]">
+  
+  <!-- App Context / Title (Left) -->
+  <div class="flex items-center gap-4">
+    <div class="hidden lg:flex flex-col">
+      <h2 class="text-xl font-playfair font-bold text-white tracking-wide">{{ pageTitle() }}</h2>
+      @if (pageSubtitle()) {
+        <p class="text-[11px] text-gray-500 font-inter mt-0.5">{{ pageSubtitle() }}</p>
+      }
+    </div>
+  </div>
+
+  <!-- Search Bar (Center) -->
+  <div class="flex-1 max-w-xl mx-8 hidden md:block relative">
+    <div class="relative group">
+      <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <i class="fas fa-search text-gray-500 group-focus-within:text-gold-main transition-colors duration-300"></i>
+      </div>
+      <input type="text"
+             class="w-full bg-[#0d0b04]/80 border border-[#D4AF37]/20 text-gray-200 text-sm rounded-xl focus:ring-0 focus:border-gold-main/60 block pl-10 pr-12 py-2.5 transition-all duration-250 placeholder-gray-500 focus:bg-[#0f0d04]/95"
+             style="transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;"
+             placeholder="Rechercher un membre, un coach, un cours..."
+             [value]="searchQuery()"
+             (input)="onSearchInput($any($event.target).value)"
+             (focus)="showResults.set(true)">
+      <div class="absolute inset-y-0 right-0 pr-4 flex items-center gap-2">
+        @if (searchQuery()) {
+          <button (click)="clearSearch()" class="text-gray-500 hover:text-white transition-colors">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        } @else {
+          <span class="text-xs text-gray-600 font-mono font-medium pointer-events-none">⌘K</span>
+        }
+      </div>
+    </div>
+
+    <!-- Résultats de recherche -->
+    @if (showResults() && searchResults().length > 0) {
+      <div class="absolute top-full left-0 right-0 mt-2 z-50 premium-card border border-white/10
+                  shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
+
+        @for (group of resultsByCategory(); track group.cat) {
+
+          <!-- En-tête catégorie -->
+          <div class="px-4 py-2 bg-black-sidebar/60 border-b border-white/5">
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">
+              {{ group.cat }}
+            </p>
+          </div>
+
+          <!-- Items -->
+          @for (item of group.items; track item.label) {
+            <button
+              (click)="selectResult(item)"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left
+                     hover:bg-[#D4AF37]/10 hover:border-l-2 hover:border-l-[#D4AF37]
+                     transition-all duration-150 group border-b border-white/[0.03] last:border-0">
+              <div class="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0
+                          group-hover:bg-[#D4AF37]/15 group-hover:border-[#D4AF37]/30 transition-colors">
+                <i [class]="item.icon + ' text-gray-500 text-[10px] group-hover:text-[#D4AF37] transition-colors'"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-gray-300 group-hover:text-white font-montserrat truncate transition-colors">
+                  {{ item.label }}
+                </p>
+                <p class="text-[10px] text-gray-600 font-inter truncate">{{ item.sublabel }}</p>
+              </div>
+              <i class="fas fa-arrow-right text-[9px] text-gray-700 group-hover:text-[#D4AF37] transition-colors flex-shrink-0"></i>
+            </button>
+          }
+
+        }
+
+        <!-- Footer hint -->
+        <div class="px-4 py-2.5 bg-black-sidebar/40 border-t border-white/5 flex items-center gap-3">
+          <span class="text-[9px] text-gray-600 font-inter">
+            <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[9px]">↵</kbd>
+            pour sélectionner
+          </span>
+          <span class="text-[9px] text-gray-600 font-inter">
+            <kbd class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[9px]">Esc</kbd>
+            pour fermer
+          </span>
+        </div>
+
+      </div>
+    }
+
+    <!-- Message "aucun résultat" -->
+    @if (showResults() && searchQuery().length >= 2 && searchResults().length === 0) {
+      <div class="absolute top-full left-0 right-0 mt-2 z-50 premium-card border border-white/10
+                  shadow-[0_8px_40px_rgba(0,0,0,0.7)] px-4 py-6 text-center">
+        <i class="fas fa-search text-gray-700 text-2xl mb-2"></i>
+        <p class="text-sm text-gray-500 font-inter">Aucun résultat pour <span class="text-white">"{{ searchQuery() }}"</span></p>
+      </div>
+    }
+
+  </div>
+
+  <!-- Actions & Profile (Right) -->
+  <div class="flex items-center gap-3">
+
+    <!-- Notification Bell -->
+    <app-notification-panel
+      (actionTriggered)="onNotificationAction($event)">
+    </app-notification-panel>
+
+    <!-- Theme Toggle -->
+    <app-theme-toggle></app-theme-toggle>
+
+    <!-- Action Rapide dropdown -->
+    <div class="relative">
+      <button
+        (click)="actionRapideOpen.set(!actionRapideOpen())"
+        class="btn-gold text-sm py-2 px-4 shadow-gold flex items-center gap-2 group">
+        <i class="fas fa-plus text-black-bg group-hover:rotate-90 transition-transform duration-200"></i>
+        <span class="hidden lg:inline font-bold">Action Rapide</span>
+      </button>
+
+      @if (actionRapideOpen()) {
+        <!-- Backdrop -->
+        <div class="fixed inset-0 z-40" (click)="actionRapideOpen.set(false)"></div>
+
+        <!-- Dropdown panel -->
+        <div class="absolute right-0 top-full mt-2 w-56 z-50
+                    bg-[#1A1A1A] border border-[#D4AF37]/20 rounded-2xl
+                    shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden animate-slide-up">
+          <div class="p-1.5 flex flex-col gap-0.5">
+
+            <button (click)="onQuickAction('member')"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#D4AF37]/10 transition-colors group/item text-left w-full">
+              <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user-plus text-[#D4AF37] text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-white group-hover/item:text-[#D4AF37] transition-colors font-montserrat">Nouveau membre</p>
+                <p class="text-[10px] text-gray-500">Inscrire un client</p>
+              </div>
+            </button>
+
+            <button (click)="onQuickAction('coach')"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#D4AF37]/10 transition-colors group/item text-left w-full">
+              <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-dumbbell text-[#D4AF37] text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-white group-hover/item:text-[#D4AF37] transition-colors font-montserrat">Nouveau coach</p>
+                <p class="text-[10px] text-gray-500">Ajouter à l'équipe</p>
+              </div>
+            </button>
+
+            <button (click)="onQuickAction('course')"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#D4AF37]/10 transition-colors group/item text-left w-full">
+              <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-calendar-plus text-[#D4AF37] text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-white group-hover/item:text-[#D4AF37] transition-colors font-montserrat">Nouveau cours</p>
+                <p class="text-[10px] text-gray-500">Planifier un créneau</p>
+              </div>
+            </button>
+
+            <button (click)="onQuickAction('payment')"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#D4AF37]/10 transition-colors group/item text-left w-full">
+              <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-credit-card text-[#D4AF37] text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-white group-hover/item:text-[#D4AF37] transition-colors font-montserrat">Encaisser</p>
+                <p class="text-[10px] text-gray-500">Enregistrer un paiement</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Divider -->
+    <div class="h-8 w-px bg-white/10 hidden sm:block mx-1"></div>
+
+    <!-- Admin Profile -->
+    <div class="flex items-center gap-3 cursor-pointer group">
+      <div class="hidden md:block text-right">
+        <p class="text-xs font-bold text-white font-montserrat">
+          {{ userName() }}
+        </p>
+        <p class="text-[10px] text-gray-500 font-inter uppercase tracking-wider">
+          {{ userRole() }}
+        </p>
+      </div>
+
+      <div class="relative">
+        <div class="w-10 h-10 rounded-full p-0.5 bg-gold-gradient shadow-gold-lg group-hover:scale-105 transition-all duration-300">
+          <img [src]="userAvatar()" alt="Avatar" class="w-full h-full rounded-full object-cover border-2 border-black-bg">
+        </div>
+        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-black-bg rounded-full"></div>
+      </div>
+    </div>
+
+  </div>
+</header>

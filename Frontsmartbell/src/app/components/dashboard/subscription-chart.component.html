@@ -1,0 +1,184 @@
+<div class="premium-card p-6 space-y-6">
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-playfair font-bold text-white">Répartition des Abonnements</h3>
+      <p class="text-[11px] text-gray-500 font-inter mt-0.5">
+        CA mensuel total :
+        <span class="text-[#D4AF37] font-bold">{{ totalRevenue() | number }} DT</span>
+        · {{ totalMembers() }} membres
+      </p>
+    </div>
+    <div class="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+      <i class="fas fa-chart-pie text-[#D4AF37]"></i>
+    </div>
+  </div>
+
+  <!-- ── Chart + Legend ──────────────────────────────────────────────── -->
+  <div class="flex flex-col md:flex-row items-center gap-8">
+
+    <!-- SVG Donut -->
+    <div class="relative flex-shrink-0">
+      <svg viewBox="0 0 200 200" width="200" height="200" class="overflow-visible">
+
+        @for (seg of segments; track seg.id) {
+          <path
+            [attr.d]="seg.path"
+            [attr.fill]="seg.color"
+            [attr.transform]="svgTransform(seg.id)"
+            [attr.opacity]="hoveredId() && !isHovered(seg.id) ? '0.45' : '1'"
+            class="cursor-pointer transition-opacity duration-200"
+            style="transition: transform 0.2s ease, opacity 0.2s ease; transform-box: fill-box;"
+            (mouseenter)="hoveredId.set(seg.id)"
+            (mouseleave)="hoveredId.set(null)">
+          </path>
+        }
+
+        <!-- Donut center -->
+        <circle [attr.cx]="100" [attr.cy]="100" [attr.r]="42"
+                fill="#141414" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+        <!-- Center text -->
+        <text x="100" y="94" text-anchor="middle"
+              font-family="Montserrat,sans-serif" font-weight="900"
+              font-size="14" fill="white">
+          {{ totalMembers() }}
+        </text>
+        <text x="100" y="109" text-anchor="middle"
+              font-family="Inter,sans-serif" font-size="7"
+              fill="#9CA3AF" letter-spacing="1">
+          MEMBRES
+        </text>
+
+        <!-- Tooltip on hover -->
+        @if (hoveredId()) {
+          @for (seg of segments; track seg.id) {
+            @if (isHovered(seg.id)) {
+              <g>
+                <!-- Tooltip bubble -->
+                <rect
+                  [attr.x]="tooltipX(seg) - 38"
+                  [attr.y]="tooltipY(seg) - 26"
+                  width="76" height="38" rx="6" ry="6"
+                  fill="#1A1A1A" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                <!-- Plan name -->
+                <text
+                  [attr.x]="tooltipX(seg)"
+                  [attr.y]="tooltipY(seg) - 12"
+                  text-anchor="middle"
+                  font-family="Montserrat,sans-serif" font-weight="700"
+                  font-size="6.5" [attr.fill]="seg.color">
+                  {{ seg.name }}
+                </text>
+                <!-- Members + % -->
+                <text
+                  [attr.x]="tooltipX(seg)"
+                  [attr.y]="tooltipY(seg) + 2"
+                  text-anchor="middle"
+                  font-family="Inter,sans-serif"
+                  font-size="6" fill="white">
+                  {{ seg.members }} membres · {{ seg.percentage }}%
+                </text>
+                <!-- Revenue -->
+                <text
+                  [attr.x]="tooltipX(seg)"
+                  [attr.y]="tooltipY(seg) + 13"
+                  text-anchor="middle"
+                  font-family="Montserrat,sans-serif" font-weight="800"
+                  font-size="6.5" fill="#D4AF37">
+                  {{ seg.monthlyRevenue | number }} DT/m
+                </text>
+              </g>
+            }
+          }
+        }
+
+      </svg>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex-1 space-y-3 w-full">
+      @for (seg of segments; track seg.id) {
+        <div
+          class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200"
+          [class]="isHovered(seg.id)
+            ? 'bg-white/[0.04] border-white/15 scale-[1.02]'
+            : 'bg-black-bg border-white/5 hover:border-white/10'"
+          (mouseenter)="hoveredId.set(seg.id)"
+          (mouseleave)="hoveredId.set(null)">
+
+          <!-- Color dot -->
+          <div class="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
+               [style.background]="seg.color"
+               [style.box-shadow]="isHovered(seg.id) ? '0 0 8px ' + seg.color : 'none'">
+          </div>
+
+          <!-- Name + members -->
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold text-white font-montserrat">{{ seg.name }}</p>
+            <p class="text-[10px] text-gray-500 font-inter">
+              {{ seg.members }} membres · {{ seg.priceLabel }}
+            </p>
+          </div>
+
+          <!-- Revenue + % -->
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-black font-montserrat" [style.color]="seg.color">
+              {{ seg.monthlyRevenue | number }} DT
+            </p>
+            <p class="text-[10px] text-gray-500 font-inter">{{ seg.percentage }}%</p>
+          </div>
+
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <!-- ── Bottom KPI cards ─────────────────────────────────────────────── -->
+  <div class="grid grid-cols-3 gap-4 pt-2 border-t border-white/5">
+
+    <!-- CA Total -->
+    <div class="p-4 rounded-xl bg-black-bg border border-white/5 text-center">
+      <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20
+                  flex items-center justify-center mx-auto mb-2">
+        <i class="fas fa-euro-sign text-[#D4AF37] text-xs"></i>
+      </div>
+      <p class="text-lg font-black text-white font-montserrat">
+        {{ totalRevenue() | number }}DT
+      </p>
+      <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5">
+        CA mensuel
+      </p>
+    </div>
+
+    <!-- Meilleur plan -->
+    <div class="p-4 rounded-xl bg-black-bg border border-white/5 text-center">
+      <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20
+                  flex items-center justify-center mx-auto mb-2">
+        <i class="fas fa-crown text-purple-400 text-xs"></i>
+      </div>
+      <p class="text-sm font-black text-white font-montserrat truncate">
+        {{ bestPlan().name }}
+      </p>
+      <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5">
+        Meilleur plan
+      </p>
+    </div>
+
+    <!-- Croissance -->
+    <div class="p-4 rounded-xl bg-black-bg border border-white/5 text-center">
+      <div class="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20
+                  flex items-center justify-center mx-auto mb-2">
+        <i class="fas fa-chart-line text-green-400 text-xs"></i>
+      </div>
+      <p class="text-lg font-black text-green-400 font-montserrat">{{ growthRate }}</p>
+      <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5">
+        Croissance
+      </p>
+    </div>
+
+  </div>
+
+</div>

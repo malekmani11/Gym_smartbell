@@ -1,0 +1,197 @@
+.salle-card {
+  background: linear-gradient(160deg, #1e1b0e 0%, #13110a 50%, #0c0a05 100%);
+  border: 1px solid rgba(212, 160, 23, 0.28);
+  border-top: 2px solid rgba(212, 160, 23, 0.52);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.70),
+    0 0 16px rgba(212, 160, 23, 0.08),
+    inset 0 1px 0 rgba(212, 160, 23, 0.12);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+}
+.salle-card:hover {
+  border-color: rgba(212, 160, 23, 0.65);
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 50px rgba(0, 0, 0, 0.75),
+    0 0 40px rgba(212, 160, 23, 0.28);
+}
+
+.kpi-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(145deg, #1a1800 0%, #0f0d00 100%);
+  border: 1px solid rgba(212, 160, 23, 0.28);
+  border-radius: 0.875rem;
+  padding: 0.9rem 1rem;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(212, 160, 23, 0.08);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  cursor: default;
+}
+.kpi-pill:hover {
+  border-color: rgba(212, 160, 23, 0.55);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.65), 0 0 24px rgba(212,160,23,0.20);
+}
+
+.panel-card {
+  background: linear-gradient(145deg, #1c1a10 0%, #131108 50%, #0d0b05 100%);
+  border: 1px solid rgba(212, 160, 23, 0.22);
+  border-top: 1px solid rgba(212, 160, 23, 0.45);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(212, 160, 23, 0.10);
+}
+
+.icon-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: rgba(212, 160, 23, 0.06);
+  border: 1px solid rgba(212, 160, 23, 0.20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: rgba(212, 160, 23, 0.16);
+  border-color: rgba(212, 160, 23, 0.50);
+  color: #F5D77A;
+  box-shadow: 0 0 12px rgba(212, 160, 23, 0.22);
+  transform: scale(1.08);
+}
+
+.salle-input {
+  width: 100%;
+  background: #0d0b04;
+  border: 1px solid rgba(212, 160, 23, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  color: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.salle-input::placeholder { color: #4B5563; }
+.salle-input:focus {
+  outline: none;
+  border-color: rgba(212, 160, 23, 0.65);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.18), 0 0 16px rgba(212, 160, 23, 0.15);
+}
+
+.form-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #8B7A3D;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+select option {
+  background-color: #131108;
+  color: #fff;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .salle-card, .kpi-pill { transition: border-color 0.1ms; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIGHT MODE
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Salle cards ── */
+body.light .salle-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .salle-card:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* ── KPI pills (stats en haut) ── */
+body.light .kpi-pill {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .kpi-pill:hover {
+  border-color: #dddddd !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Panel card (occupancy bar section) ── */
+body.light .panel-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 1px solid #ebebeb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* ── Icon action buttons ── */
+body.light .icon-btn {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #555555 !important;
+}
+body.light .icon-btn:hover {
+  background: #fff8e6 !important;
+  border-color: rgba(240,165,0,0.4) !important;
+  color: #f0a500 !important;
+  box-shadow: none !important;
+}
+
+/* ── Form input ── */
+body.light .salle-input {
+  background: #f5f5f0 !important;
+  border-color: #e0e0e0 !important;
+  color: #1a1a1a !important;
+}
+body.light .salle-input::placeholder { color: #aaaaaa !important; }
+body.light .salle-input:focus {
+  border-color: #f0a500 !important;
+  box-shadow: 0 0 0 2px rgba(240,165,0,0.15) !important;
+}
+
+body.light .form-label { color: #888888 !important; }
+
+/* ── Progress track ── */
+body.light .bg-white\/10,
+body.light .bg-white\/5  { background-color: #eeeeee !important; }
+
+/* ── Select options ── */
+body.light select option {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* ── Status badges (inline Tailwind) ── */
+body.light .bg-green-500\/20 { background: #e8f5e9 !important; }
+body.light .bg-red-500\/20   { background: #fce4ec !important; }
+body.light .bg-orange-500\/20 { background: #fff3e0 !important; }
+body.light .bg-yellow-500\/20 { background: #fff8e1 !important; }
+body.light .border-green-500\/30 { border-color: #c8e6c9 !important; }
+body.light .border-red-500\/30   { border-color: #f8bbd0 !important; }
+body.light .border-orange-500\/30 { border-color: #ffe0b2 !important; }
+
+/* KPI value text */
+body.light .kpi-pill .text-xl.font-bold { color: #1a1a1a !important; text-shadow: none !important; }
+body.light .kpi-pill .text-gray-500     { color: #888888 !important; }

@@ -1,0 +1,270 @@
+<div class="events-container">
+  <header class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="header-title">Événements & Activités</h1>
+      <p class="text-gray-500 text-sm">Gérez les animations et sorties de la communauté</p>
+    </div>
+    <button class="btn btn-amber" (click)="openCreateModal()">
+      <i class="fas fa-plus mr-2"></i> Nouvel événement
+    </button>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Événements actifs</span>
+      <span class="kpi-value">{{ stats().active }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">À venir</span>
+      <span class="kpi-value text-green-500">{{ stats().upcoming }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Total inscrits</span>
+      <span class="kpi-value text-blue-400">{{ stats().totalRegistrations }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Taux remplissage</span>
+      <span class="kpi-value text-amber-500">{{ stats().avgFillRate }}%</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <button class="filter-btn" [class.active]="filter() === 'ALL'" (click)="filter.set('ALL')">Tous</button>
+    <button class="filter-btn" [class.active]="filter() === 'UPCOMING'" (click)="filter.set('UPCOMING')">À venir</button>
+    <button class="filter-btn" [class.active]="filter() === 'PAST'" (click)="filter.set('PAST')">Passés</button>
+    <button class="filter-btn" [class.active]="filter() === 'FULL'" (click)="filter.set('FULL')">Complets</button>
+  </div>
+
+  <!-- Events Grid -->
+  <div class="events-grid">
+    @for (event of filteredEvents(); track event.id) {
+      <div class="event-card">
+        @if (event.imageUrl) {
+          <img [src]="event.imageUrl" class="event-image" alt="Event image">
+        } @else {
+          <div class="event-image"></div>
+        }
+        
+        <div class="event-content">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="event-title">{{ event.title }}</h3>
+            <span class="badge" [ngClass]="{
+              'badge-upcoming': getEventStatus(event) === 'upcoming',
+              'badge-past': getEventStatus(event) === 'past',
+              'badge-full': getEventStatus(event) === 'full'
+            }">
+              {{ getEventStatus(event) === 'upcoming' ? 'À venir' : 
+                 getEventStatus(event) === 'past' ? 'Terminé' : 'Complet' }}
+            </span>
+          </div>
+          
+          <p class="event-desc">{{ event.description }}</p>
+          
+          <div class="event-info">
+            <i class="fas fa-calendar-alt w-4"></i>
+            <span>{{ formatDate(event.eventDate) }}</span>
+          </div>
+          
+          <div class="event-info">
+            <i class="fas fa-map-marker-alt w-4"></i>
+            <span>{{ event.location }}</span>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Remplissage</span>
+              <span>{{ event.registrationCount || 0 }} / {{ event.maxParticipants }}</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="getFillPercentage(event)"></div>
+            </div>
+          </div>
+
+          <div class="event-actions">
+            <button class="btn btn-amber flex-1" (click)="viewRegistrations(event)">
+              <i class="fas fa-users mr-1"></i> Inscrits
+            </button>
+            <button class="btn btn-outline" (click)="openEditModal(event)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-danger" (click)="deleteEvent(event.id)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <div class="col-span-full p-12 text-center text-gray-500 border border-dashed border-gray-700 rounded-xl">
+        <i class="fas fa-calendar-times text-4xl mb-4"></i>
+        <p>Aucun événement trouvé pour ce filtre</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+@if (showCreateModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h2 class="text-xl font-bold text-amber-500 mb-6">
+        {{ isEditing() ? 'Modifier l\'événement' : 'Nouvel événement' }}
+      </h2>
+      
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input type="text" class="form-control" [(ngModel)]="eventForm().title" placeholder="Ex: Tournoi de Padel">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" rows="3" [(ngModel)]="eventForm().description" 
+          placeholder="Détails de l'événement..."></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <!-- DATE DÉBUT -->
+        <div class="form-group">
+          <label class="form-label">Date début *</label>
+          <input
+            type="datetime-local"
+            class="form-control"
+            [(ngModel)]="eventForm().eventDate"
+            [min]="isEditing() ? '' : minDateTime"
+            [class.input-error]="dateStartTouched() && getStartDateError() !== null"
+            (blur)="dateStartTouched.set(true)"
+          >
+          @if (dateStartTouched() && getStartDateError()) {
+            <small class="error-msg">{{ getStartDateError() }}</small>
+          }
+        </div>
+        <!-- DATE FIN -->
+        <div class="form-group">
+          <label class="form-label">Date fin *</label>
+          <input
+            type="datetime-local"
+            class="form-control"
+            [(ngModel)]="eventForm().endDate"
+            [min]="eventForm().eventDate || minDateTime"
+            [class.input-error]="dateEndTouched() && getEndDateError() !== null"
+            (blur)="dateEndTouched.set(true)"
+          >
+          @if (dateEndTouched() && getEndDateError()) {
+            <small class="error-msg">{{ getEndDateError() }}</small>
+          }
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-group">
+          <label class="form-label">Lieu</label>
+          <input type="text" class="form-control" [(ngModel)]="eventForm().location" placeholder="Ex: Salle Fitness A">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max participants</label>
+          <input type="number" class="form-control" [(ngModel)]="eventForm().maxParticipants">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Image URL (optionnel)</label>
+        <input type="text" class="form-control" [(ngModel)]="eventForm().imageUrl" 
+          placeholder="https://images.unsplash.com/...">
+      </div>
+
+      <div class="flex justify-end gap-3 mt-8">
+        <button class="btn btn-outline px-6" (click)="showCreateModal.set(false)">Annuler</button>
+        <button
+          class="btn btn-amber px-10"
+          [class.btn-disabled]="!isFormDatesValid()"
+          [disabled]="!isFormDatesValid()"
+          (click)="saveEvent()"
+        >
+          {{ isEditing() ? 'Mettre à jour' : 'Créer l\'événement' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Registrations Modal -->
+@if (showRegistrationsModal()) {
+  <div class="modal-overlay" (click)="showRegistrationsModal.set(false)">
+    <div class="modal-content max-w-2xl" (click)="$event.stopPropagation()">
+      <div class="flex justify-between items-center mb-2">
+        <div>
+          <h2 class="text-xl font-bold text-amber-500">
+            {{ selectedEvent()?.title }}
+          </h2>
+          <p class="text-gray-400 text-sm">{{ registrations().length }} inscrit(s)</p>
+        </div>
+        <button (click)="showRegistrationsModal.set(false)" class="text-gray-500 hover:text-white text-xl">✕</button>
+      </div>
+
+      @if (registrations().length === 0) {
+        <div class="p-12 text-center text-gray-500">
+          <i class="fas fa-users text-3xl mb-3 block"></i>
+          <p>Aucun membre inscrit pour le moment</p>
+        </div>
+      } @else {
+        <table class="registrations-table">
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Date d'inscription</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (reg of registrations(); track reg.id) {
+              <tr>
+                <!-- Avatar + Nom + Email -->
+                <td>
+                  <div class="flex items-center gap-3">
+                    @if (reg.profileImageUrl) {
+                      <img [src]="reg.profileImageUrl" class="reg-avatar" alt="avatar">
+                    } @else {
+                      <div class="reg-avatar-fallback">
+                        {{ (reg.firstName?.[0] ?? '') + (reg.lastName?.[0] ?? '') }}
+                      </div>
+                    }
+                    <div>
+                      <div class="font-bold text-white text-sm">
+                        {{ reg.firstName ?? '' }} {{ reg.lastName ?? reg.userName }}
+                      </div>
+                      <div class="text-gray-400 text-xs">{{ reg.email ?? '' }}</div>
+                    </div>
+                  </div>
+                </td>
+                <!-- Date -->
+                <td class="text-gray-400 text-xs">
+                  {{ reg.registrationDate | date:'dd/MM/yy HH:mm' }}
+                </td>
+                <!-- Statut -->
+                <td>
+                  @if (reg.status === 'REGISTERED') {
+                    <span class="badge-status badge-green">Inscrit</span>
+                  } @else if (reg.status === 'CANCELLED') {
+                    <span class="badge-status badge-red">Annulé</span>
+                  } @else if (reg.status === 'ATTENDED') {
+                    <span class="badge-status badge-amber">Présent</span>
+                  } @else {
+                    <span class="badge-status badge-gray">{{ reg.status }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div class="flex justify-between items-center mt-6">
+        <span class="text-gray-500 text-sm">
+          Capacité max : {{ selectedEvent()?.maxParticipants }} places
+        </span>
+        <button class="btn btn-amber" (click)="showRegistrationsModal.set(false)">Fermer</button>
+      </div>
+    </div>
+  </div>
+}

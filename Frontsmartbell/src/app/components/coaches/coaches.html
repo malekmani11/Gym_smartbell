@@ -1,0 +1,591 @@
+<div class="space-y-6 animate-fade-in relative">
+
+  <!-- Header Actions -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-playfair font-bold text-white mb-2 tracking-wide"> Gestion Coachs</h1>
+      <p class="text-gray-400 font-inter">Gérez votre équipe d'experts et leurs spécialités.</p>
+    </div>
+    <div class="flex gap-3">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <i class="fas fa-search text-gray-500"></i>
+        </div>
+        <input type="text" class="bg-black-card border border-white/5 text-sm rounded-lg focus:ring-1 focus:ring-gold-main/50 focus:border-gold-main/50 block w-full pl-10 p-2.5 placeholder-gray-600 focus:shadow-gold-lg transition-all" placeholder="Rechercher un coach..."
+               (input)="searchQuery.set($any($event.target).value)">
+      </div>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <i class="fas fa-filter text-gold-main text-xs"></i>
+        </div>
+        <select class="btn-gold-outline text-sm py-2 pl-9 pr-4 shadow-gold appearance-none cursor-pointer bg-transparent focus:outline-none focus:ring-1 focus:ring-gold-main/50"
+                (change)="filterStatus.set($any($event.target).value)">
+          <option value="all">Tous</option>
+          <option value="active">Actif</option>
+          <option value="inactive">Inactif</option>
+          <option value="away">Absent</option>
+        </select>
+      </div>
+      <button (click)="openAddModal()" class="btn-gold text-sm py-2 px-4 shadow-gold flex items-center gap-2">
+        <i class="fas fa-plus text-black-bg"></i>
+        <span class="hidden sm:inline">Nouveau coach</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-gold-main/30 transition-all duration-500">
+      <div class="absolute -right-3 -top-3 w-16 h-16 bg-gold-main/5 rounded-full blur-xl group-hover:bg-gold-main/10 transition-colors"></div>
+      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+        <i class="fas fa-users text-gold-main text-lg"></i>
+      </div>
+      <div>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Total Coachs</p>
+        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ totalCoaches() }}</p>
+      </div>
+    </div>
+
+    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-green-500/30 transition-all duration-500">
+      <div class="absolute -right-3 -top-3 w-16 h-16 bg-green-500/5 rounded-full blur-xl group-hover:bg-green-500/10 transition-colors"></div>
+      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+        <i class="fas fa-user-check text-green-400 text-lg"></i>
+      </div>
+      <div>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Coachs Actifs</p>
+        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ activeCoaches() }}</p>
+      </div>
+    </div>
+
+    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500">
+      <div class="absolute -right-3 -top-3 w-16 h-16 bg-yellow-500/5 rounded-full blur-xl group-hover:bg-yellow-500/10 transition-colors"></div>
+      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+        <i class="fas fa-user-clock text-yellow-400 text-lg"></i>
+      </div>
+      <div>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Coachs Absents</p>
+        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ awayCoaches() }}</p>
+      </div>
+    </div>
+
+    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-gold-main/30 transition-all duration-500">
+      <div class="absolute -right-3 -top-3 w-16 h-16 bg-gold-main/5 rounded-full blur-xl group-hover:bg-gold-main/10 transition-colors"></div>
+      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+        <i class="fas fa-star text-gold-main text-lg"></i>
+      </div>
+      <div>
+        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Spécialités</p>
+        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ uniqueSpecialties() }}</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Data Table Card -->
+  <div class="premium-card overflow-hidden">
+
+    <!-- Loading state -->
+    @if (loading()) {
+      <div class="flex flex-col items-center justify-center py-20 gap-4">
+        <i class="fas fa-spinner animate-spin text-gold-main text-3xl"></i>
+        <p class="text-gray-500 text-sm">Chargement des coachs…</p>
+      </div>
+    }
+
+    <!-- Error state -->
+    @else if (loadError()) {
+      <div class="flex flex-col items-center justify-center py-20 gap-4">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+          <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+        </div>
+        <p class="text-red-400 text-sm font-medium text-center max-w-sm">{{ loadError() }}</p>
+        <button (click)="loadCoaches()" class="btn-gold text-xs py-2 px-4">
+          <i class="fas fa-redo mr-1"></i> Réessayer
+        </button>
+      </div>
+    }
+
+    <!-- Table -->
+    @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left font-inter">
+        <thead class="text-xs text-gray-400 uppercase bg-black-sidebar/80 border-b border-gold-dark/20">
+          <tr>
+            <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Coach</th>
+            <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Contact</th>
+            <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Spécialité</th>
+            <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Statut</th>
+            <th scope="col" class="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          @for (coach of filteredCoaches(); track coach.id) {
+            <tr class="hover:bg-white/5 transition-colors group">
+              <!-- Avatar & Name -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-4">
+                  <div class="relative">
+                    <img class="w-10 h-10 rounded-full border-0 object-cover" [src]="coach.avatar" alt="Avatar">
+                  </div>
+                  <div>
+                    <div class="text-white font-semibold group-hover:text-gold-light transition-colors">{{ coach.firstName }} {{ coach.lastName }}</div>
+                    <div class="text-xs text-gray-500 font-mono mt-0.5">{{ coach.id }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Contact -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-gray-300">{{ coach.email }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">{{ coach.phone }}</div>
+              </td>
+
+              <!-- Specialty -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-black-bg border border-white/10">
+                  <i class="fas fa-star text-gold-main text-xs"></i>
+                  <span class="text-gray-300 font-medium">{{ coach.specialty }}</span>
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5" [class]="getStatusBadgeClass(coach.status)">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  {{ getStatusLabel(coach.status) }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button (click)="viewCoach(coach)" class="w-8 h-8 rounded-lg bg-black-bg border border-white/10 text-gray-400 hover:text-gold-main hover:border-gold-main/50 hover:bg-gold-main/10 transition-all flex items-center justify-center transform hover:scale-110" title="Voir le profil">
+                    <i class="fas fa-eye text-sm"></i>
+                  </button>
+                  <button (click)="editCoach(coach)" class="w-8 h-8 rounded-lg bg-black-bg border border-white/10 text-gray-400 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/10 transition-all flex items-center justify-center transform hover:scale-110" title="Éditer">
+                    <i class="fas fa-pen text-sm"></i>
+                  </button>
+                  <button (click)="deleteCoach(coach.id); $event.stopPropagation()"
+                          title="Supprimer"
+                          class="w-8 h-8 rounded-lg bg-black-bg border border-white/10
+                                 text-gray-400 hover:text-red-400
+                                 hover:border-red-500/40 hover:bg-red-500/10
+                                 transition-all flex items-center justify-center
+                                 transform hover:scale-110">
+                    <i class="fas fa-trash text-sm"></i>
+                  </button>
+                </div>
+                <!-- Mobile fallback dots when not hovered -->
+                <button class="text-gray-500 hover:text-white sm:hidden group-hover:hidden px-2">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </td>
+            </tr>
+          }
+          @empty {
+            <tr>
+              <td colspan="5" class="px-6 py-16 text-center">
+                <div class="flex flex-col items-center gap-3">
+                  <i class="fas fa-users-slash text-gray-600 text-3xl"></i>
+                  <p class="text-gray-500 text-sm">Aucun coach trouvé</p>
+                  <p class="text-gray-600 text-xs">Ajoutez votre premier coach via le bouton "Nouveau coach"</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Modal Profil Coach -->
+@if (selectedCoach()) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+    <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" (click)="closeCoachProfile()"></div>
+
+    <div class="relative z-10 w-full max-w-lg premium-card border border-[#D4AF37]/25
+                shadow-[0_0_60px_rgba(0,0,0,0.8)] overflow-hidden">
+
+      <!-- Bande gold en haut -->
+      <div class="h-1.5 w-full bg-gradient-to-r from-[#D4AF37] to-[#F5D77A]"></div>
+
+      <!-- Bouton fermer -->
+      <button (click)="closeCoachProfile()"
+              class="absolute top-4 right-4 z-20 w-8 h-8 rounded-lg bg-white/5 border border-white/10
+                     flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10
+                     transition-all duration-200">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+
+      <!-- Section identité -->
+      <div class="p-6 flex flex-col items-center text-center border-b border-white/5
+                  bg-gradient-to-br from-[#1A1A1A] to-[#141414]">
+
+        <!-- Avatar -->
+        <div class="relative mb-4">
+          <div class="w-24 h-24 rounded-2xl p-0.5 bg-gradient-to-br from-[#D4AF37] to-[#A68523]
+                      shadow-[0_0_24px_rgba(212,175,55,0.35)]">
+            <img [src]="selectedCoach()!.avatar" [alt]="selectedCoach()!.firstName"
+                 class="w-full h-full rounded-[14px] object-cover border-2 border-[#141414]">
+          </div>
+          <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full border
+                       text-[9px] font-black font-montserrat uppercase tracking-wide whitespace-nowrap"
+                [class]="getStatusBadgeClass(selectedCoach()!.status)">
+            {{ getStatusLabel(selectedCoach()!.status) }}
+          </span>
+        </div>
+
+        <h2 class="text-2xl font-playfair font-bold text-white mt-2">
+          {{ selectedCoach()!.firstName }} {{ selectedCoach()!.lastName }}
+        </h2>
+        <div class="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20">
+          <i class="fas fa-star text-[#D4AF37] text-[10px]"></i>
+          <span class="text-[11px] text-[#D4AF37] font-bold font-montserrat">{{ selectedCoach()!.specialty }}</span>
+        </div>
+
+        <!-- Note étoiles -->
+        <div class="flex items-center gap-1.5 mt-3">
+          @for (filled of starFill(4.8); track $index) {
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1l1.9 3.8 4.2.6-3 3 .7 4.2L8 10.5l-3.8 2.1.7-4.2-3-3 4.2-.6L8 1z"
+                    [attr.fill]="filled ? '#D4AF37' : 'none'"
+                    [attr.stroke]="filled ? '#D4AF37' : '#4B5563'"
+                    stroke-width="1.2"/>
+            </svg>
+          }
+          <span class="text-sm font-black text-[#D4AF37] font-montserrat ml-1">4.8</span>
+          <span class="text-[10px] text-gray-500 font-inter">/5</span>
+        </div>
+
+      </div>
+
+      <div class="p-6 space-y-5">
+
+        <!-- Infos de contact -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5">
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">Email</p>
+            <p class="text-xs text-gray-300 font-inter truncate">{{ selectedCoach()!.email }}</p>
+          </div>
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5">
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">Téléphone</p>
+            <p class="text-xs text-gray-300 font-inter">{{ selectedCoach()!.phone }}</p>
+          </div>
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5">
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">Embauché le</p>
+            <p class="text-xs text-gray-300 font-inter">{{ selectedCoach()!.hireDate | date:'dd MMM yyyy' }}</p>
+          </div>
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5">
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">ID Coach</p>
+            <p class="text-xs text-[#D4AF37] font-mono font-bold">{{ selectedCoach()!.id }}</p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-3">
+
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+            <p class="text-2xl font-black text-white font-montserrat">48</p>
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5 leading-tight">Séances<br>ce mois</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+            <p class="text-2xl font-black text-[#D4AF37] font-montserrat">4.8</p>
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5 leading-tight">Note<br>moyenne</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+            <p class="text-2xl font-black text-white font-montserrat">12</p>
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5 leading-tight">Membres<br>assignés</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+            <p class="text-2xl font-black text-white font-montserrat">{{ yearsExp(selectedCoach()!) }}</p>
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5 leading-tight">Ans<br>d'exp.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-white/5 bg-[#0F0F0F] flex justify-end gap-3">
+        <button (click)="closeCoachProfile()"
+                class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-400 text-xs font-bold
+                       font-montserrat hover:bg-white/5 hover:text-white transition-all">
+          Fermer
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Modal Édition Coach -->
+@if (editingCoach()) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="closeEditModal()"></div>
+
+    <div class="premium-card w-full max-w-md p-8 relative z-10 border-gold-main/30 shadow-gold/20">
+
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4 text-blue-400">
+          <i class="fas fa-pen text-2xl"></i>
+        </div>
+        <h2 class="text-2xl font-playfair font-bold text-white">Modifier le Coach</h2>
+        <p class="text-gray-500 text-sm mt-1">{{ editingCoach()!.firstName }} {{ editingCoach()!.lastName }}</p>
+      </div>
+
+      <!-- Champs -->
+      <div class="space-y-4 mb-8">
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Prénom</label>
+            <input type="text"
+                   [ngModel]="editingCoach()!.firstName"
+                   (ngModelChange)="updateEditField({ firstName: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                          focus:border-gold-main focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Nom</label>
+            <input type="text"
+                   [ngModel]="editingCoach()!.lastName"
+                   (ngModelChange)="updateEditField({ lastName: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                          focus:border-gold-main focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Email</label>
+          <input type="email"
+                 [ngModel]="editingCoach()!.email"
+                 (ngModelChange)="updateEditField({ email: $event })"
+                 class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                        focus:border-gold-main focus:outline-none transition-colors placeholder-gray-600">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Téléphone</label>
+          <input type="tel"
+                 [ngModel]="editingCoach()!.phone"
+                 (ngModelChange)="updateEditField({ phone: $event })"
+                 class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                        focus:border-gold-main focus:outline-none transition-colors placeholder-gray-600">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Spécialité</label>
+            <select [ngModel]="editingCoach()!.specialty"
+                    (ngModelChange)="updateEditField({ specialty: $event })"
+                    class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                           focus:border-gold-main focus:outline-none transition-colors cursor-pointer appearance-none">
+              <option>Bodybuilding</option>
+              <option>Yoga &amp; Pilates</option>
+              <option>CrossFit</option>
+              <option>Nutrition</option>
+              <option>HIIT</option>
+              <option>Cardio</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Statut</label>
+            <select [ngModel]="editingCoach()!.status"
+                    (ngModelChange)="updateEditField({ status: $event })"
+                    class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                           focus:border-gold-main focus:outline-none transition-colors cursor-pointer appearance-none">
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
+              <option value="away">Absent</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Photo URL -->
+        <div class="space-y-1">
+          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Photo (URL)</label>
+          <div class="flex items-center gap-3">
+            <img [src]="editingCoach()!.avatar"
+                 (error)="$any($event.target).src='https://i.pravatar.cc/150?u=edit'"
+                 class="w-10 h-10 rounded-full object-cover border border-white/10 flex-shrink-0">
+            <input type="url" placeholder="https://example.com/photo.jpg"
+                   [ngModel]="editingCoach()!.profileImageUrl"
+                   (ngModelChange)="updateEditField({ profileImageUrl: $event, avatar: $event || editingCoach()!.avatar })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm
+                          focus:border-gold-main focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Boutons -->
+      <div class="flex gap-4">
+        <button (click)="closeEditModal()"
+                class="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold
+                       hover:bg-white/5 transition-colors">
+          Annuler
+        </button>
+        <button (click)="saveCoach()"
+                class="flex-1 btn-gold py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+          <i class="fas fa-save"></i>
+          <span>Sauvegarder</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Modal Nouveau Coach -->
+@if (showAddModal()) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="closeAddModal()"></div>
+
+    <div class="premium-card w-full max-w-md relative z-10 border-[#D4AF37]/30 shadow-xl
+                flex flex-col max-h-[88vh]">
+
+      <!-- Header -->
+      <div class="flex items-center gap-4 px-6 pt-6 pb-4 border-b border-white/6 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20
+                    flex items-center justify-center shrink-0">
+          <i class="fas fa-user-plus text-[#D4AF37] text-base"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-white leading-tight">Nouveau Coach</h2>
+          <p class="text-[11px] text-gray-500 mt-0.5">Ajouter un membre à l'équipe</p>
+        </div>
+        <button (click)="closeAddModal()"
+                class="ml-auto w-8 h-8 rounded-xl bg-white/5 border border-white/10
+                       flex items-center justify-center text-gray-400 hover:text-white transition-all shrink-0">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+
+        <!-- Prénom / Nom -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Prénom *</label>
+            <input type="text" placeholder="Prénom"
+                   [ngModel]="newCoachForm().firstName"
+                   (ngModelChange)="updateForm({ firstName: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Nom *</label>
+            <input type="text" placeholder="Nom"
+                   [ngModel]="newCoachForm().lastName"
+                   (ngModelChange)="updateForm({ lastName: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <!-- Email / Téléphone -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Email *</label>
+            <input type="email" placeholder="email@exemple.com"
+                   [ngModel]="newCoachForm().email"
+                   (ngModelChange)="updateForm({ email: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Téléphone</label>
+            <input type="tel" placeholder="+216 XX XXX XXX"
+                   [ngModel]="newCoachForm().phone"
+                   (ngModelChange)="updateForm({ phone: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <!-- Mot de passe / Spécialité -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Mot de passe *</label>
+            <input type="password" placeholder="Mot de passe"
+                   [ngModel]="newCoachForm().password"
+                   (ngModelChange)="updateForm({ password: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Spécialité</label>
+            <input type="text" placeholder="Ex: Musculation, Yoga..."
+                   [ngModel]="newCoachForm().specialty"
+                   (ngModelChange)="updateForm({ specialty: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <!-- Statut / Photo URL -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Statut</label>
+            <select [ngModel]="newCoachForm().status"
+                    (ngModelChange)="updateForm({ status: $event })"
+                    class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                           focus:border-[#D4AF37] focus:outline-none transition-colors appearance-none cursor-pointer">
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
+              <option value="away">Absent</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Photo (URL)</label>
+            <input type="url" placeholder="https://example.com/photo.jpg"
+                   [ngModel]="newCoachForm().photoUrl"
+                   (ngModelChange)="updateForm({ photoUrl: $event })"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <!-- Aperçu photo -->
+        @if (newCoachForm().photoUrl) {
+          <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-black-bg border border-white/5">
+            <img [src]="newCoachForm().photoUrl"
+                 (error)="$any($event.target).src='https://i.pravatar.cc/150?u=new'"
+                 class="w-9 h-9 rounded-xl object-cover border border-white/10 shrink-0">
+            <span class="text-[10px] text-gray-500 truncate">{{ newCoachForm().photoUrl }}</span>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="flex gap-3 px-6 py-4 border-t border-white/6 shrink-0">
+        <button (click)="closeAddModal()"
+                class="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm font-bold
+                       hover:bg-white/5 transition-colors">
+          Annuler
+        </button>
+        <button (click)="addCoach()"
+                [disabled]="isProcessing() || !newCoachForm().firstName.trim() || !newCoachForm().lastName.trim() || !newCoachForm().email.trim()"
+                class="flex-1 btn-gold py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+          @if (isProcessing()) {
+            <i class="fas fa-spinner animate-spin"></i> Création…
+          } @else {
+            <i class="fas fa-check"></i> Confirmer
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+

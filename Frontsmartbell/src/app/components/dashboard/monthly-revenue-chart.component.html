@@ -1,0 +1,79 @@
+<div class="revenue-chart-card">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="flex items-start justify-between gap-4 mb-5">
+    <div class="flex items-center gap-3">
+      <div class="accent-bar"></div>
+      <div>
+        <h3 class="card-title">Revenus Mensuels</h3>
+        <p class="card-subtitle">12 derniers mois · paiements complétés</p>
+      </div>
+    </div>
+
+    @if (!isLoading() && !hasError()) {
+      <div class="text-right shrink-0">
+        <p class="total-value">{{ totalRevenue() | number:'1.0-0' }} <span class="total-unit">DT</span></p>
+        <p class="card-subtitle">sur 12 mois</p>
+      </div>
+    }
+  </div>
+
+  <!-- ── KPI Pills ──────────────────────────────────────────────────────── -->
+  @if (!isLoading() && !hasError() && monthlyData().length) {
+    <div class="kpi-pills">
+
+      @if (bestMonth()) {
+        <span class="pill pill-gold">
+          <i class="fas fa-trophy text-[9px]"></i>
+          {{ bestMonth()!.label }} · {{ bestMonth()!.revenue | number:'1.0-0' }} DT
+        </span>
+      }
+
+      <span class="pill pill-blue">
+        <i class="fas fa-chart-line text-[9px]"></i>
+        Moy. {{ avgRevenue() | number:'1.0-0' }} DT/mois
+      </span>
+
+      <span [class]="growthLastMonth() >= 0 ? 'pill pill-green' : 'pill pill-red'">
+        <i [class]="'fas text-[9px] ' + (growthLastMonth() >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down')"></i>
+        {{ growthLastMonth() >= 0 ? '+' : '' }}{{ growthLastMonth() | number:'1.1-1' }}% vs mois préc.
+      </span>
+
+    </div>
+  }
+
+  <!-- ── Loading ────────────────────────────────────────────────────────── -->
+  @if (isLoading()) {
+    <div class="state-box">
+      <i class="fas fa-spinner animate-spin text-[#D4A017] text-2xl"></i>
+      <p class="state-text">Chargement des données…</p>
+    </div>
+  }
+
+  <!-- ── Error ──────────────────────────────────────────────────────────── -->
+  @if (hasError()) {
+    <div class="state-box">
+      <i class="fas fa-circle-exclamation text-red-400 text-2xl"></i>
+      <p class="state-text">Erreur de chargement</p>
+      <button (click)="retry()" class="retry-btn">
+        <i class="fas fa-rotate-right text-[10px]"></i> Réessayer
+      </button>
+    </div>
+  }
+
+  <!-- ── Canvas ─────────────────────────────────────────────────────────── -->
+  @if (!isLoading() && !hasError()) {
+    <div class="chart-wrapper">
+      <canvas #chartCanvas></canvas>
+    </div>
+  }
+
+  <!-- ── Empty state ────────────────────────────────────────────────────── -->
+  @if (!isLoading() && !hasError() && totalRevenue() === 0) {
+    <div class="empty-overlay">
+      <i class="fas fa-receipt text-gray-700 text-3xl mb-2"></i>
+      <p class="state-text">Aucun revenu enregistré sur cette période</p>
+    </div>
+  }
+
+</div>

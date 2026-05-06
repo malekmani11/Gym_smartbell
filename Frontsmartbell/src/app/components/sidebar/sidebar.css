@@ -1,0 +1,155 @@
+/* ── Active nav item ── */
+.active-nav-item {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.28) 0%, rgba(212, 175, 55, 0.12) 100%);
+  color: #F5D77A;
+  border-radius: 0.75rem;
+  position: relative;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow:
+    0 0 24px rgba(212, 175, 55, 0.28),
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(212, 175, 55, 0.25);
+}
+
+/* Bold gold left accent bar */
+.active-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  background: linear-gradient(180deg, #F5D77A 0%, #D4A017 100%);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.90), 0 0 6px rgba(212, 175, 55, 0.70);
+}
+
+.active-nav-item i {
+  color: #F5D77A;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.90));
+}
+
+.active-nav-item span {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 16px rgba(212, 175, 55, 0.55);
+}
+
+/* ── Nav item hover — gold glow on every item ── */
+nav a:hover {
+  background: rgba(212, 175, 55, 0.10) !important;
+  border: 1px solid rgba(212, 175, 55, 0.25) !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.15);
+}
+
+nav a:hover i {
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.6));
+}
+
+/* ── Sidebar scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.50);
+}
+
+/* ── Section separator line — gold gradient ── */
+nav div.flex-1.h-px {
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent) !important;
+}
+
+/* ── Logo "Premium" badge — gold shimmer animation ── */
+aside > div:first-child p {
+  background: linear-gradient(
+    90deg,
+    #D4AF37 0%,
+    #F5D77A 30%,
+    #fff8e0 50%,
+    #F5D77A 70%,
+    #D4AF37 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: logoShimmer 3s linear infinite;
+}
+
+@keyframes logoShimmer {
+  0%   { background-position: 0%   center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Tooltip transition ── */
+[class*="group-hover/tooltip"] {
+  transition: opacity 0.18s ease;
+}
+
+/* ════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ════════════════════════════════════════ */
+
+/* Active nav item — amber on light bg */
+body.light .active-nav-item {
+  background: #fff8e6 !important;
+  color: #f0a500 !important;
+  border: 1px solid rgba(240,165,0,0.25) !important;
+  box-shadow: none !important;
+}
+body.light .active-nav-item::before {
+  background: linear-gradient(180deg, #f0a500 0%, #cc8800 100%) !important;
+  box-shadow: none !important;
+}
+body.light .active-nav-item i {
+  color: #f0a500 !important;
+  filter: none !important;
+}
+body.light .active-nav-item span {
+  color: #f0a500 !important;
+  text-shadow: none !important;
+}
+
+/* Nav item hover — subtle warm hover */
+body.light nav a:hover {
+  background: #f5f5f0 !important;
+  border: 1px solid #e8e8e8 !important;
+  box-shadow: none !important;
+}
+body.light nav a:hover i {
+  filter: none !important;
+  color: #f0a500 !important;
+}
+
+/* Non-active nav text */
+body.light nav a:not(.active-nav-item) span { color: #444444 !important; }
+body.light nav a:not(.active-nav-item) i    { color: #666666 !important; }
+
+/* Section separator — light grey */
+body.light nav div.flex-1.h-px {
+  background: #eeeeee !important;
+}
+
+/* Logo "Premium" text — flat dark, no shimmer */
+body.light aside > div:first-child p {
+  background: none !important;
+  -webkit-text-fill-color: #1a1a1a !important;
+  color: #1a1a1a !important;
+  animation: none !important;
+  text-shadow: none !important;
+}
+
+/* Sidebar scrollbar */
+body.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(240,165,0,0.35);
+}

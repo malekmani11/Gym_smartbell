@@ -1,0 +1,476 @@
+<div class="premium-card p-6 space-y-6">
+
+  <!-- ══════════════════════════════════════════════════════════
+       WEEKLY SUMMARY BAR
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+    <div class="summary-stat">
+      <div class="summary-icon bg-[#D4A017]/10 border-[#D4A017]/20">
+        <i class="fas fa-calendar-check text-[#D4A017] text-sm"></i>
+      </div>
+      <div>
+        <p class="summary-value">{{ weeklyTotalCourses() }}</p>
+        <p class="summary-label">Cours cette semaine</p>
+      </div>
+    </div>
+
+    <div class="summary-stat">
+      <div class="summary-icon bg-green-500/10 border-green-500/20">
+        <i class="fas fa-users text-green-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="summary-value">{{ weeklyTotalEnrolled() }}</p>
+        <p class="summary-label">Réservations confirmées</p>
+      </div>
+    </div>
+
+    <div class="summary-stat">
+      <div class="summary-icon bg-blue-500/10 border-blue-500/20">
+        <i class="fas fa-chart-pie text-blue-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="summary-value">{{ weeklyFillRate() }}<span class="text-sm font-medium text-gray-500">%</span></p>
+        <p class="summary-label">Taux de remplissage</p>
+      </div>
+    </div>
+
+    <div class="summary-stat">
+      <div class="summary-icon bg-purple-500/10 border-purple-500/20">
+        <i class="fas fa-euro-sign text-purple-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="summary-value">{{ weeklyRevenue() | number }}<span class="text-sm font-medium text-gray-500"> DT</span></p>
+        <p class="summary-label">Revenus cours estimés</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Separator -->
+  <div class="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent -mx-6"></div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       HEADER: title + controls
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#D4A017]/10 border border-[#D4A017]/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-calendar-week text-[#D4A017]"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-playfair font-bold text-white">Planning Hebdomadaire</h3>
+        <p class="text-[11px] text-gray-500 mt-0.5">{{ weekLabel() }}</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+
+      <!-- Coach filter -->
+      <select [ngModel]="coachFilter()" (ngModelChange)="coachFilter.set($event)"
+              class="sched-select">
+        <option value="">Tous les coachs</option>
+        @for (coach of coaches(); track coach) {
+          <option [value]="coach">{{ coach }}</option>
+        }
+      </select>
+
+      <!-- Week nav -->
+      <div class="flex items-center gap-1 bg-[#0D0D0D] border border-white/5 rounded-xl p-1">
+        <button (click)="prevWeek()" class="sched-nav-btn"><i class="fas fa-chevron-left text-xs"></i></button>
+        <span class="px-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest min-w-[90px] text-center">{{ weekLabel() }}</span>
+        <button (click)="nextWeek()" class="sched-nav-btn"><i class="fas fa-chevron-right text-xs"></i></button>
+      </div>
+
+      <!-- Add button -->
+      <button (click)="toggleAddForm()"
+              class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border"
+              [class]="showAddForm()
+                ? 'bg-[#D4A017]/15 border-[#D4A017]/35 text-[#D4A017]'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:text-[#D4A017] hover:border-[#D4A017]/25 hover:bg-[#D4A017]/8'">
+        <i class="fas text-xs" [class.fa-plus]="!showAddForm()" [class.fa-times]="showAddForm()"></i>
+        {{ showAddForm() ? 'Annuler' : 'Ajouter cours' }}
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SEARCH + CATEGORY TABS
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+
+    <!-- Search -->
+    <div class="relative flex-1 max-w-xs">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-xs pointer-events-none"></i>
+      <input
+        type="text"
+        placeholder="Rechercher cours ou coach…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        class="w-full pl-9 pr-4 py-2 bg-[#0D0D0D] border border-white/8 rounded-xl text-sm text-white
+               placeholder-gray-700 focus:outline-none focus:border-[#D4A017]/40 transition-colors">
+    </div>
+
+    <!-- Category tabs -->
+    <div class="flex items-center gap-1.5 flex-wrap">
+      @for (cat of CATEGORIES; track cat) {
+        <button (click)="setCategory(cat)"
+                class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
+                [class]="activeCategory() === cat
+                  ? 'bg-[#D4A017] text-black shadow-[0_2px_10px_rgba(212,160,23,0.3)]'
+                  : 'bg-white/5 border border-white/8 text-gray-400 hover:text-[#D4A017] hover:border-[#D4A017]/25'">
+          {{ cat }}
+        </button>
+      }
+    </div>
+
+    <!-- Active filters indicator -->
+    @if (filteredSlots().length !== slots().length) {
+      <span class="text-[10px] text-[#D4A017] font-bold ml-auto shrink-0">
+        {{ filteredSlots().length }} / {{ slots().length }} cours
+      </span>
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ADD COURSE FORM
+  ═══════════════════════════════════════════════════════════════ -->
+  @if (showAddForm()) {
+    <div class="p-5 rounded-xl bg-[#0D0D0D] border border-[#D4A017]/20 space-y-4">
+      <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Nouveau créneau</p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="form-field">
+          <label class="form-label">Nom du cours</label>
+          <input type="text" placeholder="ex: CrossFit WOD"
+                 [ngModel]="addForm().name" (ngModelChange)="updateAddForm({ name: $event })"
+                 class="sched-input">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Coach</label>
+          <input type="text" placeholder="ex: Marc Leroux"
+                 [ngModel]="addForm().coach" (ngModelChange)="updateAddForm({ coach: $event })"
+                 class="sched-input">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Jour</label>
+          <select [ngModel]="addForm().day" (ngModelChange)="updateAddForm({ day: +$event })"
+                  class="sched-input appearance-none cursor-pointer">
+            @for (d of DAY_LABELS; track d; let i = $index) {
+              <option [value]="i">{{ d }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Heure début</label>
+          <input type="number" [min]="START_HOUR" [max]="END_HOUR - 1" step="0.5"
+                 [ngModel]="addForm().startHour" (ngModelChange)="updateAddForm({ startHour: +$event })"
+                 class="sched-input">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Durée (h)</label>
+          <input type="number" min="0.5" max="4" step="0.5"
+                 [ngModel]="addForm().duration" (ngModelChange)="updateAddForm({ duration: +$event })"
+                 class="sched-input">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Capacité</label>
+          <input type="number" min="1"
+                 [ngModel]="addForm().capacity" (ngModelChange)="updateAddForm({ capacity: +$event })"
+                 class="sched-input">
+        </div>
+      </div>
+
+      <!-- Color picker -->
+      <div class="space-y-1.5">
+        <label class="form-label">Couleur</label>
+        <div class="flex gap-2 flex-wrap">
+          @for (col of slotColors; track col) {
+            <button type="button" (click)="selectedColor.set(col)"
+                    class="w-6 h-6 rounded-full border-2 transition-all"
+                    [class]="col + (selectedColor() === col ? ' border-white scale-110' : ' border-transparent opacity-50 hover:opacity-100')">
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button (click)="submitAdd()" [disabled]="!addFormValid"
+                class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all
+                       bg-[#D4A017] text-black hover:bg-[#e8b41e] disabled:opacity-40 disabled:cursor-not-allowed
+                       shadow-[0_4px_14px_rgba(212,160,23,0.3)] hover:shadow-[0_4px_20px_rgba(212,160,23,0.4)]">
+          <i class="fas fa-check mr-1.5"></i>Ajouter le créneau
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════
+       CALENDAR GRID
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="overflow-x-auto mt-10">
+    <div class="min-w-[700px]">
+
+      <!-- Day headers -->
+      <div class="flex mb-2 ml-12">
+        @for (day of DAY_LABELS; track day) {
+          <div class="flex-1 text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-2">{{ day }}</div>
+        }
+      </div>
+
+      <!-- Grid body -->
+      <div class="flex">
+
+        <!-- Y-axis hours -->
+        <div class="w-12 flex-shrink-0 relative" [style.height.px]="HOURS.length * PX_PER_HOUR">
+          @for (h of HOURS; track h) {
+            <div class="absolute right-2 text-[9px] text-gray-600 font-mono leading-none"
+                 [style.top.px]="(h - START_HOUR) * PX_PER_HOUR - 5">
+              {{ hourLabel(h) }}
+            </div>
+          }
+        </div>
+
+        <!-- 7 day columns -->
+        @for (day of DAY_LABELS; track day; let di = $index) {
+          <div class="flex-1 relative border-l border-white/5"
+               [style.height.px]="HOURS.length * PX_PER_HOUR">
+
+            <!-- Hour grid lines -->
+            @for (h of HOURS; track h) {
+              <div class="absolute inset-x-0 border-t"
+                   [class]="h % 2 === 0 ? 'border-white/5' : 'border-white/[0.02]'"
+                   [style.top.px]="(h - START_HOUR) * PX_PER_HOUR">
+              </div>
+            }
+
+            <!-- Course blocks -->
+            @for (slot of slotsForDay(di); track slot.id) {
+              <div
+                class="absolute inset-x-1 rounded-lg border cursor-pointer overflow-hidden
+                       transition-all duration-200 hover:inset-x-0 hover:z-10 hover:shadow-lg group/slot"
+                [class]="slot.color + '/15 ' + fillClass(slot)"
+                [style.top.px]="topPx(slot)"
+                [style.height.px]="heightPx(slot)"
+                (click)="openSlot(slot)">
+
+                <!-- Left accent bar -->
+                <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" [class]="slot.color"></div>
+
+                <!-- Reserved indicator -->
+                @if (isReserved(slot.id)) {
+                  <div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#D4A017] flex items-center justify-center z-10">
+                    <i class="fas fa-check text-black text-[7px]"></i>
+                  </div>
+                }
+
+                <div class="ml-2 h-full flex flex-col justify-between py-1 pr-1">
+
+                  <!-- Top: name + badge -->
+                  <div>
+                    <p class="text-[10px] font-black text-white leading-tight truncate">{{ slot.name }}</p>
+
+                    @if (heightPx(slot) >= 48) {
+                      <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase"
+                            [class]="getStatusBadge(slot).cls">
+                        {{ getStatusBadge(slot).label }}
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Middle: coach avatar + name -->
+                  @if (heightPx(slot) >= 80) {
+                    <div class="flex items-center gap-1 mt-1">
+                      <img [src]="coachAvatar(slot.coach)" [alt]="slot.coach"
+                           class="w-4 h-4 rounded-full object-cover border border-white/20 shrink-0">
+                      <span class="text-[9px] text-gray-400 truncate">{{ slot.coach }}</span>
+                    </div>
+                  }
+
+                  <!-- Bottom: spots + reserve button -->
+                  @if (heightPx(slot) >= 100) {
+                    <div class="flex items-center justify-between mt-1">
+                      <span class="text-[9px] font-bold" [class]="fillBadgeClass(slot)">
+                        {{ slot.enrolled }}/{{ slot.capacity }}
+                        <span class="text-gray-600 font-normal">({{ spotsRemaining(slot) }} libres)</span>
+                      </span>
+                    </div>
+                    <button (click)="reserveSlot(slot, $event)"
+                            class="mt-1 w-full py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all"
+                            [class]="isReserved(slot.id)
+                              ? 'bg-[#D4A017]/20 text-[#D4A017] border border-[#D4A017]/40'
+                              : spotsRemaining(slot) === 0
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/20 cursor-not-allowed'
+                                : 'bg-white/8 text-gray-300 border border-white/10 hover:bg-[#D4A017]/15 hover:text-[#D4A017] hover:border-[#D4A017]/30'">
+                      {{ isReserved(slot.id) ? 'Annuler' : spotsRemaining(slot) === 0 ? 'Complet' : 'Réserver' }}
+                    </button>
+                  }
+
+                </div>
+              </div>
+            }
+
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       LEGEND
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-white/5">
+    <span class="text-[9px] text-gray-600 font-black uppercase tracking-widest">Statut :</span>
+    <div class="flex items-center gap-1.5">
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-black border bg-green-500/12 text-green-400 border-green-500/30">DISPONIBLE</span>
+      <span class="text-[9px] text-gray-600">&lt; 80% rempli</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-black border bg-[#D4A017]/12 text-[#D4A017] border-[#D4A017]/30">BIENTÔT COMPLET</span>
+      <span class="text-[9px] text-gray-600">80–99%</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-black border bg-red-500/15 text-red-400 border-red-500/30">COMPLET</span>
+      <span class="text-[9px] text-gray-600">100%</span>
+    </div>
+    @if (reservedSlots().size > 0) {
+      <div class="ml-auto flex items-center gap-1.5 text-[9px] text-[#D4A017] font-bold">
+        <i class="fas fa-check-circle"></i>
+        {{ reservedSlots().size }} réservation(s) active(s)
+      </div>
+    }
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLOT DETAIL MODAL
+═══════════════════════════════════════════════════════════════ -->
+@if (showSlotModal() && selectedSlot()) {
+  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/88 backdrop-blur-sm" (click)="closeSlot()"></div>
+
+    <!-- Modal card -->
+    <div class="relative z-10 w-full max-w-md bg-[#141414] border border-[#D4A017]/20
+                rounded-2xl shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden">
+
+      <!-- Color top stripe -->
+      <div class="h-1.5 w-full" [class]="selectedSlot()!.color"></div>
+
+      <!-- Close -->
+      <button (click)="closeSlot()"
+              class="absolute top-4 right-4 z-20 w-8 h-8 rounded-xl bg-white/5 border border-white/10
+                     flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+
+      <div class="p-6 space-y-5">
+
+        <!-- Title + metadata chips -->
+        <div>
+          <h3 class="text-xl font-playfair font-bold text-white pr-10">{{ selectedSlot()!.name }}</h3>
+          <div class="flex flex-wrap gap-2 mt-3">
+
+            <!-- Coach chip with avatar -->
+            <span class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-300">
+              <img [src]="coachAvatar(selectedSlot()!.coach)" [alt]="selectedSlot()!.coach"
+                   class="w-5 h-5 rounded-full object-cover border border-white/15 shrink-0">
+              {{ selectedSlot()!.coach }}
+            </span>
+
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-300">
+              <i class="fas fa-calendar-day text-gray-500 text-[9px]"></i>
+              {{ DAY_LABELS[selectedSlot()!.day] }}
+            </span>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-300">
+              <i class="fas fa-clock text-gray-500 text-[9px]"></i>
+              {{ selectedSlot()!.startHour }}h – {{ selectedSlot()!.startHour + selectedSlot()!.duration }}h
+            </span>
+
+            <!-- Status badge -->
+            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase" [class]="getStatusBadge(selectedSlot()!).cls">
+              {{ getStatusBadge(selectedSlot()!).label }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Spots + fill bar -->
+        <div class="p-4 rounded-xl bg-[#0D0D0D] border border-white/5 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Inscriptions</span>
+            <span class="text-lg font-black" [class]="fillBadgeClass(selectedSlot()!)">
+              {{ selectedSlot()!.enrolled }} / {{ selectedSlot()!.capacity }}
+            </span>
+          </div>
+          <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-700"
+                 [class]="fillBarClass(selectedSlot()!)"
+                 [style.width.%]="fillPct(selectedSlot()!)">
+            </div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[9px] font-bold" [class]="fillBadgeClass(selectedSlot()!)">
+              {{ fillPct(selectedSlot()!) }}% de remplissage
+            </span>
+            <span class="text-[9px] text-gray-500">
+              <span class="font-bold text-white">{{ spotsRemaining(selectedSlot()!) }}</span>
+              place{{ spotsRemaining(selectedSlot()!) > 1 ? 's' : '' }} restante{{ spotsRemaining(selectedSlot()!) > 1 ? 's' : '' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Reserve CTA -->
+        <button (click)="reserveSlot(selectedSlot()!, $event)"
+                [disabled]="spotsRemaining(selectedSlot()!) === 0 && !isReserved(selectedSlot()!.id)"
+                class="w-full py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                [class]="isReserved(selectedSlot()!.id)
+                  ? 'bg-[#D4A017]/15 text-[#D4A017] border border-[#D4A017]/35 hover:bg-[#D4A017]/25'
+                  : spotsRemaining(selectedSlot()!) === 0
+                    ? 'bg-red-500/10 text-red-400 border border-red-500/20 cursor-not-allowed opacity-60'
+                    : 'bg-[#D4A017] text-black hover:bg-[#e8b41e] shadow-[0_4px_16px_rgba(212,160,23,0.3)]'">
+          @if (isReserved(selectedSlot()!.id)) {
+            <i class="fas fa-times text-sm"></i> Annuler la réservation
+          } @else if (spotsRemaining(selectedSlot()!) === 0) {
+            <i class="fas fa-ban text-sm"></i> Cours complet
+          } @else {
+            <i class="fas fa-bookmark text-sm"></i>
+            Réserver — {{ spotsRemaining(selectedSlot()!) }} place{{ spotsRemaining(selectedSlot()!) > 1 ? 's' : '' }} restante{{ spotsRemaining(selectedSlot()!) > 1 ? 's' : '' }}
+          }
+        </button>
+
+        <!-- Enrolled members list -->
+        <div>
+          <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-3">Membres inscrits</p>
+          <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1" style="scrollbar-width:thin;scrollbar-color:rgba(212,160,23,0.2) transparent">
+            @for (name of mockMembers(selectedSlot()!); track name; let i = $index) {
+              <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[#0D0D0D] border border-white/5">
+                <img [src]="'https://i.pravatar.cc/150?u=' + name" [alt]="name"
+                     class="w-6 h-6 rounded-full object-cover border border-white/10 shrink-0">
+                <span class="text-xs text-gray-300">{{ name }}</span>
+                <span class="ml-auto text-[9px] text-gray-600 font-mono">#{{ i + 1 }}</span>
+              </div>
+            }
+            @if (selectedSlot()!.enrolled === 0) {
+              <p class="text-xs text-gray-600 text-center py-4">Aucun inscrit pour l'instant</p>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-white/5 bg-[#0F0F0F] flex justify-end">
+        <button (click)="closeSlot()"
+                class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-400 text-xs font-bold
+                       hover:bg-white/5 hover:text-white transition-all">
+          Fermer
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

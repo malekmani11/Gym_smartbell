@@ -1,0 +1,175 @@
+<div class="notifications-container">
+  <header class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="header-title">Notifications</h1>
+      <p class="text-gray-500 text-sm">Gérez et diffusez des informations à vos membres</p>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-outline" (click)="markAllAsRead()">
+        <i class="fas fa-check-double"></i> Tout marquer lu
+      </button>
+      <button class="btn btn-outline" style="color:#ef4444;border-color:#ef444440" (click)="deleteAll()">
+        <i class="fas fa-trash"></i> Tout supprimer
+      </button>
+      <button class="btn btn-amber" (click)="openCreateModal()">
+        <i class="fas fa-plus"></i> Nouvelle notification
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Bar -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">TOTAL</span>
+      <span class="kpi-value text-white">{{ stats().total }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label text-red-400">NON LUES</span>
+      <span class="kpi-value text-red-500">{{ stats().unread }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">AUJOURD'HUI</span>
+      <span class="kpi-value text-amber-500">{{ stats().today }}</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <button class="filter-btn" [class.active]="filterType() === 'ALL' && !filterUnread()" 
+      (click)="filterType.set('ALL'); filterUnread.set(false)">Toutes</button>
+    
+    <button class="filter-btn" [class.active]="filterUnread()" 
+      (click)="filterUnread.set(true)">Non lues</button>
+
+    <div class="h-6 w-px bg-gray-700 mx-2"></div>
+    
+    <button class="filter-btn" [class.active]="filterType() === 'INFO'" 
+      (click)="filterType.set('INFO')">INFO</button>
+    <button class="filter-btn" [class.active]="filterType() === 'WARNING'" 
+      (click)="filterType.set('WARNING')">WARNING</button>
+    <button class="filter-btn" [class.active]="filterType() === 'ALERT'" 
+      (click)="filterType.set('ALERT')">ALERT</button>
+    <button class="filter-btn" [class.active]="filterType() === 'REMINDER'" 
+      (click)="filterType.set('REMINDER')">REMINDER</button>
+  </div>
+
+  <!-- List -->
+  <div class="notif-list">
+    @if (loading()) {
+      <div class="p-12 text-center text-gray-500">Chargement...</div>
+    } @else {
+      @for (notif of filteredNotifications(); track notif.id) {
+        <div class="notif-card" [class.unread]="!notif.isRead">
+          <div class="notif-icon" [style.background-color]="getTypeColor(notif.type) + '20'"
+            [style.color]="getTypeColor(notif.type)">
+            <i [class]="getFaIcon(notif.type)"></i>
+          </div>
+          <div class="notif-content">
+            <div class="notif-header">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="notif-title">{{ notif.title }}</span>
+                @if (!notif.isRead) {
+                  <span class="unread-badge">Non lu</span>
+                }
+              </div>
+              <span class="notif-time">{{ getTimeAgo(notif.createdAt) }}</span>
+            </div>
+            <p class="notif-message">{{ notif.message }}</p>
+            <div class="mt-2">
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+                           padding:2px 8px;border-radius:20px;background:rgba(212,160,23,0.12);
+                           color:#D4A017;border:1px solid rgba(212,160,23,0.3);letter-spacing:0.05em;">
+                <i class="fas fa-paper-plane" style="font-size:8px"></i>
+                {{ targetLabel(notif) }}
+              </span>
+            </div>
+            
+            <div class="mt-3 flex justify-end gap-2">
+              @if (!notif.isRead) {
+                <button class="btn btn-outline btn-sm" (click)="markAsRead(notif.id)">
+                  Marquer comme lu
+                </button>
+              }
+              <button class="btn btn-outline btn-sm" style="color:#ef4444;border-color:#ef444440"
+                      (click)="deleteNotification(notif.id)">
+                <i class="fas fa-trash text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="p-12 text-center bg-[#1e1e1e] rounded-xl border border-dashed border-gray-700">
+          <i class="fas fa-bell-slash text-4xl text-gray-600 mb-4"></i>
+          <p class="text-gray-500">Aucune notification correspondant aux filtres</p>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Modal Création -->
+@if (showCreateModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h2 class="text-xl font-bold text-amber-500 mb-6">Nouvelle Notification</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input type="text" class="form-input" [(ngModel)]="newNotif().title" placeholder="Ex: Maintenance prévue">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" [(ngModel)]="newNotif().message" placeholder="Détails du message..."></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-select" [(ngModel)]="newNotif().type">
+            <option value="INFO">ℹ️ INFO</option>
+            <option value="WARNING">⚠️ WARNING</option>
+            <option value="ALERT">🚨 ALERT</option>
+            <option value="REMINDER">🔔 REMINDER</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destinataire</label>
+          <select class="form-select" [ngModel]="targetType()" (ngModelChange)="targetType.set($event)">
+            <option value="ALL">📢 Tous les utilisateurs</option>
+            <option value="ROLE">👥 Par rôle</option>
+            <option value="MEMBER">👤 Membre spécifique</option>
+          </select>
+        </div>
+      </div>
+
+      @if (targetType() === 'ROLE') {
+        <div class="form-group">
+          <label class="form-label">Rôle cible</label>
+          <select class="form-select" [(ngModel)]="newNotif().roleName">
+            <option value="ROLE_MEMBER">Membres uniquement</option>
+            <option value="ROLE_COACH">Coachs uniquement</option>
+          </select>
+        </div>
+      }
+
+      @if (targetType() === 'MEMBER') {
+        <div class="form-group">
+          <label class="form-label">Choisir le membre</label>
+          <select class="form-select" [(ngModel)]="newNotif().userId">
+            @for (m of members(); track m.id) {
+              <option [value]="m.id">{{ m.firstName }} {{ m.lastName }} ({{ m.email }})</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div class="flex justify-end gap-3 mt-8">
+        <button class="btn btn-outline px-6" (click)="showCreateModal.set(false)">Annuler</button>
+        <button class="btn btn-amber px-10" (click)="sendNotification()">
+          <i class="fas fa-paper-plane"></i> Envoyer
+        </button>
+      </div>
+    </div>
+  </div>
+}

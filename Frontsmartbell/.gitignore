@@ -1,0 +1,45 @@
+# ===== ANGULAR =====
+/dist
+/tmp
+/out-tsc
+/bazel-out
+node_modules/
+npm-debug.log
+yarn-error.log
+/.angular/cache
+.sass-cache/
+/coverage
+
+# ===== SPRING BOOT =====
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+**/application-prod.properties
+
+# ===== PYTHON / ML =====
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/venv/
+**/.env
+**/*.pkl
+
+# ===== SECRETS =====
+.env
+.env.example
+**/application.properties
+
+# ===== IDE =====
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# ===== SYSTEM =====
+.DS_Store
+Thumbs.db
+*.log

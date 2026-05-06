@@ -1,0 +1,125 @@
+<div class="premium-card p-6">
+
+  <!-- Header + Stats ──────────────────────────────────────────────────── -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+    <div>
+      <h3 class="text-lg font-playfair font-bold text-white tracking-wide">
+        Affluence par Créneau
+      </h3>
+      <p class="text-[11px] text-gray-500 font-inter mt-0.5">
+        Fréquentation horaire sur 7 jours
+      </p>
+    </div>
+
+    <!-- Peak stats -->
+    <div class="flex items-center gap-3">
+
+      <div class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-black-bg border border-white/5">
+        <div class="w-7 h-7 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-clock text-[#D4AF37] text-xs"></i>
+        </div>
+        <div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">
+            Heure de pointe
+          </p>
+          <p class="text-sm font-bold text-white font-montserrat">{{ peakHour() }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-black-bg border border-white/5">
+        <div class="w-7 h-7 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-calendar-day text-[#D4AF37] text-xs"></i>
+        </div>
+        <div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">
+            Jour le plus chargé
+          </p>
+          <p class="text-sm font-bold text-white font-montserrat">{{ busiestDay() }}</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Heatmap Grid ────────────────────────────────────────────────────── -->
+  <div class="overflow-x-auto">
+    <div class="min-w-[520px]">
+
+      <!-- Day labels (X axis) -->
+      <div class="flex mb-2 ml-10">
+        @for (day of days; track day) {
+          <div class="flex-1 text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest font-montserrat">
+            {{ day }}
+          </div>
+        }
+      </div>
+
+      <!-- Rows (one per hour) -->
+      @for (hour of hours; track hour) {
+        <div class="flex items-center gap-0 mb-1">
+
+          <!-- Hour label (Y axis) -->
+          <div class="w-10 flex-shrink-0 text-[10px] text-gray-600 font-mono text-right pr-2">
+            {{ hour }}h
+          </div>
+
+          <!-- Cells -->
+          @for (day of days; track day; let di = $index) {
+            <div class="flex-1 px-0.5">
+              <div
+                class="relative group h-7 rounded-md border transition-all duration-200 cursor-default hover:scale-110 hover:z-10"
+                [class]="getCellColor(getCell(di, hour).count) + ' ' + getCellBorder(getCell(di, hour).count)">
+
+                <!-- Tooltip -->
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg
+                            bg-[#1A1A1A] border border-white/10 shadow-xl
+                            text-[10px] text-white font-bold font-montserrat whitespace-nowrap
+                            opacity-0 group-hover:opacity-100 pointer-events-none
+                            transition-opacity duration-150 z-20">
+                  {{ getCell(di, hour).count }} présents
+                  <!-- Arrow -->
+                  <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1A1A1A]"></div>
+                </div>
+
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+  </div>
+
+  <!-- Légende ─────────────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-end gap-4 mt-4 pt-4 border-t border-white/5">
+    <span class="text-[10px] text-gray-600 font-bold uppercase tracking-widest font-montserrat">
+      Légende :
+    </span>
+    <div class="flex items-center gap-3">
+
+      <div class="flex items-center gap-1.5">
+        <div class="w-4 h-4 rounded bg-white/5 border border-white/10"></div>
+        <span class="text-[10px] text-gray-500 font-inter">Vide</span>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <div class="w-4 h-4 rounded bg-[#D4AF37]/20 border border-[#D4AF37]/15"></div>
+        <span class="text-[10px] text-gray-500 font-inter">Faible</span>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <div class="w-4 h-4 rounded bg-[#D4AF37]/50 border border-[#D4AF37]/30"></div>
+        <span class="text-[10px] text-gray-500 font-inter">Moyen</span>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <div class="w-4 h-4 rounded bg-[#D4AF37] border border-[#D4AF37]/60"></div>
+        <span class="text-[10px] text-gray-500 font-inter">Plein</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,201 @@
+/* ── FullCalendar dark theme overrides ───────────────────────────────────── */
+:host ::ng-deep .fc-wrapper {
+  color-scheme: dark;
+}
+
+:host ::ng-deep .fc {
+  --fc-border-color: rgba(255, 255, 255, 0.07);
+  --fc-today-bg-color: rgba(212, 160, 23, 0.06);
+  --fc-now-indicator-color: #ef4444;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #1a1a1a;
+  --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.03);
+  --fc-highlight-color: rgba(212, 160, 23, 0.12);
+  --fc-event-border-color: transparent;
+  font-family: inherit;
+}
+
+/* Toolbar */
+:host ::ng-deep .fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: capitalize;
+  letter-spacing: 0.03em;
+}
+
+:host ::ng-deep .fc .fc-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem !important;
+  transition: all 0.18s ease;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .fc .fc-button:hover {
+  background: rgba(212, 160, 23, 0.12);
+  border-color: rgba(212, 160, 23, 0.3);
+  color: #D4A017;
+}
+
+:host ::ng-deep .fc .fc-button-primary:not(:disabled).fc-button-active,
+:host ::ng-deep .fc .fc-button-primary:not(:disabled):active {
+  background: #D4A017 !important;
+  border-color: #D4A017 !important;
+  color: #000 !important;
+}
+
+:host ::ng-deep .fc .fc-button-group .fc-button {
+  border-radius: 0 !important;
+}
+:host ::ng-deep .fc .fc-button-group .fc-button:first-child {
+  border-radius: 0.5rem 0 0 0.5rem !important;
+}
+:host ::ng-deep .fc .fc-button-group .fc-button:last-child {
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+
+/* Column headers (day names) */
+:host ::ng-deep .fc .fc-col-header-cell {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+:host ::ng-deep .fc .fc-col-header-cell-cushion {
+  color: #9ca3af;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 8px 4px;
+  text-decoration: none !important;
+}
+
+/* Today column header highlight */
+:host ::ng-deep .fc .fc-day-today .fc-col-header-cell-cushion {
+  color: #D4A017;
+}
+
+/* Scrollgrid / time grid */
+:host ::ng-deep .fc .fc-scrollgrid {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+:host ::ng-deep .fc .fc-scrollgrid td,
+:host ::ng-deep .fc .fc-scrollgrid th {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Time labels */
+:host ::ng-deep .fc .fc-timegrid-axis,
+:host ::ng-deep .fc .fc-timegrid-slot-label-cushion {
+  color: #6b7280;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  padding-right: 8px;
+}
+
+/* Time slot rows */
+:host ::ng-deep .fc .fc-timegrid-slot {
+  height: 2.5rem;
+}
+:host ::ng-deep .fc .fc-timegrid-slot-minor {
+  border-top-style: dashed;
+  border-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Events */
+:host ::ng-deep .fc .fc-event {
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 3px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+:host ::ng-deep .fc .fc-event:hover {
+  filter: brightness(1.18);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+:host ::ng-deep .fc .fc-event-title {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host ::ng-deep .fc .fc-event-time {
+  font-size: 0.6rem;
+  opacity: 0.85;
+  font-family: 'Courier New', monospace;
+}
+
+/* Now indicator */
+:host ::ng-deep .fc .fc-timegrid-now-indicator-line {
+  border-color: #ef4444;
+  border-width: 2px;
+}
+:host ::ng-deep .fc .fc-timegrid-now-indicator-arrow {
+  border-top-color: #ef4444;
+  border-bottom-color: #ef4444;
+}
+
+/* Selection highlight */
+:host ::ng-deep .fc .fc-highlight {
+  background: rgba(212, 160, 23, 0.14) !important;
+  border: 1px dashed rgba(212, 160, 23, 0.4) !important;
+  border-radius: 0.4rem;
+}
+
+/* List view */
+:host ::ng-deep .fc .fc-list-day-cushion {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #9ca3af !important;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+}
+:host ::ng-deep .fc .fc-list-event-title {
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+:host ::ng-deep .fc .fc-list-event-time {
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+}
+:host ::ng-deep .fc .fc-list-empty {
+  background: transparent;
+  color: #4b5563;
+}
+
+/* Scrollbar styling */
+:host ::ng-deep .fc .fc-scroller::-webkit-scrollbar {
+  width: 4px;
+}
+:host ::ng-deep .fc .fc-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host ::ng-deep .fc .fc-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+:host ::ng-deep .fc .fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 160, 23, 0.3);
+}

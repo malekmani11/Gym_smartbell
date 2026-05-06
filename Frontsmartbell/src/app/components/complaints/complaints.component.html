@@ -1,0 +1,227 @@
+<div class="complaints-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestion des Plaintes</h1>
+      <p class="page-subtitle">Suivi et résolution des réclamations membres</p>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stats-grid">
+    <div class="stat-card stat-card--open">
+      <span class="stat-label stat-label--open">Ouvertes</span>
+      <span class="stat-value stat-value--open">{{ stats().open }}</span>
+      <span class="stat-sub">En attente de traitement</span>
+    </div>
+    <div class="stat-card stat-card--ongoing">
+      <span class="stat-label stat-label--ongoing">En cours</span>
+      <span class="stat-value stat-value--ongoing">{{ stats().inProgress }}</span>
+      <span class="stat-sub">En cours de traitement</span>
+    </div>
+    <div class="stat-card stat-card--resolved">
+      <span class="stat-label stat-label--resolved">Résolues</span>
+      <span class="stat-value stat-value--resolved">{{ stats().resolved }}</span>
+      <span class="stat-sub">Traitées avec succès</span>
+    </div>
+    <div class="stat-card stat-card--closed">
+      <span class="stat-label stat-label--closed">Fermées</span>
+      <span class="stat-value stat-value--closed">{{ stats().closed }}</span>
+      <span class="stat-sub">Archivées</span>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="cpl-filter-bar">
+    <div class="cpl-filter-search">
+      <i class="fas fa-search" style="position:absolute;left:11px;color:#555;font-size:.75rem;pointer-events:none;"></i>
+      <input class="cpl-filter-input" type="text" placeholder="Rechercher par sujet ou membre..."
+        [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+    </div>
+    <select class="cpl-filter-select" [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
+      <option value="ALL">Tous les statuts</option>
+      <option value="OPEN">Ouvert</option>
+      <option value="IN_PROGRESS">En cours</option>
+      <option value="RESOLVED">Résolu</option>
+      <option value="CLOSED">Fermé</option>
+    </select>
+    <select class="cpl-filter-select" [value]="filterPriority()" (change)="filterPriority.set($any($event.target).value)">
+      <option value="">Toutes priorités</option>
+      <option value="HIGH">Haute</option>
+      <option value="MEDIUM">Moyenne</option>
+      <option value="LOW">Basse</option>
+    </select>
+  </div>
+
+  <!-- List -->
+  @if (loading()) {
+    <div class="cpl-loading"><i class="fas fa-spinner fa-spin"></i></div>
+  } @else {
+    <div class="complaints-list">
+      @for (complaint of filteredComplaints(); track complaint.id) {
+        <div class="complaint-card">
+
+          <!-- Avatar -->
+          <div [class]="getAvatarClass(complaint.status)">
+            {{ getInitials(complaint.firstName, complaint.lastName) }}
+          </div>
+
+          <!-- Body -->
+          <div class="cpl-body">
+            <div class="cpl-title">{{ complaint.subject }}</div>
+            <div class="cpl-meta">
+              <span><i class="fas fa-user"></i> {{ complaint.firstName }} {{ complaint.lastName }}</span>
+              <span><i class="fas fa-clock"></i> {{ complaint.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+          <!-- Badge -->
+          <span [class]="getBadgeClass(complaint.status)">
+            <span class="cpl-dot"></span>
+            {{ getStatusLabel(complaint.status) }}
+          </span>
+
+          <!-- Actions -->
+          <div class="cpl-actions">
+            @if (complaint.status === 'OPEN') {
+              <button class="cpl-btn cpl-btn--read" title="Marquer comme lue" (click)="markAsRead(complaint)">
+                <i class="fas fa-check"></i>
+              </button>
+            }
+            <button class="cpl-btn cpl-btn--view" title="Voir les détails" (click)="openDetailModal(complaint)">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="cpl-btn cpl-btn--respond" title="Répondre" (click)="openResponseModal(complaint)">
+              <i class="fas fa-reply"></i>
+            </button>
+          </div>
+
+        </div>
+      } @empty {
+        <div class="cpl-empty">
+          <i class="fas fa-inbox" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+          Aucune plainte trouvée
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- ── Response modal ─────────────────────────────────────── -->
+@if (showResponseModal()) {
+  <div class="modal-overlay" (click)="closeModals()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <span class="modal-title">Répondre à la plainte #{{ selectedComplaint()?.id }}</span>
+        <button class="modal-close" (click)="closeModals()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Membre</label>
+        <div class="modal-info-box">{{ selectedComplaint()?.firstName }} {{ selectedComplaint()?.lastName }}</div>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Sujet</label>
+        <div class="modal-info-box">{{ selectedComplaint()?.subject }}</div>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Description</label>
+        <div class="modal-info-box" style="min-height:70px;font-size:0.8rem;color:#aaa;">{{ selectedComplaint()?.description }}</div>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Votre réponse</label>
+        <textarea class="modal-textarea" placeholder="Saisissez votre réponse ici..."
+          [ngModel]="adminResponse()" (ngModelChange)="adminResponse.set($event)"></textarea>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Changer le statut</label>
+        <select class="modal-select-input" [ngModel]="newStatus()" (ngModelChange)="newStatus.set($event)">
+          <option value="IN_PROGRESS">En cours</option>
+          <option value="RESOLVED">Résolu</option>
+          <option value="CLOSED">Fermé</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="modal-btn-cancel" (click)="closeModals()">Annuler</button>
+        <button class="modal-btn-submit" (click)="submitResponse()">
+          <i class="fas fa-paper-plane"></i> Envoyer
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ── Detail modal ───────────────────────────────────────── -->
+@if (showDetailModal()) {
+  <div class="modal-overlay" (click)="closeModals()">
+    <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <span class="modal-title">Détails de la plainte #{{ selectedComplaint()?.id }}</span>
+        <button class="modal-close" (click)="closeModals()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="modal-grid-2">
+        <div class="modal-grid-item">
+          <div class="modal-field-label">Membre</div>
+          <div class="modal-grid-value">{{ selectedComplaint()?.firstName }} {{ selectedComplaint()?.lastName }}</div>
+        </div>
+        <div class="modal-grid-item">
+          <div class="modal-field-label">Date de création</div>
+          <div class="modal-grid-value">{{ selectedComplaint()?.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+        <div class="modal-grid-item">
+          <div class="modal-field-label">Statut actuel</div>
+          <div class="modal-grid-value">
+            <span [class]="getBadgeClass(selectedComplaint()!.status)">
+              <span class="cpl-dot"></span>
+              {{ getStatusLabel(selectedComplaint()!.status) }}
+            </span>
+          </div>
+        </div>
+        @if (selectedComplaint()?.resolvedAt) {
+          <div class="modal-grid-item">
+            <div class="modal-field-label">Date de résolution</div>
+            <div class="modal-grid-value">{{ selectedComplaint()?.resolvedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Sujet</label>
+        <div class="modal-info-box">{{ selectedComplaint()?.subject }}</div>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-field-label">Description complète</label>
+        <div class="modal-info-box" style="min-height:100px;">{{ selectedComplaint()?.description }}</div>
+      </div>
+
+      @if (selectedComplaint()?.response) {
+        <div class="modal-field">
+          <label class="modal-field-label" style="color:#f0a500;">Réponse de l'administration</label>
+          <div class="modal-info-box" style="border-color:rgba(240,165,0,.3);">{{ selectedComplaint()?.response }}</div>
+        </div>
+      }
+
+      <div class="modal-footer">
+        @if (selectedComplaint()?.status !== 'RESOLVED' && selectedComplaint()?.status !== 'CLOSED') {
+          <button class="modal-btn-cancel" (click)="closeModals(); openResponseModal(selectedComplaint()!)">
+            <i class="fas fa-reply"></i> Répondre
+          </button>
+        }
+        <button class="modal-btn-submit" (click)="closeModals()">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+}

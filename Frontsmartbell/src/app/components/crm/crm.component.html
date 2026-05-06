@@ -1,0 +1,219 @@
+<div class="space-y-7 pb-12">
+
+  <!-- Header -->
+  <div>
+    <p class="text-[10px] text-[#D4A017] uppercase tracking-[0.25em] font-black mb-1">Relation Client</p>
+    <h1 class="text-3xl font-playfair font-bold text-white">Pipeline <span class="text-[#D4A017]">CRM</span></h1>
+    <p class="text-gray-500 text-xs mt-1">Glissez les cartes pour changer le statut d'un membre</p>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="stat-pill">
+      <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-user-plus text-blue-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ totalProspects() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Prospects</p>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-check-circle text-green-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ totalActive() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Actifs</p>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="w-9 h-9 rounded-xl bg-[#D4A017]/10 border border-[#D4A017]/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-exclamation-triangle text-[#D4A017] text-sm"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ totalAtRisk() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">À risque</p>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-percent text-green-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-green-400">{{ conversionRate() }}%</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Conversion</p>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-times-circle text-red-400 text-sm"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-red-400">{{ churnRate() }}%</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Churn</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="panel-card flex flex-wrap gap-3 items-center">
+    <i class="fas fa-filter text-[#D4A017] text-sm"></i>
+    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"
+            class="bg-[#0D0D0D] border border-white/8 rounded-xl px-3 py-2 text-xs text-gray-300
+                   focus:outline-none focus:border-[#D4A017]/40 appearance-none cursor-pointer">
+      <option value="">Tous statuts</option>
+      <option value="ACTIVE">Actif</option>
+      <option value="INACTIVE">Inactif</option>
+      <option value="SUSPENDED">Suspendu</option>
+    </select>
+    <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+            class="bg-[#0D0D0D] border border-white/8 rounded-xl px-3 py-2 text-xs text-gray-300
+                   focus:outline-none focus:border-[#D4A017]/40 appearance-none cursor-pointer">
+      <option value="">Tous abonnements</option>
+      @for (type of membershipTypes(); track type) {
+        <option [value]="type">{{ type }}</option>
+      }
+    </select>
+    @if (filterStatus() || filterType()) {
+      <button (click)="filterStatus.set(''); filterType.set('')"
+              class="text-[10px] text-gray-500 hover:text-[#D4A017] transition-colors font-bold">
+        <i class="fas fa-times mr-1"></i>Réinitialiser
+      </button>
+    }
+    <span class="ml-auto text-[9px] text-gray-600">{{ filteredCards().length }} membre(s)</span>
+  </div>
+
+  <!-- Kanban board -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-16">
+      <i class="fas fa-spinner animate-spin text-[#D4A017] text-3xl"></i>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+
+      @for (stage of stages; track stage) {
+        <div class="crm-column"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event, stage)">
+
+          <!-- Column header -->
+          <div class="flex items-center justify-between p-4 border-b border-white/5">
+            <div class="flex items-center gap-2.5">
+              <i [class]="stageMeta[stage].icon + ' text-sm ' + stageMeta[stage].color"></i>
+              <span class="text-sm font-bold text-white">{{ stageMeta[stage].label }}</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-white/8 text-gray-400">
+              {{ cardsForStage(stage).length }}
+            </span>
+          </div>
+
+          <!-- Cards -->
+          <div class="flex-1 p-3 space-y-3 overflow-y-auto">
+            @for (card of cardsForStage(stage); track card.memberId) {
+              <div class="crm-card"
+                   [class.dragging]="draggedId() === card.memberId"
+                   draggable="true"
+                   (dragstart)="onDragStart(card.memberId)">
+
+                <!-- Avatar + name -->
+                <div class="flex items-start gap-2.5 mb-3">
+                  <img [src]="avatar(card)" class="w-9 h-9 rounded-xl object-cover border border-white/10 shrink-0">
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-white truncate">{{ card.firstName }} {{ card.lastName }}</p>
+                    <p class="text-[9px] text-gray-500 truncate">{{ card.email }}</p>
+                  </div>
+                </div>
+
+                <!-- Membership badge -->
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[9px] px-2 py-0.5 rounded-full bg-[#D4A017]/10 text-[#D4A017] border border-[#D4A017]/20 font-bold truncate max-w-[110px]">
+                    {{ card.membershipType }}
+                  </span>
+                  <span class="text-[9px] font-bold" [class]="daysColor(card.daysUntilExpiry)">
+                    {{ daysLabel(card.daysUntilExpiry) }}
+                  </span>
+                </div>
+
+                <!-- Join date -->
+                @if (card.joinDate) {
+                  <p class="text-[9px] text-gray-600 mb-2">
+                    <i class="fas fa-calendar-alt mr-1 opacity-50"></i>
+                    Inscrit {{ card.joinDate | date:'dd/MM/yyyy' }}
+                  </p>
+                }
+
+                <!-- Notes preview -->
+                @if (card.notes) {
+                  <p class="text-[9px] text-gray-500 bg-white/3 rounded-lg p-2 line-clamp-2 mb-2">
+                    <i class="fas fa-sticky-note text-[#D4A017] mr-1 opacity-70"></i>{{ card.notes }}
+                  </p>
+                }
+
+                <!-- Note button -->
+                <button (click)="openNote(card)"
+                        class="w-full mt-1 py-1.5 rounded-lg bg-white/4 border border-white/8 text-[9px]
+                               text-gray-500 font-bold uppercase tracking-wider hover:text-[#D4A017]
+                               hover:border-[#D4A017]/25 transition-all">
+                  <i class="fas fa-plus mr-1"></i>Note
+                </button>
+              </div>
+            }
+
+            @if (cardsForStage(stage).length === 0) {
+              <div class="flex flex-col items-center justify-center py-10 text-gray-700">
+                <i class="fas fa-inbox text-2xl mb-2 opacity-40"></i>
+                <p class="text-xs font-medium">Aucun membre</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
+
+<!-- Note Modal -->
+@if (noteCard()) {
+  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" (click)="closeNote()"></div>
+    <div class="relative z-10 w-full max-w-md bg-[#141414] border border-[#D4A017]/20 rounded-2xl p-6 shadow-[0_0_60px_rgba(0,0,0,0.9)]">
+      <div class="flex items-center gap-3 mb-5">
+        <img [src]="avatar(noteCard()!)" class="w-10 h-10 rounded-xl object-cover border border-white/10">
+        <div>
+          <p class="text-sm font-bold text-white">{{ noteCard()!.firstName }} {{ noteCard()!.lastName }}</p>
+          <p class="text-[10px] text-gray-500">{{ noteCard()!.membershipType }}</p>
+        </div>
+        <button (click)="closeNote()" class="ml-auto w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      @if (noteCard()!.notes) {
+        <div class="mb-4 p-3 rounded-xl bg-[#0D0D0D] border border-white/5 text-[11px] text-gray-400 max-h-28 overflow-y-auto whitespace-pre-wrap">
+          {{ noteCard()!.notes }}
+        </div>
+      }
+
+      <label class="text-[9px] text-gray-500 uppercase font-black tracking-widest block mb-1.5">Nouvelle note</label>
+      <textarea rows="4" placeholder="Saisissez votre note…"
+                [ngModel]="noteText()" (ngModelChange)="noteText.set($event)"
+                class="w-full bg-[#0D0D0D] border border-white/8 rounded-xl px-4 py-3 text-sm text-white
+                       placeholder-gray-700 focus:border-[#D4A017]/45 focus:outline-none resize-none">
+      </textarea>
+
+      <div class="flex gap-3 mt-4">
+        <button (click)="closeNote()"
+                class="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 transition-colors">
+          Annuler
+        </button>
+        <button (click)="saveNote()"
+                class="flex-1 py-3 rounded-xl bg-[#D4A017] text-black text-sm font-black hover:bg-[#e8b41e] transition-colors shadow-[0_4px_14px_rgba(212,160,23,0.3)]">
+          <i class="fas fa-save mr-1.5"></i>Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+}

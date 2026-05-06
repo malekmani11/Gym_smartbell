@@ -1,0 +1,212 @@
+<div class="space-y-7 pb-12">
+
+  <!-- Header -->
+  <div class="flex items-end justify-between gap-4 flex-wrap">
+    <div>
+      <p class="text-[10px] text-[#D4A017] uppercase tracking-[0.25em] font-black mb-1">Équipements</p>
+      <h1 class="text-3xl font-playfair font-bold text-white">Gestion des <span class="text-[#D4A017]">Machines</span></h1>
+      <p class="text-gray-500 text-xs mt-1">Suivi des équipements, maintenance et QR codes</p>
+    </div>
+    <button (click)="openAdd()"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D4A017] text-black text-xs font-black uppercase tracking-wider
+                   hover:bg-[#e8b41e] transition-colors shadow-[0_4px_14px_rgba(212,160,23,0.35)]">
+      <i class="fas fa-plus text-[10px]"></i> Ajouter machine
+    </button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="kpi-pill">
+      <div class="w-9 h-9 rounded-xl bg-[#D4A017]/10 border border-[#D4A017]/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-dumbbell text-[#D4A017]"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ machines().length }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Total machines</p>
+      </div>
+    </div>
+    <div class="kpi-pill">
+      <div class="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-check-circle text-green-400"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ availableCount() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Disponibles</p>
+      </div>
+    </div>
+    <div class="kpi-pill">
+      <div class="w-9 h-9 rounded-xl bg-[#D4A017]/10 border border-[#D4A017]/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-tools text-[#D4A017]"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ maintenanceCount() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Maintenance</p>
+      </div>
+    </div>
+    <div class="kpi-pill">
+      <div class="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+        <i class="fas fa-times-circle text-red-400"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-white">{{ outOfServiceCount() }}</p>
+        <p class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Hors service</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search + Filters -->
+  <div class="filters-panel">
+    <div class="filter-search-wrap">
+      <i class="fas fa-search filter-icon"></i>
+      <input type="text" placeholder="Rechercher machine ou espace…"
+             [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+             class="filter-input">
+    </div>
+    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)"
+            class="filter-select appearance-none cursor-pointer">
+      <option value="">Tous statuts</option>
+      @for (st of statuses; track st) {
+        <option [value]="st">{{ statusLabel(st) }}</option>
+      }
+    </select>
+    <select [ngModel]="locationFilter()" (ngModelChange)="locationFilter.set($event)"
+            class="filter-select appearance-none cursor-pointer">
+      <option value="">Tous espaces</option>
+      @for (loc of locations(); track loc) {
+        <option [value]="loc">{{ loc }}</option>
+      }
+    </select>
+    <span class="text-[9px] text-gray-600 shrink-0">{{ filtered().length }} résultat(s)</span>
+  </div>
+
+  <!-- Grid -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-16">
+      <i class="fas fa-spinner animate-spin text-[#D4A017] text-3xl"></i>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+      @for (machine of filtered(); track machine.id) {
+        <div class="machine-card">
+
+          <!-- Top bar -->
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div class="min-w-0">
+              <h3 class="text-sm font-bold text-white truncate">{{ machine.name }}</h3>
+              @if (machine.location) {
+                <p class="text-[9px] text-gray-500 mt-0.5"><i class="fas fa-map-marker-alt mr-1 opacity-40"></i>{{ machine.location }}</p>
+              }
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase shrink-0" [class]="statusBadge(machine.status)">
+              <i [class]="'fas ' + statusIcon(machine.status) + ' mr-0.5'"></i>{{ statusLabel(machine.status) }}
+            </span>
+          </div>
+
+          @if (machine.description) {
+            <p class="text-[10px] text-gray-500 line-clamp-2 mb-4 flex-1">{{ machine.description }}</p>
+          }
+
+          <!-- Action buttons -->
+          <div class="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-white/5">
+            <button (click)="openEdit(machine)" title="Modifier"
+                    class="action-btn text-gray-400 hover:text-[#D4A017] hover:border-[#D4A017]/25">
+              <i class="fas fa-pen text-[10px]"></i>
+            </button>
+            <button (click)="openQr(machine)" title="QR Code"
+                    class="action-btn text-gray-400 hover:text-blue-400 hover:border-blue-500/25">
+              <i class="fas fa-qrcode text-[10px]"></i>
+            </button>
+            @if (machine.status === 'AVAILABLE') {
+              <button (click)="requestMaintenance(machine)" title="Signaler maintenance"
+                      class="action-btn text-gray-400 hover:text-[#D4A017] hover:border-[#D4A017]/25">
+                <i class="fas fa-tools text-[10px]"></i>
+              </button>
+            } @else {
+              <button (click)="delete(machine)" title="Supprimer"
+                      class="action-btn text-gray-400 hover:text-red-400 hover:border-red-500/25">
+                <i class="fas fa-trash text-[10px]"></i>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showFormModal()) {
+  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" (click)="closeForm()"></div>
+    <div class="relative z-10 w-full max-w-lg bg-[#141414] border border-[#D4A017]/20 rounded-2xl p-7 shadow-[0_0_60px_rgba(0,0,0,0.9)]">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-playfair font-bold text-white">{{ editingMachine() ? 'Modifier' : 'Nouvelle machine' }}</h2>
+        <button (click)="closeForm()" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="form-label">Nom</label>
+          <input type="text" placeholder="ex: Tapis de course"
+                 [ngModel]="form().name" (ngModelChange)="updateForm({name: $event})" class="machine-input">
+        </div>
+        <div>
+          <label class="form-label">Localisation</label>
+          <input type="text" placeholder="ex: Cardio"
+                 [ngModel]="form().location" (ngModelChange)="updateForm({location: $event})" class="machine-input">
+        </div>
+        <div>
+          <label class="form-label">Statut</label>
+          <select [ngModel]="form().status" (ngModelChange)="updateForm({status: $event})" class="machine-input appearance-none cursor-pointer">
+            @for (st of statuses; track st) { <option [value]="st">{{ statusLabel(st) }}</option> }
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="form-label">Description</label>
+          <textarea rows="2" [ngModel]="form().description" (ngModelChange)="updateForm({description: $event})"
+                    class="machine-input resize-none"></textarea>
+        </div>
+        <div class="col-span-2">
+          <label class="form-label">URL image</label>
+          <input type="url" placeholder="https://…"
+                 [ngModel]="form().imageUrl" (ngModelChange)="updateForm({imageUrl: $event})" class="machine-input">
+        </div>
+        <div class="col-span-2">
+          <label class="form-label">URL tutoriel</label>
+          <input type="url" placeholder="https://…"
+                 [ngModel]="form().tutorialUrl" (ngModelChange)="updateForm({tutorialUrl: $event})" class="machine-input">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button (click)="closeForm()" class="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 transition-colors">Annuler</button>
+        <button (click)="save()" [disabled]="isProcessing()"
+                class="flex-1 py-3 rounded-xl bg-[#D4A017] text-black text-sm font-black hover:bg-[#e8b41e] transition-colors
+                       shadow-[0_4px_14px_rgba(212,160,23,0.3)] disabled:opacity-50 flex items-center justify-center gap-2">
+          @if (isProcessing()) { <i class="fas fa-spinner animate-spin"></i> … } @else { <i class="fas fa-check"></i> Enregistrer }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- QR Modal -->
+@if (showQrModal() && qrMachine()) {
+  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" (click)="closeQr()"></div>
+    <div class="relative z-10 w-full max-w-xs bg-[#141414] border border-[#D4A017]/20 rounded-2xl p-7 text-center shadow-[0_0_60px_rgba(0,0,0,0.9)]">
+      <h3 class="text-lg font-playfair font-bold text-white mb-1">QR Code</h3>
+      <p class="text-xs text-gray-500 mb-5">{{ qrMachine()!.name }}</p>
+      <!-- QR placeholder (real QR generation would use a library like angularx-qrcode) -->
+      <div class="w-40 h-40 mx-auto bg-white rounded-xl flex items-center justify-center mb-4">
+        <div class="text-center p-2">
+          <i class="fas fa-qrcode text-black text-5xl mb-1 block"></i>
+          <p class="text-[8px] text-gray-700 font-mono break-all">{{ qrMachine()!.qrCodeData || 'MACHINE-' + qrMachine()!.id }}</p>
+        </div>
+      </div>
+      <p class="text-[9px] text-gray-600 font-mono mb-5">{{ qrMachine()!.qrCodeData || 'MACHINE-' + qrMachine()!.id }}</p>
+      <button (click)="closeQr()" class="w-full py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 transition-colors">Fermer</button>
+    </div>
+  </div>
+}

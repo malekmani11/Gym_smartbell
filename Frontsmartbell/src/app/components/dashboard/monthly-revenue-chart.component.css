@@ -1,0 +1,201 @@
+/* ── Card container ─────────────────────────────────────────────────────── */
+.revenue-chart-card {
+  background: linear-gradient(145deg, #1c1a10 0%, #131108 50%, #0d0b05 100%);
+  border: 1px solid rgba(212, 160, 23, 0.22);
+  border-top: 2px solid rgba(212, 160, 23, 0.50);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.65),
+    0 0 18px rgba(212, 160, 23, 0.06),
+    inset 0 1px 0 rgba(212, 160, 23, 0.10);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.revenue-chart-card:hover {
+  border-color: rgba(212, 160, 23, 0.45);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.70),
+    0 0 30px rgba(212, 160, 23, 0.15);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.accent-bar {
+  width: 3px;
+  height: 1.5rem;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #F5D77A 0%, #D4A017 100%);
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+.card-subtitle {
+  font-size: 0.6875rem;
+  color: #4B5563;
+  margin-top: 2px;
+}
+
+.total-value {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #D4A017;
+  line-height: 1.1;
+}
+
+.total-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+/* ── KPI Pills ───────────────────────────────────────────────────────────── */
+.kpi-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1.25rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pill-gold {
+  background: rgba(212, 160, 23, 0.12);
+  border-color: rgba(212, 160, 23, 0.30);
+  color: #D4A017;
+}
+
+.pill-blue {
+  background: rgba(59, 130, 246, 0.10);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #93C5FD;
+}
+
+.pill-green {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6EE7B7;
+}
+
+.pill-red {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #FCA5A5;
+}
+
+/* ── Chart canvas ────────────────────────────────────────────────────────── */
+.chart-wrapper {
+  position: relative;
+  height: 280px;
+}
+
+/* ── State boxes ─────────────────────────────────────────────────────────── */
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  gap: 10px;
+}
+
+.state-text {
+  font-size: 0.8125rem;
+  color: #6B7280;
+}
+
+.empty-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: -280px;
+  height: 280px;
+  pointer-events: none;
+}
+
+/* ── Retry button ────────────────────────────────────────────────────────── */
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 0.625rem;
+  background: transparent;
+  border: 1px solid rgba(212, 160, 23, 0.35);
+  color: #D4A017;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.retry-btn:hover {
+  background: rgba(212, 160, 23, 0.10);
+  border-color: rgba(212, 160, 23, 0.60);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .revenue-chart-card { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIGHT MODE
+   ════════════════════════════════════════════════════════════ */
+
+body.light .revenue-chart-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 3px solid #f0a500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .revenue-chart-card:hover {
+  border-color: #dddddd !important;
+  border-top-color: #f0a500 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important;
+}
+
+body.light .accent-bar {
+  background: linear-gradient(180deg, #f0a500 0%, #cc8800 100%) !important;
+  box-shadow: none !important;
+}
+body.light .card-title    { color: #1a1a1a !important; }
+body.light .card-subtitle { color: #888888 !important; }
+body.light .total-value   { color: #cc8800 !important; }
+body.light .total-unit    { color: #888888 !important; }
+
+body.light .pill-gold  { background: #fff8e1 !important; border-color: #ffe082 !important; color: #cc8800 !important; }
+body.light .pill-blue  { background: #e3f2fd !important; border-color: #bbdefb !important; color: #1565c0 !important; }
+body.light .pill-green { background: #e8f5e9 !important; border-color: #c8e6c9 !important; color: #2e7d32 !important; }
+body.light .pill-red   { background: #fce4ec !important; border-color: #f8bbd0 !important; color: #c62828 !important; }
+
+body.light .state-text { color: #888888 !important; }
+
+body.light .retry-btn {
+  border-color: rgba(240,165,0,0.35) !important;
+  color: #cc8800 !important;
+}
+body.light .retry-btn:hover {
+  background: #fff8e6 !important;
+  border-color: rgba(240,165,0,0.55) !important;
+}

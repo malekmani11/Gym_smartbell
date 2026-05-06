@@ -1,0 +1,198 @@
+<div class="premium-card p-6 space-y-6">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+        <i class="fas fa-store text-[#D4AF37]"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-playfair font-bold text-white">Revenus Boutique</h3>
+        <p class="text-[11px] text-gray-500 font-inter mt-0.5">Hors abonnements — ce mois</p>
+      </div>
+    </div>
+
+    <!-- Bouton Ajouter vente -->
+    <button
+      (click)="toggleForm()"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider font-montserrat
+             transition-all duration-200 border"
+      [class]="showForm()
+        ? 'bg-[#D4AF37]/20 border-[#D4AF37]/40 text-[#D4AF37]'
+        : 'bg-white/5 border-white/10 text-gray-400 hover:text-[#D4AF37] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/10'">
+      <i class="fas text-xs" [class.fa-plus]="!showForm()" [class.fa-times]="showForm()"></i>
+      {{ showForm() ? 'Annuler' : 'Ajouter une vente' }}
+    </button>
+
+  </div>
+
+  <!-- ── Total prévisionnel ───────────────────────────────────────────────── -->
+  <div class="flex items-end justify-between gap-4 py-2 border-b border-white/5 pb-5">
+
+    <div>
+      <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">
+        Total boutique
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-5xl font-black text-white font-montserrat tracking-tight">
+          {{ totalRevenue() | number }}
+        </span>
+        <span class="text-2xl text-gray-500 font-light">DT</span>
+      </div>
+      <!-- Growth badge -->
+      <div class="flex items-center gap-2 mt-2">
+        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black font-montserrat"
+              [class]="totalGrowth() >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'">
+          <i class="fas text-[10px]"
+             [class.fa-arrow-up]="totalGrowth() >= 0"
+             [class.fa-arrow-down]="totalGrowth() < 0"></i>
+          {{ totalGrowth() >= 0 ? '+' : '' }}{{ totalGrowth() | number:'1.1-1' }}% vs mois précédent
+        </span>
+      </div>
+    </div>
+
+    <!-- CA share pill -->
+    <div class="flex flex-col items-center px-4 py-3 rounded-xl bg-black-bg border border-white/5 flex-shrink-0">
+      <span class="text-2xl font-black text-[#D4AF37] font-montserrat">{{ caSharePct() }}%</span>
+      <span class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-0.5 text-center">
+        du CA<br>total
+      </span>
+    </div>
+
+  </div>
+
+  <!-- ── Formulaire ajout vente ───────────────────────────────────────────── -->
+  @if (showForm()) {
+    <div class="p-4 rounded-xl bg-black-bg border border-[#D4AF37]/20 space-y-3 animate-fade-in">
+      <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">
+        Nouvelle vente
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <!-- Catégorie -->
+        <div class="space-y-1">
+          <label class="text-[9px] text-gray-600 uppercase tracking-widest font-bold font-montserrat">Catégorie</label>
+          <select
+            [ngModel]="form().categoryId"
+            (ngModelChange)="updateForm({ categoryId: $event })"
+            class="w-full bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white
+                   focus:outline-none focus:border-[#D4AF37]/50 transition-colors font-inter appearance-none cursor-pointer">
+            <option value="" disabled>Choisir...</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Montant -->
+        <div class="space-y-1">
+          <label class="text-[9px] text-gray-600 uppercase tracking-widest font-bold font-montserrat">Montant (DT)</label>
+          <input
+            type="number"
+            min="1"
+            placeholder="ex: 120"
+            [ngModel]="form().amount"
+            (ngModelChange)="updateForm({ amount: $event })"
+            class="w-full bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white
+                   placeholder-gray-700 focus:outline-none focus:border-[#D4AF37]/50 transition-colors font-inter">
+        </div>
+
+        <!-- Membre (optionnel) -->
+        <div class="space-y-1 sm:col-span-2">
+          <label class="text-[9px] text-gray-600 uppercase tracking-widest font-bold font-montserrat">
+            Membre <span class="text-gray-700 normal-case">(optionnel)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Nom du membre..."
+            [ngModel]="form().member"
+            (ngModelChange)="updateForm({ member: $event })"
+            class="w-full bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white
+                   placeholder-gray-700 focus:outline-none focus:border-[#D4AF37]/50 transition-colors font-inter">
+        </div>
+
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button
+          (click)="submitSale()"
+          [disabled]="!formValid"
+          class="px-5 py-2.5 rounded-xl text-xs font-black font-montserrat uppercase tracking-wider transition-all duration-200
+                 bg-gradient-to-r from-[#D4AF37] to-[#F5D77A] text-[#0A0A0A]
+                 disabled:opacity-40 disabled:cursor-not-allowed
+                 hover:shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:-translate-y-0.5">
+          <i class="fas fa-check mr-1.5"></i>
+          Valider la vente
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Catégories ───────────────────────────────────────────────────────── -->
+  <div class="space-y-4">
+
+    @for (cat of categories(); track cat.id) {
+      <div class="p-4 rounded-xl bg-black-bg border border-white/5 hover:border-[#D4AF37]/15 transition-colors group">
+
+        <div class="flex items-start gap-3">
+
+          <!-- Icône -->
+          <div class="w-9 h-9 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/15 flex items-center justify-center flex-shrink-0
+                      group-hover:bg-[#D4AF37]/20 transition-colors">
+            <i [class]="cat.icon + ' text-[#D4AF37] text-sm'"></i>
+          </div>
+
+          <!-- Info + barre -->
+          <div class="flex-1 min-w-0">
+
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-bold text-white font-montserrat truncate">{{ cat.label }}</p>
+
+              <!-- Évolution -->
+              <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                <span class="text-[10px] font-black font-montserrat"
+                      [class]="growthPct(cat) >= 0 ? 'text-green-400' : 'text-red-400'">
+                  {{ growthPct(cat) >= 0 ? '+' : '' }}{{ growthPct(cat) | number:'1.1-1' }}%
+                </span>
+                <span class="text-sm font-black text-white font-montserrat">
+                  {{ cat.current | number }} DT
+                </span>
+              </div>
+            </div>
+
+            <!-- Barre de progression -->
+            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-[#D4AF37]/70 to-[#D4AF37] rounded-full transition-all duration-700"
+                   [style.width.%]="barWidth(cat.current)">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Mini graphique SVG -->
+          <div class="flex-shrink-0 ml-2">
+            <svg [attr.viewBox]="svgViewBox" width="60" height="20"
+                 class="overflow-visible">
+              @for (bar of svgBars(cat.history); track $index; let last = $last) {
+                <rect
+                  [attr.x]="bar.x * 0.5"
+                  [attr.y]="bar.y * 0.5 + 2"
+                  [attr.width]="7"
+                  [attr.height]="bar.h * 0.5"
+                  [attr.rx]="1.5"
+                  [class]="last ? 'fill-[#D4AF37]' : 'fill-white/20'"
+                />
+              }
+            </svg>
+          </div>
+
+        </div>
+
+      </div>
+    }
+
+  </div>
+
+</div>

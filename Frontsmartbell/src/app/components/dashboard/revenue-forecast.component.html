@@ -1,0 +1,193 @@
+<div class="premium-card p-6 space-y-6">
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-playfair font-bold text-white">Prévision du Mois Prochain</h3>
+      <p class="text-[11px] text-gray-500 font-inter mt-0.5">Basée sur rétention, renouvellements et acquisitions</p>
+    </div>
+    <!-- Attainability badge -->
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider font-montserrat"
+         [class]="isOnTarget()
+           ? 'bg-green-500/10 border-green-500/25 text-green-400'
+           : 'bg-orange-500/10 border-orange-500/25 text-orange-400'">
+      <i class="fas text-[9px]"
+         [class.fa-check-circle]="isOnTarget()"
+         [class.fa-exclamation-triangle]="!isOnTarget()"></i>
+      {{ isOnTarget() ? 'Objectif atteignable' : 'Attention' }}
+    </div>
+  </div>
+
+  <!-- ── Grand total prévisionnel ─────────────────────────────────────── -->
+  <div class="flex items-end gap-5 py-2">
+
+    <!-- Animated number -->
+    <div>
+      <p class="text-[11px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-1">
+        Total prévisionnel
+      </p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-5xl font-black text-white font-montserrat tracking-tight">
+          {{ displayedTotal() | number }}
+        </span>
+        <span class="text-2xl text-gray-500 font-light">DT</span>
+      </div>
+    </div>
+
+    <!-- Gap vs current -->
+    <div class="mb-1.5 flex flex-col items-start gap-1">
+      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black font-montserrat"
+           [class]="gapAmount() >= 0
+             ? 'bg-green-500/10 text-green-400'
+             : 'bg-red-500/10 text-red-400'">
+        <i class="fas text-[10px]"
+           [class.fa-arrow-up]="gapAmount() >= 0"
+           [class.fa-arrow-down]="gapAmount() < 0"></i>
+        {{ gapAmount() >= 0 ? '+' : '' }}{{ gapAmount() | number }} DT
+      </div>
+      <span class="text-[10px] text-gray-600 font-inter pl-1">
+        {{ gapAmount() >= 0 ? '+' : '' }}{{ gapPercent() }}% vs mois actuel
+      </span>
+    </div>
+
+  </div>
+
+  <!-- ── Barre de décomposition ────────────────────────────────────────── -->
+  <div class="space-y-2">
+    <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">
+      Décomposition du prévisionnel
+    </p>
+
+    <!-- Stacked bar -->
+    <div class="flex h-4 rounded-full overflow-hidden gap-0.5">
+      <div class="h-full bg-green-500 rounded-l-full transition-all duration-700 flex items-center justify-center"
+           [style.width.%]="certainPct()">
+        @if (certainPct() > 12) {
+          <span class="text-[8px] font-black text-black font-montserrat">{{ certainPct() }}%</span>
+        }
+      </div>
+      <div class="h-full bg-[#D4AF37] transition-all duration-700 flex items-center justify-center"
+           [style.width.%]="renewalsPct()">
+        @if (renewalsPct() > 12) {
+          <span class="text-[8px] font-black text-black font-montserrat">{{ renewalsPct() }}%</span>
+        }
+      </div>
+      <div class="h-full bg-blue-500 rounded-r-full transition-all duration-700 flex items-center justify-center"
+           [style.width.%]="newPct()">
+        @if (newPct() > 12) {
+          <span class="text-[8px] font-black text-white font-montserrat">{{ newPct() }}%</span>
+        }
+      </div>
+    </div>
+
+    <!-- Bar legend + amounts -->
+    <div class="grid grid-cols-3 gap-2 mt-3">
+
+      <div class="flex items-start gap-2">
+        <div class="w-2.5 h-2.5 rounded-sm bg-green-500 flex-shrink-0 mt-0.5"></div>
+        <div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Certains</p>
+          <p class="text-xs font-black text-green-400 font-montserrat">{{ certain() | number }} DT</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-2">
+        <div class="w-2.5 h-2.5 rounded-sm bg-[#D4AF37] flex-shrink-0 mt-0.5"></div>
+        <div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Renouvellements</p>
+          <p class="text-xs font-black text-[#D4AF37] font-montserrat">{{ renewals() | number }} DT</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-2">
+        <div class="w-2.5 h-2.5 rounded-sm bg-blue-500 flex-shrink-0 mt-0.5"></div>
+        <div>
+          <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Nouveaux</p>
+          <p class="text-xs font-black text-blue-400 font-montserrat">{{ newRevenue() | number }} DT</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tableau comparatif ────────────────────────────────────────────── -->
+  <div class="rounded-xl overflow-hidden border border-white/5">
+
+    <div class="grid grid-cols-3 bg-black-sidebar/60 border-b border-white/5">
+      <div class="px-4 py-2.5 text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Mois actuel</div>
+      <div class="px-4 py-2.5 text-[9px] text-[#D4AF37] uppercase tracking-widest font-bold font-montserrat border-x border-white/5">Mois prévu</div>
+      <div class="px-4 py-2.5 text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Objectif</div>
+    </div>
+
+    <div class="grid grid-cols-3 bg-black-bg">
+      <div class="px-4 py-3.5">
+        <p class="text-base font-black text-white font-montserrat">{{ currentRevenue() | number }} DT</p>
+        <p class="text-[9px] text-gray-600 font-inter mt-0.5">{{ activeMembers() }} membres actifs</p>
+      </div>
+      <div class="px-4 py-3.5 border-x border-white/5">
+        <p class="text-base font-black text-[#D4AF37] font-montserrat">{{ totalForecast() | number }} DT</p>
+        <p class="text-[9px] font-inter mt-0.5"
+           [class]="gapAmount() >= 0 ? 'text-green-500' : 'text-red-500'">
+          {{ gapAmount() >= 0 ? '+' : '' }}{{ gapAmount() | number }} DT
+        </p>
+      </div>
+      <div class="px-4 py-3.5">
+        <p class="text-base font-black font-montserrat"
+           [class]="isOnTarget() ? 'text-green-400' : 'text-orange-400'">
+          {{ revenueTarget() | number }} DT
+        </p>
+        <p class="text-[9px] font-inter mt-0.5"
+           [class]="isOnTarget() ? 'text-green-600' : 'text-orange-500'">
+          {{ isOnTarget() ? 'Atteint ✓' : 'Manque ' + (gapToTarget() | number) + ' DT' }}
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Slider rétention ──────────────────────────────────────────────── -->
+  <div class="p-4 rounded-xl bg-black-bg border border-white/5 space-y-3">
+
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-sliders-h text-[#D4AF37] text-sm"></i>
+        <p class="text-xs font-bold text-white font-montserrat">Simuler le taux de rétention</p>
+      </div>
+      <div class="flex items-baseline gap-1">
+        <span class="text-xl font-black text-[#D4AF37] font-montserrat">{{ retentionRate() }}</span>
+        <span class="text-sm text-gray-500">%</span>
+      </div>
+    </div>
+
+    <!-- Slider -->
+    <input
+      type="range"
+      min="70" max="99" step="0.1"
+      [value]="retentionRate()"
+      (input)="onRetentionChange($event)"
+      class="w-full h-1.5 rounded-full appearance-none cursor-pointer
+             bg-white/10 accent-[#D4AF37]">
+
+    <div class="flex justify-between text-[9px] text-gray-600 font-mono">
+      <span>70%</span>
+      <span>80%</span>
+      <span>90%</span>
+      <span>99%</span>
+    </div>
+
+    <!-- Impact hint -->
+    <div class="flex items-center gap-2 pt-1 border-t border-white/5">
+      <i class="fas fa-info-circle text-gray-600 text-xs"></i>
+      <p class="text-[10px] text-gray-500 font-inter">
+        Impact sur le prévisionnel :
+        <span class="font-bold"
+              [class]="gapAmount() >= 0 ? 'text-green-400' : 'text-red-400'">
+          {{ gapAmount() >= 0 ? '+' : '' }}{{ gapAmount() | number }} DT
+        </span>
+        vs mois actuel
+      </p>
+    </div>
+
+  </div>
+
+</div>

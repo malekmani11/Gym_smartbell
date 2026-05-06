@@ -1,0 +1,145 @@
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+  <!-- ── CARD 1 : Membres à risque de résiliation ──────────────────────── -->
+  <div class="premium-card overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-black-sidebar/50">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+          <i class="fas fa-user-slash text-red-400 text-sm"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white font-montserrat">Membres à risque de résiliation</h3>
+          <p class="text-[10px] text-gray-500 font-inter">Inactifs depuis +30 jours</p>
+        </div>
+      </div>
+      <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-red-500/15 text-red-400 border border-red-500/30 font-montserrat uppercase tracking-wider">
+        {{ atRiskMembers().length }} alertes
+      </span>
+    </div>
+
+    <!-- List -->
+    <div class="divide-y divide-white/5">
+      @for (member of atRiskMembers(); track member.id) {
+        <div class="px-6 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors group">
+
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            <img [src]="member.avatar" [alt]="member.name"
+                 class="w-10 h-10 rounded-full object-cover border border-white/10 group-hover:border-red-500/40 transition-colors">
+            @if (member.riskScore > 70) {
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-[#141414] flex items-center justify-center">
+                <i class="fas fa-exclamation text-white text-[7px] font-black"></i>
+              </span>
+            }
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+              <p class="text-xs font-bold text-white truncate font-montserrat">{{ member.name }}</p>
+              <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider"
+                    [class]="getRiskBadgeClass(member.riskScore)">
+                {{ member.riskScore }}%
+              </span>
+            </div>
+            <p class="text-[10px] text-gray-500 font-inter mb-2">{{ member.plan }}</p>
+
+            <!-- Risk bar -->
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-700"
+                     [class]="getRiskBarColor(member.riskScore)"
+                     [style.width.%]="member.riskScore">
+                </div>
+              </div>
+              <span class="text-[10px] text-gray-500 font-mono flex-shrink-0">
+                {{ member.inactiveDays }}j inactif
+              </span>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <button
+            (click)="sendRetentionEmail(member)"
+            class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all duration-200 font-montserrat
+                   border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/60 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)]">
+            <i class="fas fa-paper-plane text-[9px]"></i>
+            Relancer
+          </button>
+
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <!-- ── CARD 2 : Abonnements expirant bientôt ─────────────────────────── -->
+  <div class="premium-card overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-black-sidebar/50">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+          <i class="fas fa-calendar-times text-yellow-400 text-sm"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white font-montserrat">Abonnements expirant bientôt</h3>
+          <p class="text-[10px] text-gray-500 font-inter">Expire dans les 7 prochains jours</p>
+        </div>
+      </div>
+      <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 font-montserrat uppercase tracking-wider">
+        {{ expiringMembers().length }} expirations
+      </span>
+    </div>
+
+    <!-- List -->
+    <div class="divide-y divide-white/5">
+      @for (member of expiringMembers(); track member.id) {
+        <div class="px-6 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors group">
+
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            <img [src]="member.avatar" [alt]="member.name"
+                 class="w-10 h-10 rounded-full object-cover border border-white/10 group-hover:border-yellow-500/40 transition-colors">
+            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#141414] flex items-center justify-center text-[8px] font-black"
+                  [class]="member.daysLeft <= 2 ? 'bg-red-500 text-white' : member.daysLeft <= 4 ? 'bg-yellow-500 text-black' : 'bg-green-500 text-black'">
+              {{ member.daysLeft }}j
+            </span>
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold text-white truncate font-montserrat mb-0.5">{{ member.name }}</p>
+            <p class="text-[10px] text-gray-500 font-inter mb-2">{{ member.plan }}</p>
+
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <i class="fas fa-calendar-alt text-gray-600 text-[10px]"></i>
+                <span class="text-[10px] text-gray-400 font-inter">
+                  Expire le {{ member.expiryDate | date:'dd MMM yyyy' }}
+                </span>
+              </div>
+              <span class="text-[10px] font-bold font-montserrat" [class]="getDaysColor(member.daysLeft)">
+                J-{{ member.daysLeft }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <button
+            (click)="sendRenewalReminder(member)"
+            class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all duration-200 font-montserrat
+                   border-gold-main/30 text-gold-main bg-gold-main/10 hover:bg-gold-main/20 hover:border-gold-main/60 hover:shadow-[0_0_12px_rgba(212,175,55,0.2)]">
+            <i class="fas fa-redo text-[9px]"></i>
+            Renouveler
+          </button>
+
+        </div>
+      }
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,32 @@
+<!-- Root: full-screen flex row, nothing overflows -->
+<div class="flex h-screen overflow-hidden bg-[#0A0A0A] selection:bg-gold-main/30 selection:text-gold-light">
+
+  <!-- Sidebar: normal flex child — fixed width, never overlaps content -->
+  <app-sidebar
+    [collapsed]="sidebarCollapsed()"
+    (toggleCollapse)="sidebarCollapsed.set(!sidebarCollapsed())">
+  </app-sidebar>
+
+  <!-- Right column: flex-1, flex column, min-w-0 prevents overflow bleed -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Topbar: flex-shrink-0 keeps its height in the flex column,
+         z-40 keeps it above content but it does NOT float over it -->
+    <app-topbar class="flex-shrink-0 z-40 relative"></app-topbar>
+
+    <!-- Main: only this scrolls — topbar never overlaps it -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-[#0A0A0A] p-6 lg:p-8 relative">
+      <!-- Ambient background glows -->
+      <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-gold-main/4 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none animate-glow-breathe"></div>
+      <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gold-main/4 blur-[100px] rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none animate-glow-breathe" style="animation-delay:2s"></div>
+
+      <div class="relative z-10 max-w-7xl mx-auto min-h-full">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- Toast: outside layout flow so it always renders above everything -->
+<app-toast></app-toast>

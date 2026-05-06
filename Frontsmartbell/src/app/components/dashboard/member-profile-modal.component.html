@@ -1,0 +1,202 @@
+<!-- Overlay -->
+<div class="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in">
+
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" (click)="close()"></div>
+
+  <!-- Modal -->
+  <div class="relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col premium-card border border-[#D4AF37]/25 shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+
+    <!-- Close button -->
+    <button
+      (click)="close()"
+      class="absolute top-4 right-4 z-20 w-8 h-8 rounded-lg bg-white/5 border border-white/10
+             flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10
+             hover:border-white/20 transition-all duration-200">
+      <i class="fas fa-times text-sm"></i>
+    </button>
+
+    <!-- Scrollable body -->
+    <div class="overflow-y-auto custom-scrollbar flex-1">
+
+      <!-- ── SECTION 1 : Identité ─────────────────────────────────────── -->
+      <div class="p-6 border-b border-white/5 bg-gradient-to-br from-[#1A1A1A] to-[#141414]">
+        <div class="flex items-center gap-5">
+
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            <div class="w-20 h-20 rounded-2xl p-0.5 bg-gradient-to-br from-[#D4AF37] to-[#A68523] shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+              <img [src]="member().avatar" [alt]="member().name"
+                   class="w-full h-full rounded-[14px] object-cover border-2 border-[#141414]">
+            </div>
+            <span class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md text-[9px] font-black border uppercase"
+                  [class]="getStatusClass(member().status)">
+              {{ getStatusLabel(member().status) }}
+            </span>
+          </div>
+
+          <!-- Info principale -->
+          <div class="flex-1 min-w-0">
+            <h2 class="text-xl font-playfair font-bold text-white mb-0.5 truncate">{{ member().name }}</h2>
+            <p class="text-[11px] text-gray-400 font-inter mb-3">{{ member().email }}</p>
+
+            <div class="flex flex-wrap gap-2">
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20">
+                <i class="fas fa-id-card text-[#D4AF37] text-[10px]"></i>
+                <span class="text-[10px] text-[#D4AF37] font-bold font-montserrat">{{ member().plan }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <i class="fas fa-user-tie text-gray-400 text-[10px]"></i>
+                <span class="text-[10px] text-gray-300 font-inter">{{ member().assignedCoach }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <i class="fas fa-calendar-plus text-gray-400 text-[10px]"></i>
+                <span class="text-[10px] text-gray-300 font-inter">
+                  Inscrit le {{ member().joinDate | date:'dd MMM yyyy' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+
+        <!-- ── SECTION 2 : Objectifs & Mesures ──────────────────────── -->
+        <div>
+          <h3 class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-4 flex items-center gap-2">
+            <i class="fas fa-bullseye text-[#D4AF37]"></i>
+            Objectifs & Mesures
+          </h3>
+
+          <div class="grid grid-cols-3 gap-3 mb-4">
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <i [class]="getGoalIcon(member().goal) + ' text-[#D4AF37] text-lg mb-1.5 block'"></i>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Objectif</p>
+              <p class="text-xs text-white font-bold font-inter mt-0.5">{{ member().goal }}</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <p class="text-2xl font-bold text-white font-montserrat">{{ member().currentWeight }}<span class="text-sm text-gray-500 font-normal">kg</span></p>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-1">Poids actuel</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <p class="text-2xl font-bold text-[#D4AF37] font-montserrat">{{ member().targetWeight }}<span class="text-sm text-[#A68523] font-normal">kg</span></p>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-1">Poids cible</p>
+            </div>
+
+          </div>
+
+          <!-- Barre de progression -->
+          <div class="p-3 rounded-xl bg-black-bg border border-white/5">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest font-montserrat">Progression</span>
+              <span class="text-sm font-black font-montserrat" [class]="member().progressPercent >= 75 ? 'text-green-400' : 'text-[#D4AF37]'">
+                {{ member().progressPercent }}%
+              </span>
+            </div>
+            <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-700"
+                   [class]="getProgressColor(member().progressPercent)"
+                   [style.width.%]="member().progressPercent">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 3 : Activité ──────────────────────────────────── -->
+        <div>
+          <h3 class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-4 flex items-center gap-2">
+            <i class="fas fa-bolt text-[#D4AF37]"></i>
+            Activité
+          </h3>
+
+          <div class="grid grid-cols-3 gap-3 mb-4">
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <p class="text-2xl font-black text-white font-montserrat">{{ member().sessionsThisMonth }}</p>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-1">Séances ce mois</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <div class="flex items-center justify-center gap-1 mb-1">
+                <i class="fas fa-fire text-orange-400 text-lg"></i>
+                <p class="text-2xl font-black text-white font-montserrat">{{ member().currentStreak }}</p>
+              </div>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat">Jours de streak</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-black-bg border border-white/5 text-center">
+              <p class="text-xs font-bold text-white font-inter">{{ member().lastVisit | date:'dd MMM' }}</p>
+              <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mt-1">Dernière visite</p>
+            </div>
+
+          </div>
+
+          <!-- Cours favoris -->
+          <div class="flex flex-wrap gap-2">
+            @for (course of member().favoriteCourses; track course) {
+              <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[10px] text-[#D4AF37] font-bold font-montserrat">
+                <i class="fas fa-star text-[8px]"></i>
+                {{ course }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- ── SECTION 4 : Historique des cours ─────────────────────── -->
+        <div>
+          <h3 class="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-montserrat mb-4 flex items-center gap-2">
+            <i class="fas fa-history text-[#D4AF37]"></i>
+            Derniers cours suivis
+          </h3>
+
+          <div class="space-y-2">
+            @for (course of member().courseHistory; track course.name + course.date) {
+              <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-black-bg border border-white/5 hover:border-[#D4AF37]/20 transition-colors group">
+
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-dumbbell text-[#D4AF37] text-xs group-hover:scale-110 transition-transform"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-white font-montserrat">{{ course.name }}</p>
+                    <p class="text-[10px] text-gray-500 font-inter">{{ course.coach }}</p>
+                  </div>
+                </div>
+
+                <div class="text-right flex-shrink-0 ml-4">
+                  <p class="text-[10px] text-gray-400 font-inter">{{ course.date | date:'dd MMM' }}</p>
+                  <p class="text-[10px] text-[#D4AF37] font-bold font-montserrat">{{ course.duration }}</p>
+                </div>
+
+              </div>
+            }
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-white/5 bg-[#0F0F0F] flex justify-end gap-3 flex-shrink-0">
+      <button
+        (click)="close()"
+        class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-400 text-xs font-bold
+               font-montserrat hover:bg-white/5 hover:text-white transition-all">
+        Fermer
+      </button>
+      <button
+        class="px-5 py-2.5 rounded-xl text-xs font-bold font-montserrat
+               bg-gradient-to-r from-[#D4AF37] to-[#F5D77A] text-[#0A0A0A]
+               hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all">
+        <i class="fas fa-edit mr-1.5"></i>
+        Modifier le profil
+      </button>
+    </div>
+
+  </div>
+</div>

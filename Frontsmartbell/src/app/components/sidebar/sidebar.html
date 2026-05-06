@@ -1,0 +1,174 @@
+<aside class="h-screen bg-black-sidebar border-r border-gold-dark/20 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden"
+       [class.w-64]="!collapsed"
+       [class.w-16]="collapsed">
+
+  <!-- Logo Area -->
+  <div class="h-24 flex items-center border-b border-gold-dark/20 relative overflow-hidden"
+       [class.px-6]="!collapsed" [class.px-0]="collapsed" [class.justify-start]="!collapsed" [class.justify-center]="collapsed">
+    <!-- Subtle gold glow behind logo -->
+    <div class="absolute inset-0 bg-gold-main/5 blur-xl rounded-full scale-150 translate-y-4 opacity-50"></div>
+
+    <!-- Logo icon -->
+    <div class="flex items-center gap-3 relative z-10 w-full"
+         [class.justify-center]="collapsed">
+      <button (click)="toggle()"
+              class="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center shadow-gold flex-shrink-0 hover:scale-105 transition-transform cursor-pointer"
+              [title]="collapsed ? 'Développer le menu' : 'Réduire le menu'">
+        <i class="fas fa-dumbbell text-black-bg text-xl"></i>
+      </button>
+      @if (!collapsed) {
+        <div class="overflow-hidden">
+          <h1 class="font-playfair font-bold text-xl text-gold-gradient m-0 leading-tight whitespace-nowrap">GymAdmin</h1>
+          <p class="text-[0.65rem] text-gold-light/60 font-montserrat uppercase tracking-[0.2em] font-semibold mt-0.5 whitespace-nowrap">Premium</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden py-6 space-y-2 custom-scrollbar"
+       [class.px-4]="!collapsed" [class.px-2]="collapsed">
+
+    @for (item of visibleNavItems(); track item.route) {
+
+      <!-- Section label (only when expanded) -->
+      @if (item.section && !collapsed) {
+        <div class="flex items-center gap-2 px-4 pt-3 pb-1">
+          <span class="text-[8px] font-black uppercase tracking-[0.22em] text-gray-600">{{ item.section }}</span>
+          <div class="flex-1 h-px bg-white/5"></div>
+        </div>
+      }
+      @if (item.section && collapsed) {
+        <div class="my-2 mx-2 h-px bg-white/8"></div>
+      }
+
+      <div class="relative group/tooltip">
+        <a [routerLink]="item.route"
+           routerLinkActive="active-nav-item"
+           class="flex items-center gap-4 py-3.5 rounded-xl text-gray-400 font-inter transition-all duration-200 hover:text-gold-light hover:bg-gold-main/10 group relative overflow-hidden cursor-pointer"
+           [class.px-4]="!collapsed"
+           [class.px-0]="collapsed"
+           [class.justify-start]="!collapsed"
+           [class.justify-center]="collapsed">
+
+          <!-- Active indicator line -->
+          <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-gold-gradient rounded-r-md transition-all duration-300 group-[.active-nav-item]:h-2/3"></div>
+
+          <!-- Icon -->
+          <i [class]="item.icon + ' text-lg w-6 text-center flex-shrink-0 transition-colors duration-300 group-[.active-nav-item]:text-gold-main group-hover:text-gold-light'"></i>
+
+          <!-- Label (hidden when collapsed) -->
+          @if (!collapsed) {
+            <span class="font-medium tracking-wide group-[.active-nav-item]:text-white group-[.active-nav-item]:font-semibold whitespace-nowrap overflow-hidden">
+              {{ item.label }}
+            </span>
+
+            @if (item.badge) {
+              <span class="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
+                    [class]="item.badgeColor === 'red'  ? 'bg-red-500/20 text-red-400'   :
+                             item.badgeColor === 'blue' ? 'bg-blue-500/20 text-blue-400' :
+                                                          'bg-[#D4AF37]/20 text-[#D4AF37]'">
+                {{ item.badge }}
+              </span>
+            }
+          }
+
+          <!-- Hover background glow -->
+          <div class="absolute inset-0 bg-gold-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-10 group-[.active-nav-item]:opacity-20 pointer-events-none rounded-xl"></div>
+        </a>
+
+        <!-- Tooltip (visible only when collapsed) -->
+        @if (collapsed) {
+          <div class="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 pointer-events-none
+                      bg-[#1A1A1A] border border-white/10 text-white text-xs font-bold
+                      px-3 py-2 rounded-lg shadow-xl whitespace-nowrap
+                      opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200">
+            {{ item.label }}
+            @if (item.badge) {
+              <span class="ml-1.5 text-[9px] font-black px-1 py-0.5 rounded-full"
+                    [class]="item.badgeColor === 'red'  ? 'bg-red-500/30 text-red-300'   :
+                             item.badgeColor === 'blue' ? 'bg-blue-500/30 text-blue-300' :
+                                                          'bg-[#D4AF37]/30 text-[#D4AF37]'">
+                {{ item.badge }}
+              </span>
+            }
+            <!-- Tooltip arrow -->
+            <div class="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0"
+                 style="border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:6px solid rgba(255,255,255,0.1)"></div>
+          </div>
+        }
+      </div>
+
+    }
+  </nav>
+
+  <!-- Bottom: User Profile + Logout -->
+  <div class="border-t border-gold-dark/20"
+       [class.p-4]="!collapsed" [class.p-2]="collapsed">
+
+    <!-- Logout confirm modal (only when expanded) -->
+    @if (showLogoutConfirm() && !collapsed) {
+      <div class="mb-3 p-4 rounded-xl bg-[#1A1A1A] border border-red-500/25 space-y-3 animate-fade-in">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-exclamation-triangle text-red-400 text-sm"></i>
+          <p class="text-xs font-bold text-white font-montserrat">Confirmer la déconnexion ?</p>
+        </div>
+        <p class="text-[10px] text-gray-500 font-inter">Vous serez redirigé vers la page d'accueil.</p>
+        <div class="flex gap-2">
+          <button (click)="showLogoutConfirm.set(false)"
+                  class="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 text-[11px] font-bold
+                         font-montserrat hover:bg-white/5 transition-colors">
+            Annuler
+          </button>
+          <button (click)="logout()"
+                  class="flex-1 py-2 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400
+                         text-[11px] font-bold font-montserrat hover:bg-red-500/25 transition-colors">
+            <i class="fas fa-sign-out-alt mr-1 text-[10px]"></i>Déco
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- User mini-profile (expanded) -->
+    @if (!collapsed) {
+      <div class="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-white/5 transition-colors cursor-default">
+        <div class="relative flex-shrink-0">
+          <img [src]="userAvatar()" alt="Admin" class="w-8 h-8 rounded-full object-cover border border-gold-main/30">
+          <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-black-sidebar rounded-full"></div>
+        </div>
+        <div class="overflow-hidden flex-1">
+          <p class="text-xs font-bold text-white font-montserrat truncate">{{ userName() }}</p>
+          <p class="text-[10px] text-gray-500 font-inter truncate">{{ userEmail() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Logout button -->
+    <div class="relative group/logout">
+      <button (click)="collapsed ? null : showLogoutConfirm.set(true)"
+              [title]="collapsed ? 'Déconnexion' : ''"
+              class="w-full flex items-center gap-4 py-3.5 rounded-xl text-gray-400 font-inter transition-all duration-300 hover:text-red-400 hover:bg-red-400/10"
+              [class.px-4]="!collapsed"
+              [class.px-0]="collapsed"
+              [class.justify-start]="!collapsed"
+              [class.justify-center]="collapsed">
+        <i class="fas fa-sign-out-alt text-lg w-6 text-center flex-shrink-0 transition-colors duration-300"></i>
+        @if (!collapsed) {
+          <span class="font-medium tracking-wide">Déconnexion</span>
+        }
+      </button>
+
+      <!-- Tooltip for logout when collapsed -->
+      @if (collapsed) {
+        <div class="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 pointer-events-none
+                    bg-[#1A1A1A] border border-white/10 text-white text-xs font-bold
+                    px-3 py-2 rounded-lg shadow-xl whitespace-nowrap
+                    opacity-0 group-hover/logout:opacity-100 transition-opacity duration-200">
+          Déconnexion
+          <div class="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0"
+               style="border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:6px solid rgba(255,255,255,0.1)"></div>
+        </div>
+      }
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,46 @@
+/* ── Schedule / Cours page — card & component enhancements ── */
+
+/* premium-card in schedule context (weekly calendar wrapper) */
+.premium-card {
+  border-top: 2px solid rgba(212, 160, 23, 0.42) !important;
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.68),
+    0 0 16px rgba(212, 160, 23, 0.07),
+    inset 0 1px 0 rgba(212, 160, 23, 0.12) !important;
+}
+
+/* Course cards — match premium warm gradient */
+.bg-gradient-to-r {
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.60),
+    0 0 14px rgba(212, 160, 23, 0.06);
+  border-width: 1px !important;
+  transition: box-shadow 0.3s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+.bg-gradient-to-r:hover {
+  box-shadow:
+    0 14px 45px rgba(0, 0, 0, 0.72),
+    0 0 35px rgba(212, 160, 23, 0.18) !important;
+}
+
+/* Time dot — brighter */
+.bg-gold-main.opacity-50 {
+  opacity: 0.80 !important;
+  box-shadow: 0 0 8px rgba(212, 160, 23, 0.60);
+}
+
+/* Day selector buttons — hover gold border */
+button[class*="rounded-xl"][class*="border"] {
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Custom scrollbar inside schedule */
+.custom-scrollbar::-webkit-scrollbar { height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #D4AF37, #A68523);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #F5D77A;
+}

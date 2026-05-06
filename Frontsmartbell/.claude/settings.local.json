@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng:*)",
+      "Bash(ls C:/Users/MSI/Frontsmartbell/src/app/components/dashboard/member-alerts*)",
+      "Bash(ls C:/Users/MSI/Frontsmartbell/src/app/components/dashboard/subscription-chart*)"
+    ]
+  }
+}

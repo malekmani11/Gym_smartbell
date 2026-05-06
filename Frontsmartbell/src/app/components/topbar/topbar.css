@@ -1,0 +1,76 @@
+/* ── Search input focus glow — STRONG ── */
+input[type="text"]:focus {
+  box-shadow:
+    0 0 0 2px rgba(212, 175, 55, 0.35),
+    0 0 28px rgba(212, 175, 55, 0.25),
+    0 0 8px rgba(212, 175, 55, 0.15) inset !important;
+  border-color: rgba(212, 175, 55, 0.65) !important;
+}
+
+/* ── Topbar shadow — visible gold underline ── */
+header {
+  box-shadow:
+    0 1px 0 rgba(212, 175, 55, 0.20),
+    0 4px 24px rgba(0, 0, 0, 0.60),
+    0 0 60px rgba(0, 0, 0, 0.30) !important;
+}
+
+/* ── Action Rapide dropdown animation ── */
+.animate-slide-up {
+  animation: slideUpDropdown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpDropdown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Avatar ring pulse — more visible ── */
+.avatar-ring {
+  animation: ringPulse 3s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15); }
+  50%       { box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.45), 0 0 20px rgba(212, 175, 55, 0.30); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up { animation: none; }
+  .avatar-ring      { animation: none; }
+}
+
+/* ════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ════════════════════════════════════════ */
+
+/* Header bar */
+body.light header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #eeeeee !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* Search input focus — amber instead of gold glow */
+body.light input[type="text"]:focus {
+  box-shadow:
+    0 0 0 2px rgba(240,165,0,0.18),
+    0 0 8px rgba(240,165,0,0.10) inset !important;
+  border-color: rgba(240,165,0,0.6) !important;
+}
+
+/* Avatar ring — amber pulse */
+body.light .avatar-ring {
+  animation: ringPulseLite 3s ease-in-out infinite;
+}
+
+@keyframes ringPulseLite {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(240,165,0,0.20); }
+  50%       { box-shadow: 0 0 0 3px rgba(240,165,0,0.50); }
+}
+
+/* Dropdown/quick-action panel */
+body.light .animate-slide-up,
+body.light [class*="bg-black-card"],
+body.light [class*="bg-[#0"] { background-color: #ffffff !important; }
