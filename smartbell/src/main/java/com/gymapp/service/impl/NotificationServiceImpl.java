@@ -10,6 +10,7 @@ import com.gymapp.entity.enums.NotificationType;
 import com.gymapp.repository.NotificationBroadcastRepository;
 import com.gymapp.repository.NotificationReadRepository;
 import com.gymapp.repository.UserRepository;
+import com.gymapp.service.FcmService;
 import com.gymapp.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationBroadcastRepository broadcastRepo;
     private final NotificationReadRepository readRepo;
     private final UserRepository userRepository;
+    private final FcmService fcmService;
 
     // ── Admin ─────────────────────────────────────────────────────────────────
 
@@ -63,6 +65,17 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationBroadcast saved = broadcastRepo.save(broadcast);
         log.info("Broadcast created id={} targetAll={} role={} userId={}",
                 saved.getId(), saved.getTargetAll(), saved.getTargetRole(), saved.getTargetUserId());
+
+        // ── Envoi FCM push notification ──────────────────────────────────────
+        String title = req.getTitle();
+        String msg   = req.getMessage();
+        if (Boolean.TRUE.equals(req.getTargetAll())) {
+            fcmService.sendToAll(title, msg);
+        } else if (targetRole != null) {
+            fcmService.sendToRole(targetRole, title, msg);
+        } else if (req.getUserId() != null) {
+            fcmService.sendToUser(req.getUserId(), title, msg);
+        }
 
         return List.of(toDTO(saved, false));
     }

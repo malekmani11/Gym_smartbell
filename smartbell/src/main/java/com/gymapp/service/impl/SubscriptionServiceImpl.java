@@ -1,10 +1,14 @@
 package com.gymapp.service.impl;
 
 import com.gymapp.dto.SubscriptionDTO;
-import com.gymapp.entity.*;
+import com.gymapp.entity.Subscription;
+import com.gymapp.entity.SubscriptionPlan;
+import com.gymapp.entity.User;
 import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.mapper.EntityMapper;
-import com.gymapp.repository.*;
+import com.gymapp.repository.SubscriptionPlanRepository;
+import com.gymapp.repository.SubscriptionRepository;
+import com.gymapp.repository.UserRepository;
 import com.gymapp.service.SubscriptionService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,7 +30,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final SubscriptionPlanRepository planRepository;
-    private final CouponRepository couponRepository;
     private final EntityMapper mapper;
 
     @Override
@@ -50,26 +51,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .endDate(endDate)
                 .status(SubscriptionStatus.ACTIVE)
                 .build();
-
-        // Apply coupon if provided
-        if (dto.getCouponId() != null) {
-            Coupon coupon = couponRepository.findById(dto.getCouponId())
-                    .orElseThrow(() -> new EntityNotFoundException("Coupon not found"));
-
-            if (!coupon.getActive()) {
-                throw new IllegalStateException("Coupon is not active");
-            }
-            if (coupon.getValidUntil().isBefore(LocalDate.now())) {
-                throw new IllegalStateException("Coupon has expired");
-            }
-            if (coupon.getMaxUses() != null && coupon.getCurrentUses() >= coupon.getMaxUses()) {
-                throw new IllegalStateException("Coupon usage limit reached");
-            }
-
-            subscription.setCoupon(coupon);
-            coupon.setCurrentUses(coupon.getCurrentUses() + 1);
-            couponRepository.save(coupon);
-        }
 
         Subscription saved = subscriptionRepository.save(subscription);
         log.info("Subscription created: {}", saved.getId());
@@ -101,6 +82,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription subscription = subscriptionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found with id: " + id));
         subscription.setStatus(SubscriptionStatus.CANCELLED);
+        return mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
+    }
+
+    @Override
+    public SubscriptionDTO renewSubscription(Long id) {
+        log.info("Renewing subscription: {}", id);
+        Subscription subscription = subscriptionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Subscription not found with id: " + id));
+        SubscriptionPlan plan = subscription.getPlan();
+        if (plan == null) {
+            throw new EntityNotFoundException("Aucun plan associé à cet abonnement (id: " + id + ")");
+        }
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate   = startDate.plusMonths(plan.getDurationMonths());
+        subscription.setStartDate(startDate);
+        subscription.setEndDate(endDate);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
         return mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
     }
 

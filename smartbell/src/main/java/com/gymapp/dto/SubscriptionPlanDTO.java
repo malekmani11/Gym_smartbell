@@ -34,4 +34,8 @@ public class SubscriptionPlanDTO {
 
     private Boolean active;
     private LocalDateTime createdAt;
+
+    // ── Stats (computed, not stored) ──────────────────────
+    private Long subscribersCount;
+    private java.math.BigDecimal totalRevenue;
 }

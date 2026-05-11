@@ -106,12 +106,6 @@ import { ToastService } from '../../services/toast.service';
       </button>
     </div>
 
-    <p class="text-center text-gray-600 text-xs mt-6 font-inter">
-      Pas encore de compte ?
-      <a routerLink="/register" class="text-[#D4AF37] hover:text-[#F5D77A] transition-colors ml-1 font-medium">
-        Créer un compte
-      </a>
-    </p>
   </div>
 </div>
   `,

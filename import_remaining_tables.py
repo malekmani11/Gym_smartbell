@@ -1,4 +1,4 @@
-import pymysql
+﻿import pymysql
 import random
 from datetime import datetime, timedelta
 from faker import Faker
@@ -7,19 +7,19 @@ fake = Faker(['fr_FR'])
 random.seed(42)
 
 DB_CONFIG = {
-    'host': 'localhost', 'port': 3306,
+    'host': 'localhost', 'port': 3308,
     'user': 'root', 'password': '',
     'database': 'gym_smartbell', 'charset': 'utf8mb4',
 }
 
 TODAY = datetime.now()
 
-print("🏋️  Import tables restantes — gym_smartbell")
+print("ðŸ‹ï¸  Import tables restantes â€” gym_smartbell")
 print("=" * 50)
 
 conn   = pymysql.connect(**DB_CONFIG)
 cursor = conn.cursor()
-print("✅ Connexion OK")
+print("âœ… Connexion OK")
 
 def get_columns(table):
     cursor.execute(f"DESCRIBE {table}")
@@ -47,10 +47,10 @@ def get_pk(table):
     r = cursor.fetchone()
     return r[4] if r else 'id'
 
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # COURSES
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import courses...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+print("\nðŸ“¥ Import courses...")
 if table_exists('courses'):
     course_cols = get_columns('courses')
     desc        = get_full_desc('courses')
@@ -62,16 +62,16 @@ if table_exists('courses'):
     existing = cursor.fetchone()[0]
 
     if existing >= 5:
-        print(f"   ℹ️  {existing} cours déjà présents — skip")
+        print(f"   â„¹ï¸  {existing} cours dÃ©jÃ  prÃ©sents â€” skip")
     else:
-        # Récupère les user_ids des coachs
+        # RÃ©cupÃ¨re les user_ids des coachs
         pk_coach = get_pk('coaches')
         cursor.execute(f"SELECT {pk_coach} FROM coaches LIMIT 8")
         coach_ids = [r[0] for r in cursor.fetchall()]
-        print(f"   Coach IDs trouvés : {coach_ids}")
+        print(f"   Coach IDs trouvÃ©s : {coach_ids}")
 
         if not coach_ids:
-            print("   ⚠️  Aucun coach trouvé — utilise NULL")
+            print("   âš ï¸  Aucun coach trouvÃ© â€” utilise NULL")
             coach_ids = [None]
 
         courses_data = [
@@ -79,14 +79,14 @@ if table_exists('courses'):
             ('CrossFit Advanced', 'WEDNESDAY', '18:00:00', '19:30:00', 15, coach_ids[0]),
             ('CrossFit Weekend',  'SATURDAY',  '09:00:00', '10:30:00', 18, coach_ids[0]),
             ('Yoga Flow',         'MONDAY',    '09:00:00', '10:30:00', 15, coach_ids[1] if len(coach_ids)>1 else coach_ids[0]),
-            ('Yoga Débutant',     'WEDNESDAY', '10:00:00', '11:30:00', 12, coach_ids[1] if len(coach_ids)>1 else coach_ids[0]),
+            ('Yoga DÃ©butant',     'WEDNESDAY', '10:00:00', '11:30:00', 12, coach_ids[1] if len(coach_ids)>1 else coach_ids[0]),
             ('Yoga Weekend',      'SATURDAY',  '10:00:00', '11:30:00', 15, coach_ids[1] if len(coach_ids)>1 else coach_ids[0]),
             ('Cardio HIIT',       'TUESDAY',   '17:00:00', '18:00:00', 25, coach_ids[2] if len(coach_ids)>2 else coach_ids[0]),
             ('Cardio Endurance',  'SATURDAY',  '08:00:00', '09:30:00', 20, coach_ids[2] if len(coach_ids)>2 else coach_ids[0]),
             ('Powerlifting',      'MONDAY',    '19:00:00', '20:30:00', 10, coach_ids[3] if len(coach_ids)>3 else coach_ids[0]),
             ('Powerlifting Adv',  'WEDNESDAY', '19:00:00', '20:30:00', 10, coach_ids[3] if len(coach_ids)>3 else coach_ids[0]),
             ('Boxing Fitness',    'TUESDAY',   '19:00:00', '20:00:00', 16, coach_ids[4] if len(coach_ids)>4 else coach_ids[0]),
-            ('Boxing Avancé',     'SATURDAY',  '11:00:00', '12:30:00', 12, coach_ids[4] if len(coach_ids)>4 else coach_ids[0]),
+            ('Boxing AvancÃ©',     'SATURDAY',  '11:00:00', '12:30:00', 12, coach_ids[4] if len(coach_ids)>4 else coach_ids[0]),
             ('Dance Fitness',     'WEDNESDAY', '17:00:00', '18:00:00', 20, coach_ids[5] if len(coach_ids)>5 else coach_ids[0]),
             ('Dance Weekend',     'SUNDAY',    '10:00:00', '11:30:00', 18, coach_ids[5] if len(coach_ids)>5 else coach_ids[0]),
         ]
@@ -123,18 +123,18 @@ if table_exists('courses'):
                     )
                     n += 1
                 except Exception as e:
-                    print(f"   ⚠️  Course {name}: {e}")
+                    print(f"   âš ï¸  Course {name}: {e}")
 
         conn.commit()
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-        print(f"   ✅ {n} cours importés")
+        print(f"   âœ… {n} cours importÃ©s")
 else:
-    print("   ⚠️  Table courses non trouvée")
+    print("   âš ï¸  Table courses non trouvÃ©e")
 
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MACHINES
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import machines...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+print("\nðŸ“¥ Import machines...")
 if table_exists('machines'):
     mach_cols = get_columns('machines')
     desc      = get_full_desc('machines')
@@ -146,7 +146,7 @@ if table_exists('machines'):
     existing = cursor.fetchone()[0]
 
     if existing >= 10:
-        print(f"   ℹ️  {existing} machines déjà présentes — skip")
+        print(f"   â„¹ï¸  {existing} machines dÃ©jÃ  prÃ©sentes â€” skip")
     else:
         status_vals = get_enum_values('machines', 'status')
         print(f"   status values : {status_vals}")
@@ -168,22 +168,22 @@ if table_exists('machines'):
             ('Tapis de course #1',   'Cardio',      'OPERATIONAL', 2500, 'Salle A'),
             ('Tapis de course #2',   'Cardio',      'OPERATIONAL', 2500, 'Salle A'),
             ('Tapis de course #3',   'Cardio',      'MAINTENANCE', 2500, 'Salle A'),
-            ('Vélo elliptique #1',   'Cardio',      'OPERATIONAL', 1800, 'Salle B'),
-            ('Vélo elliptique #2',   'Cardio',      'OPERATIONAL', 1800, 'Salle B'),
+            ('VÃ©lo elliptique #1',   'Cardio',      'OPERATIONAL', 1800, 'Salle B'),
+            ('VÃ©lo elliptique #2',   'Cardio',      'OPERATIONAL', 1800, 'Salle B'),
             ('Rameur #1',            'Cardio',      'OPERATIONAL', 2200, 'Salle A'),
             ('Barre olympique #1',   'Musculation', 'OPERATIONAL',  300, 'Salle C'),
             ('Barre olympique #2',   'Musculation', 'OPERATIONAL',  300, 'Salle C'),
-            ('Cage à squat #1',      'Musculation', 'OPERATIONAL', 3500, 'Salle C'),
-            ('Cage à squat #2',      'Musculation', 'BROKEN',      3500, 'Salle C'),
-            ('Presse à cuisses #1',  'Machines',    'OPERATIONAL', 4000, 'Salle B'),
-            ('Presse à cuisses #2',  'Machines',    'OPERATIONAL', 4000, 'Salle B'),
+            ('Cage Ã  squat #1',      'Musculation', 'OPERATIONAL', 3500, 'Salle C'),
+            ('Cage Ã  squat #2',      'Musculation', 'BROKEN',      3500, 'Salle C'),
+            ('Presse Ã  cuisses #1',  'Machines',    'OPERATIONAL', 4000, 'Salle B'),
+            ('Presse Ã  cuisses #2',  'Machines',    'OPERATIONAL', 4000, 'Salle B'),
             ('Poulie haute #1',      'Machines',    'OPERATIONAL', 3200, 'Salle B'),
             ('Banc musculation #1',  'Musculation', 'OPERATIONAL',  600, 'Salle C'),
             ('Banc musculation #2',  'Musculation', 'OPERATIONAL',  600, 'Salle C'),
-            ('Haltères 20kg x2',     'Musculation', 'OPERATIONAL',  150, 'Salle C'),
-            ('Haltères 30kg x2',     'Musculation', 'OPERATIONAL',  200, 'Salle C'),
+            ('HaltÃ¨res 20kg x2',     'Musculation', 'OPERATIONAL',  150, 'Salle C'),
+            ('HaltÃ¨res 30kg x2',     'Musculation', 'OPERATIONAL',  200, 'Salle C'),
             ('Tapis yoga x10',       'Yoga',        'OPERATIONAL',   30, 'Studio Yoga'),
-            ('Corde à sauter x5',    'Cardio',      'OPERATIONAL',   25, 'Salle A'),
+            ('Corde Ã  sauter x5',    'Cardio',      'OPERATIONAL',   25, 'Salle A'),
             ('Kettlebell 16kg x4',   'Musculation', 'OPERATIONAL',  120, 'Salle C'),
         ]
 
@@ -210,7 +210,7 @@ if table_exists('machines'):
                 'room':                  room,
                 'location':              room,
                 'salle':                 room,
-                'description':           f"Équipement {category}",
+                'description':           f"Ã‰quipement {category}",
                 'brand':                 random.choice(['TechnoGym','Life Fitness','Hammer','Generic']),
                 'model':                 f"Model-{random.randint(100,999)}",
                 'serial_number':         f"SN{random.randint(10000,99999)}",
@@ -233,18 +233,18 @@ if table_exists('machines'):
                     )
                     n += 1
                 except Exception as e:
-                    print(f"   ⚠️  Machine {name}: {e}")
+                    print(f"   âš ï¸  Machine {name}: {e}")
 
         conn.commit()
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-        print(f"   ✅ {n} machines importées")
+        print(f"   âœ… {n} machines importÃ©es")
 else:
-    print("   ⚠️  Table machines non trouvée")
+    print("   âš ï¸  Table machines non trouvÃ©e")
 
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # EVENTS
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import events...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+print("\nðŸ“¥ Import events...")
 if table_exists('events'):
     event_cols = get_columns('events')
     desc       = get_full_desc('events')
@@ -256,7 +256,7 @@ if table_exists('events'):
     existing = cursor.fetchone()[0]
 
     if existing >= 3:
-        print(f"   ℹ️  {existing} événements déjà présents — skip")
+        print(f"   â„¹ï¸  {existing} Ã©vÃ©nements dÃ©jÃ  prÃ©sents â€” skip")
     else:
         status_vals = get_enum_values('events', 'status')
         type_vals   = get_enum_values('events', 'event_type')
@@ -271,11 +271,11 @@ if table_exists('events'):
             return vals[0]
 
         events_data = [
-            ('Tournoi CrossFit SmartBell', 'Compétition interne CrossFit', 30, 50),
-            ('Journée Yoga & Bien-être',   'Séance yoga spéciale',         20, 30),
-            ('Championnat Powerlifting',   'Compétition powerlifting',     15, 25),
+            ('Tournoi CrossFit SmartBell', 'CompÃ©tition interne CrossFit', 30, 50),
+            ('JournÃ©e Yoga & Bien-Ãªtre',   'SÃ©ance yoga spÃ©ciale',         20, 30),
+            ('Championnat Powerlifting',   'CompÃ©tition powerlifting',     15, 25),
             ('Open Day GymAdmin',          'Portes ouvertes salle',       100, 150),
-            ('Séminaire Nutrition Sport',  'Conférence nutrition',         40, 60),
+            ('SÃ©minaire Nutrition Sport',  'ConfÃ©rence nutrition',         40, 60),
             ('Bootcamp Cardio Intensif',   'Bootcamp cardio',              25, 35),
         ]
 
@@ -298,7 +298,7 @@ if table_exists('events'):
                 'end_date':             (ev_date + timedelta(days=1)).strftime('%Y-%m-%d'),
                 'start_time':           '09:00:00',
                 'end_time':             '18:00:00',
-                'location':             'SmartBell Gym — Tunis',
+                'location':             'SmartBell Gym â€” Tunis',
                 'max_participants':     cap,
                 'capacity':             cap,
                 'current_participants': reg,
@@ -324,18 +324,18 @@ if table_exists('events'):
                     )
                     n += 1
                 except Exception as e:
-                    print(f"   ⚠️  Event {title}: {e}")
+                    print(f"   âš ï¸  Event {title}: {e}")
 
         conn.commit()
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-        print(f"   ✅ {n} événements importés")
+        print(f"   âœ… {n} Ã©vÃ©nements importÃ©s")
 else:
-    print("   ⚠️  Table events non trouvée")
+    print("   âš ï¸  Table events non trouvÃ©e")
 
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SALLES
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import salles...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+print("\nðŸ“¥ Import salles...")
 if table_exists('salles'):
     salle_cols = get_columns('salles')
     desc       = get_full_desc('salles')
@@ -347,14 +347,14 @@ if table_exists('salles'):
     existing = cursor.fetchone()[0]
 
     if existing >= 3:
-        print(f"   ℹ️  {existing} salles déjà présentes — skip")
+        print(f"   â„¹ï¸  {existing} salles dÃ©jÃ  prÃ©sentes â€” skip")
     else:
         salles_data = [
-            ('Salle A',     'Cardio',      50, 'Rez-de-chaussée'),
-            ('Salle B',     'Machines',    40, 'Rez-de-chaussée'),
-            ('Salle C',     'Musculation', 35, '1er étage'),
-            ('Studio Yoga', 'Yoga',        20, '1er étage'),
-            ('Ring Boxe',   'Boxing',      15, '2ème étage'),
+            ('Salle A',     'Cardio',      50, 'Rez-de-chaussÃ©e'),
+            ('Salle B',     'Machines',    40, 'Rez-de-chaussÃ©e'),
+            ('Salle C',     'Musculation', 35, '1er Ã©tage'),
+            ('Studio Yoga', 'Yoga',        20, '1er Ã©tage'),
+            ('Ring Boxe',   'Boxing',      15, '2Ã¨me Ã©tage'),
         ]
 
         status_vals = get_enum_values('salles', 'status')
@@ -396,28 +396,28 @@ if table_exists('salles'):
                     )
                     n += 1
                 except Exception as e:
-                    print(f"   ⚠️  Salle {name}: {e}")
+                    print(f"   âš ï¸  Salle {name}: {e}")
 
         conn.commit()
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-        print(f"   ✅ {n} salles importées")
+        print(f"   âœ… {n} salles importÃ©es")
 else:
-    print("   ⚠️  Table salles non trouvée")
+    print("   âš ï¸  Table salles non trouvÃ©e")
 
-# ═══════════════════════════════════════════════════════
-# RÉSUMÉ FINAL
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# RÃ‰SUMÃ‰ FINAL
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 print("\n" + "="*50)
-print("📊 RÉSUMÉ FINAL — gym_smartbell")
+print("ðŸ“Š RÃ‰SUMÃ‰ FINAL â€” gym_smartbell")
 print("="*50)
 cursor.execute("SHOW TABLES")
 for t in [r[0] for r in cursor.fetchall()]:
     cursor.execute(f"SELECT COUNT(*) FROM {t}")
     count = cursor.fetchone()[0]
-    status = "✅" if count > 0 else "⬜"
-    print(f"  {status} {t:<30} → {count:>6} lignes")
+    status = "âœ…" if count > 0 else "â¬œ"
+    print(f"  {status} {t:<30} â†’ {count:>6} lignes")
 print("="*50)
-print("\n✅ Import terminé ! 🚀")
+print("\nâœ… Import terminÃ© ! ðŸš€")
 
 cursor.close()
 conn.close()

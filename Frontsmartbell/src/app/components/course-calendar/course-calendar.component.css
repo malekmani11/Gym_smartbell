@@ -1,3 +1,36 @@
+/* ── Filter row ──────────────────────────────────────────────────────────── */
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-btn:hover:not(.active) {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.filter-btn.active              { background: #D4A017;  border-color: #D4A017;  color: #000; font-weight: 700; }
+.filter-btn.yoga.active         { background: #9333ea;  border-color: #9333ea;  color: #fff; }
+.filter-btn.crossfit.active     { background: #f97316;  border-color: #f97316;  color: #fff; }
+.filter-btn.powerlifting.active { background: #ef4444;  border-color: #ef4444;  color: #fff; }
+.filter-btn.cardio.active       { background: #3b82f6;  border-color: #3b82f6;  color: #fff; }
+
 /* ── FullCalendar dark theme overrides ───────────────────────────────────── */
 :host ::ng-deep .fc-wrapper {
   color-scheme: dark;

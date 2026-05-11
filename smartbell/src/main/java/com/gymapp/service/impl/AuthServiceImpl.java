@@ -80,9 +80,6 @@ public class AuthServiceImpl implements AuthService {
             saved = memberRepository.save(member);
 
         } else if (userRole == Role.ROLE_COACH) {
-            String specialization = (request.getSpecialization() != null && !request.getSpecialization().isBlank())
-                    ? request.getSpecialization()
-                    : null;
             Coach coach = Coach.builder()
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
@@ -94,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
                     .gender(request.getGender() != null && !request.getGender().isBlank() ? Gender.valueOf(request.getGender()) : null)
                     .role(Role.ROLE_COACH)
                     .enabled(true)
-                    .specialization(specialization)
+                    .specialization(request.getSpecialization())
                     .hireDate(LocalDate.now())
                     .availabilityStatus(AvailabilityStatus.AVAILABLE)
                     .build();

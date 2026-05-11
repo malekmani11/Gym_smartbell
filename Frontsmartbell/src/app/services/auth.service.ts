@@ -102,14 +102,14 @@ export class AuthService {
   logout() {
     const refreshToken = this._refreshToken();
     if (refreshToken) {
-      // Révoquer le refresh token côté serveur
       this.http.post(`${this.API}/auth/logout`, { refreshToken })
-        .subscribe({
-          next: () => console.log('Refresh token révoqué'),
-          error: () => {}
-        });
+        .subscribe({ next: () => {}, error: () => {} });
     }
+    this.clearLocalSession();
+  }
 
+  /** Vide la session localement sans appel HTTP — utilisé par l'intercepteur sur 401 */
+  clearLocalSession() {
     localStorage.removeItem('gym_token');
     localStorage.removeItem('gym_refresh_token');
     localStorage.removeItem('gym_user');

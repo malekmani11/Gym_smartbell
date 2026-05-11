@@ -1,6 +1,6 @@
 import pymysql
 
-conn = pymysql.connect(host='localhost', user='root', password='', database='gym_smartbell')
+conn = pymysql.connect(host='localhost', port=3308, user='root', password='', database='gym_smartbell')
 c = conn.cursor()
 
 print('=' * 55)

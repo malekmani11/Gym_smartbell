@@ -24,9 +24,6 @@ export class ComplaintApiService {
   }
 
   markAsRead(id: number): Observable<ComplaintDTO> {
-    return this.http.patch<ComplaintDTO>(`${this.BASE}/${id}/respond`, {
-      response: '',
-      status: 'IN_PROGRESS' as ComplaintStatus
-    });
+    return this.http.patch<ComplaintDTO>(`${this.BASE}/${id}/read`, {});
   }
 }

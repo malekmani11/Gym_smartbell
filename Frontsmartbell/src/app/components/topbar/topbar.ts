@@ -1,11 +1,12 @@
-import { Component, signal, computed, inject, HostListener, ElementRef } from '@angular/core';
+import { Component, signal, computed, inject, HostListener, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of, takeUntil } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { NotificationPanelComponent } from '../dashboard/notification-panel.component';
 import { AuthService } from '../../services/auth.service';
 import { ThemeToggleComponent } from '../shared/theme-toggle/theme-toggle.component';
-
+import { MemberApiService } from '../../services/member-api.service';
 
 interface SearchItem {
   label: string;
@@ -15,27 +16,14 @@ interface SearchItem {
   route?: string;
 }
 
-const SEARCH_DATA: SearchItem[] = [
-  // Membres
-  { label: 'Sophie Laurent',  sublabel: 'Yoga Premium',         icon: 'fas fa-user',               category: 'Membres' },
-  { label: 'Lucas Martin',    sublabel: 'CrossFit Elite',        icon: 'fas fa-user',               category: 'Membres' },
-  { label: 'Emma Bernard',    sublabel: 'Standard',              icon: 'fas fa-user',               category: 'Membres' },
-  { label: 'Thomas Renard',   sublabel: 'Standard Premium',      icon: 'fas fa-user',               category: 'Membres' },
-  { label: 'Camille Morin',   sublabel: 'VIP Elite',             icon: 'fas fa-user',               category: 'Membres' },
-  // Coachs
-  { label: 'Marc Leroux',     sublabel: 'Bodybuilding',          icon: 'fas fa-user-tie',           category: 'Coachs'  },
-  { label: 'Julie Vasseur',   sublabel: 'Yoga & Pilates',        icon: 'fas fa-user-tie',           category: 'Coachs'  },
-  { label: 'Thomas Durand',   sublabel: 'CrossFit',              icon: 'fas fa-user-tie',           category: 'Coachs'  },
-  { label: 'Sarah Guerin',    sublabel: 'Nutrition',             icon: 'fas fa-user-tie',           category: 'Coachs'  },
-  // Pages
-  { label: 'Dashboard',       sublabel: 'Vue générale',          icon: 'fas fa-tachometer-alt',     category: 'Pages',  route: '/dashboard'     },
-  { label: 'Membres',         sublabel: 'Gestion adhérents',     icon: 'fas fa-users',              category: 'Pages',  route: '/members'       },
-  { label: 'Coachs',          sublabel: "Équipe d'experts",      icon: 'fas fa-chalkboard-teacher', category: 'Pages',  route: '/coaches'       },
-  { label: 'Abonnements',     sublabel: 'Formules & contrats',   icon: 'fas fa-id-card',            category: 'Pages',  route: '/subscriptions' },
-  { label: 'Paiements',       sublabel: 'Transactions & revenus',icon: 'fas fa-credit-card',        category: 'Pages',  route: '/payments'      },
-  { label: 'Salles',          sublabel: 'Gestion des espaces',   icon: 'fas fa-door-open',          category: 'Pages',  route: '/rooms'         },
-  { label: 'Machines',        sublabel: 'Équipements & maintenance', icon: 'fas fa-dumbbell',       category: 'Pages',  route: '/equipment'     },
-  { label: 'CRM',             sublabel: 'Pipeline & prospects',  icon: 'fas fa-address-book',       category: 'Pages',  route: '/dashboard'     },
+const PAGES: SearchItem[] = [
+  { label: 'Dashboard',    sublabel: 'Vue générale',              icon: 'fas fa-tachometer-alt',     category: 'Pages', route: '/dashboard'     },
+  { label: 'Membres',      sublabel: 'Gestion adhérents',         icon: 'fas fa-users',              category: 'Pages', route: '/members'       },
+  { label: 'Coachs',       sublabel: "Équipe d'experts",          icon: 'fas fa-chalkboard-teacher', category: 'Pages', route: '/coaches'       },
+  { label: 'Abonnements',  sublabel: 'Formules & contrats',       icon: 'fas fa-id-card',            category: 'Pages', route: '/subscriptions' },
+  { label: 'Paiements',    sublabel: 'Transactions & revenus',    icon: 'fas fa-credit-card',        category: 'Pages', route: '/payments'      },
+  { label: 'Salles',       sublabel: 'Gestion des espaces',       icon: 'fas fa-door-open',          category: 'Pages', route: '/rooms'         },
+  { label: 'Machines',     sublabel: 'Équipements & maintenance', icon: 'fas fa-dumbbell',           category: 'Pages', route: '/equipment'     },
 ];
 
 @Component({
@@ -45,8 +33,10 @@ const SEARCH_DATA: SearchItem[] = [
   templateUrl: './topbar.html',
   styleUrl: './topbar.css'
 })
-export class Topbar {
-  private auth = inject(AuthService);
+export class Topbar implements OnDestroy {
+  private auth      = inject(AuthService);
+  private memberApi = inject(MemberApiService);
+  private destroy$  = new Subject<void>();
 
   userName = computed(() => {
     const user = this.auth.currentUser();
@@ -77,21 +67,25 @@ export class Topbar {
 
   searchQuery   = signal('');
   showResults   = signal(false);
+  searchLoading = signal(false);
 
-  searchResults = computed<SearchItem[]>(() => {
+  private searchSubject = new Subject<string>();
+  apiMembers = signal<SearchItem[]>([]);
+
+  // Pages sont statiques — filtrées localement
+  pageResults = computed<SearchItem[]>(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (q.length < 2) return [];
-    return SEARCH_DATA.filter(item =>
-      item.label.toLowerCase().includes(q) ||
-      item.sublabel.toLowerCase().includes(q)
-    );
+    return PAGES.filter(p => p.label.toLowerCase().includes(q));
   });
 
   resultsByCategory = computed(() => {
-    const categories: ('Membres' | 'Coachs' | 'Pages')[] = ['Membres', 'Coachs', 'Pages'];
-    return categories
-      .map(cat => ({ cat, items: this.searchResults().filter(r => r.category === cat) }))
-      .filter(g => g.items.length > 0);
+    const members = this.apiMembers();
+    const pages   = this.pageResults();
+    const groups: { cat: string; items: SearchItem[] }[] = [];
+    if (members.length) groups.push({ cat: 'Membres', items: members });
+    if (pages.length)   groups.push({ cat: 'Pages',   items: pages   });
+    return groups;
   });
 
   private router  = inject(Router);
@@ -122,7 +116,6 @@ export class Topbar {
   };
 
   constructor() {
-    // Set title from current URL on first load
     const initialUrl = this.router.url.split('?')[0];
     this.pageTitle.set(this.routeTitles[initialUrl] ?? 'GymPro');
     this.pageSubtitle.set(this.routeSubtitles[initialUrl] ?? '');
@@ -134,16 +127,47 @@ export class Topbar {
         this.pageTitle.set(this.routeTitles[url] ?? 'GymPro');
         this.pageSubtitle.set(this.routeSubtitles[url] ?? '');
       });
+
+    // Debounce la recherche membres : attend 350ms après la dernière frappe
+    this.searchSubject.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      switchMap(q => {
+        if (q.length < 2) { this.apiMembers.set([]); return of(null); }
+        this.searchLoading.set(true);
+        return this.memberApi.getAll(0, 6, q);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(res => {
+      this.searchLoading.set(false);
+      if (!res) return;
+      const items: SearchItem[] = res.content.map(m => ({
+        label:    `${m.firstName} ${m.lastName}`,
+        sublabel: m.planName || m.email || '',
+        icon:     'fas fa-user',
+        category: 'Membres' as const,
+        route:    '/members',
+      }));
+      this.apiMembers.set(items);
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onSearchInput(value: string) {
     this.searchQuery.set(value);
     this.showResults.set(true);
+    this.searchSubject.next(value.trim());
+    if (value.trim().length < 2) this.apiMembers.set([]);
   }
 
   clearSearch() {
     this.searchQuery.set('');
     this.showResults.set(false);
+    this.apiMembers.set([]);
   }
 
   selectResult(item: SearchItem) {

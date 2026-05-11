@@ -12,10 +12,11 @@ export class MemberApiService {
   private readonly USERS_BASE = `${environment.apiUrl}/users`;
 
   // GET /members
-  getAll(): Observable<PageResponse<MemberDTO>> {
-    return this.http.get<PageResponse<MemberDTO>>(this.BASE, {
-      params: { size: '100' }
-    });
+  getAll(page = 0, size = 20, search = '', status = ''): Observable<PageResponse<MemberDTO>> {
+    const params: Record<string, string> = { page: page.toString(), size: size.toString() };
+    if (search.trim()) params['search'] = search.trim();
+    if (status.trim()) params['status'] = status.trim();
+    return this.http.get<PageResponse<MemberDTO>>(this.BASE, { params });
   }
 
   // POST /auth/register (crée user + entité member automatiquement)

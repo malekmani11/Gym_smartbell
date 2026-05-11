@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../services/toast.service';
 import { MachineApiService, Machine, MachineStatus } from '../../services/machine-api.service';
+import { SalleApiService, Salle } from '../../services/salle-api.service';
 
 const EMPTY = (): Machine => ({
   name: '', description: '', location: '', status: 'AVAILABLE', imageUrl: '', tutorialUrl: '',
@@ -17,7 +18,10 @@ const EMPTY = (): Machine => ({
 })
 export class MachinesComponent implements OnInit {
   private machineApi = inject(MachineApiService);
+  private salleApi  = inject(SalleApiService);
   private toast = inject(ToastService);
+
+  salles = signal<Salle[]>([]);
 
   machines       = signal<Machine[]>([]);
   searchQuery    = signal('');
@@ -51,7 +55,13 @@ export class MachinesComponent implements OnInit {
   outOfServiceCount= computed(() => this.machines().filter(m => m.status === 'OUT_OF_SERVICE').length);
   locations        = computed(() => [...new Set(this.machines().map(m => m.location ?? '').filter(Boolean))].sort());
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    this.salleApi.getAll().subscribe({
+      next: (list) => this.salles.set(list),
+      error: () => this.toast.error('Erreur', 'Impossible de charger les salles.'),
+    });
+  }
 
   load() {
     this.isLoading.set(true);
@@ -174,4 +184,8 @@ export class MachinesComponent implements OnInit {
   }
 
   updateForm(patch: Partial<Machine>) { this.form.update(f => ({ ...f, ...patch })); }
+
+  qrImageUrl(data: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(data)}`;
+  }
 }

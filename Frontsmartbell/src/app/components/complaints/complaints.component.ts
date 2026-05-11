@@ -19,9 +19,8 @@ export class ComplaintsComponent implements OnInit {
   complaints = signal<ComplaintDTO[]>([]);
   loading    = signal(true);
 
-  filterStatus   = signal<string>('ALL');
-  searchTerm     = signal<string>('');
-  filterPriority = signal<string>('');
+  filterStatus = signal<string>('ALL');
+  searchTerm   = signal<string>('');
 
   showResponseModal = signal(false);
   showDetailModal   = signal(false);
@@ -107,6 +106,10 @@ export class ComplaintsComponent implements OnInit {
       },
       error: () => this.toast.error('Erreur', 'Impossible d\'envoyer la réponse')
     });
+  }
+
+  openNewComplaint() {
+    this.toast.info('Info', 'Les plaintes sont soumises par les membres via l\'application mobile');
   }
 
   getStatusColor(status: ComplaintStatus): string {

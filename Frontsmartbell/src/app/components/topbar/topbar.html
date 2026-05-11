@@ -34,8 +34,16 @@
       </div>
     </div>
 
+    <!-- Spinner pendant la recherche API -->
+    @if (showResults() && searchLoading()) {
+      <div class="absolute top-full left-0 right-0 mt-2 z-50 premium-card border border-white/10
+                  shadow-[0_8px_40px_rgba(0,0,0,0.7)] px-4 py-5 text-center">
+        <i class="fas fa-spinner fa-spin text-[#D4AF37] text-lg"></i>
+      </div>
+    }
+
     <!-- Résultats de recherche -->
-    @if (showResults() && searchResults().length > 0) {
+    @if (showResults() && !searchLoading() && resultsByCategory().length > 0) {
       <div class="absolute top-full left-0 right-0 mt-2 z-50 premium-card border border-white/10
                   shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
 
@@ -87,7 +95,7 @@
     }
 
     <!-- Message "aucun résultat" -->
-    @if (showResults() && searchQuery().length >= 2 && searchResults().length === 0) {
+    @if (showResults() && !searchLoading() && searchQuery().length >= 2 && resultsByCategory().length === 0) {
       <div class="absolute top-full left-0 right-0 mt-2 z-50 premium-card border border-white/10
                   shadow-[0_8px_40px_rgba(0,0,0,0.7)] px-4 py-6 text-center">
         <i class="fas fa-search text-gray-700 text-2xl mb-2"></i>

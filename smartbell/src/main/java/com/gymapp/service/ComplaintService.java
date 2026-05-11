@@ -18,4 +18,6 @@ public interface ComplaintService {
     Page<ComplaintDTO> getAllComplaints(Pageable pageable);
 
     ComplaintDTO respondToComplaint(Long id, String response, ComplaintStatus status);
+
+    ComplaintDTO markAsRead(Long id);
 }

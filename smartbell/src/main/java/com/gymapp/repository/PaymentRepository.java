@@ -29,8 +29,27 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
 
+    /** Only payments that have a valid (non-orphaned) subscription. */
+    @Query("SELECT p FROM Payment p JOIN p.subscription s JOIN s.user u")
+    Page<Payment> findAllWithValidSubscription(Pageable pageable);
+
+    @Query("SELECT p FROM Payment p JOIN p.subscription s JOIN s.user u WHERE p.status = :status")
+    Page<Payment> findByStatusWithValidSubscription(@Param("status") PaymentStatus status, Pageable pageable);
+
     Page<Payment> findByPaymentDateBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);
 
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'COMPLETED'")
     BigDecimal sumAllCompleted();
+
+    /** Count COMPLETED payments for the same member in the same month/year (duplicate guard). */
+    @Query("SELECT COUNT(p) FROM Payment p " +
+           "JOIN p.subscription s " +
+           "JOIN s.user u " +
+           "WHERE u.id = :userId " +
+           "AND p.status = 'COMPLETED' " +
+           "AND YEAR(p.paymentDate) = :year " +
+           "AND MONTH(p.paymentDate) = :month")
+    long countCompletedPaymentsForUserInMonth(@Param("userId") Long userId,
+                                              @Param("year") int year,
+                                              @Param("month") int month);
 }

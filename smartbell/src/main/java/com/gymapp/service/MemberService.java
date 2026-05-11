@@ -19,6 +19,8 @@ public interface MemberService {
 
     Page<MemberDTO> getMembersByStatus(MembershipStatus status, Pageable pageable);
 
+    Page<MemberDTO> searchMembers(String query, Pageable pageable);
+
     MemberDTO updateMember(Long id, MemberDTO dto);
 
     void updateMembershipStatus(Long id, MembershipStatus status);

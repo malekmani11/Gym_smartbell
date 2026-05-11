@@ -52,4 +52,9 @@ public class ComplaintController {
             @RequestBody RespondComplaintRequest req) {
         return ResponseEntity.ok(complaintService.respondToComplaint(id, req.getResponse(), req.getStatus()));
     }
+
+    @PatchMapping("/{id}/read")
+    public ResponseEntity<ComplaintDTO> markAsRead(@PathVariable Long id) {
+        return ResponseEntity.ok(complaintService.markAsRead(id));
+    }
 }

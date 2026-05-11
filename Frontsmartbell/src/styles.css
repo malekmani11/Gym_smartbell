@@ -41,17 +41,29 @@
   html {
     scroll-behavior: smooth;
     font-size: 16px;
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
     font-family: 'Inter', 'Montserrat', sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
     transition: background-color 0.12s ease, color 0.12s ease;
+  }
+
+  /* Custom elements default to display:inline in some browsers.
+     Force block so they participate correctly in document flow. */
+  app-root,
+  app-layout,
+  app-topbar,
+  app-sidebar {
+    display: block;
   }
 
   /* Premium Scrollbar */
@@ -479,3 +491,526 @@ app-members tr img {
   background: transparent !important;
   padding: 0 !important;
 }
+
+/* ══════════════════════════════════════════════════════════
+   PAGE HEADER — Style unifié pour tous les composants
+   ══════════════════════════════════════════════════════════ */
+
+.page-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  flex-wrap: nowrap;
+  gap: 16px;
+}
+
+.page-header {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.page-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+/* ── Page action buttons ───────────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #000;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(212, 160, 23, 0.35);
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  background: #e8b41e;
+  box-shadow: 0 6px 20px rgba(212, 160, 23, 0.5);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.btn-secondary.btn-danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.btn-secondary.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
+}
+
+/* ══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — global tokens (all pages)
+   ══════════════════════════════════════════════════════════ */
+
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* KPI Card */
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-top: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: block;
+  box-shadow: var(--card-shadow);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  cursor: default;
+}
+.kpi-card:hover {
+  border-color: rgba(212, 160, 23, 0.35);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+}
+
+/* KPI typography */
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  line-height: 1.15;
+}
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Filter tabs bar */
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a1a;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+/* Filter pill button */
+.filter-btn {
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid #2a2a1a;
+  background: transparent;
+  color: #cccccc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.filter-btn:hover:not(.active) { border-color: #D4A017; color: #D4A017; }
+.filter-btn.active {
+  background: #D4A017;
+  border-color: #D4A017;
+  color: #000000;
+  font-weight: 700;
+}
+
+/* Primary CTA button */
+.btn-primary-cta {
+  background: #D4A017;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.btn-primary-cta:hover { background: #e8b41e; }
+
+/* Unread badge */
+.badge-unread {
+  background: rgba(212, 160, 23, 0.15);
+  color: #D4A017;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid rgba(212, 160, 23, 0.25);
+}
+
+/* Content card */
+.content-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a1a;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.2s ease;
+}
+.content-card:hover  { border-color: #333; }
+.content-card.unread { border-left: 3px solid #D4A017; }
+
+/* Light mode overrides */
+body.light .kpi-card   { background: #ffffff !important; border-color: #ebebeb !important; border-top-color: var(--accent) !important; box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; }
+body.light .kpi-value  { color: #1a1a1a !important; }
+body.light .kpi-label  { color: #888888 !important; }
+body.light .filter-tabs{ background: #ffffff !important; border-color: #ebebeb !important; }
+body.light .filter-btn { color: #444 !important; border-color: #e0e0e0 !important; }
+body.light .filter-btn.active { background: #f0a500 !important; border-color: #f0a500 !important; color: #fff !important; }
+body.light .content-card { background: #ffffff !important; border-color: #ebebeb !important; }
+
+/* ── Global kpi-pill token ─────────────────────────────────────────────────── */
+.kpi-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(145deg, #1a1800 0%, #0f0d00 100%);
+  border: 1px solid rgba(212, 160, 23, 0.28);
+  border-radius: 0.875rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55), 0 0 12px rgba(212,160,23,0.08);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  cursor: default;
+}
+.kpi-pill:hover {
+  border-color: rgba(212, 160, 23, 0.55);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.65), 0 0 24px rgba(212,160,23,0.20);
+}
+
+/* ── Global panel-card token ───────────────────────────────────────────────── */
+.panel-card {
+  background: linear-gradient(145deg, #1c1a10 0%, #131108 50%, #0d0b05 100%);
+  border: 1px solid rgba(212, 160, 23, 0.22);
+  border-top: 1px solid rgba(212, 160, 23, 0.45);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.65), inset 0 1px 0 rgba(212,160,23,0.10);
+}
+
+/* ── Light-mode overrides for global tokens ────────────────────────────────── */
+body.light .kpi-pill {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+body.light .kpi-pill:hover {
+  border-color: #dddddd !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+body.light .panel-card {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-top: 1px solid #ebebeb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL TABLE STYLES — GymAdmin Dark Mode
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Table wrapper ─────────────────────────────────────────── */
+.table-container,
+.table-wrapper {
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a2a1a;
+  width: 100%;
+}
+
+/* ── Base table reset ──────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+/* ── HEADER — column titles ────────────────────────────────── */
+thead {
+  background: #222216 !important;
+}
+
+thead tr {
+  border-bottom: 2px solid #2e2e1e !important;
+}
+
+thead th {
+  color: #cccccc !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  padding: 0.9rem 1.25rem !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+}
+
+/* ── BODY rows ─────────────────────────────────────────────── */
+tbody tr {
+  border-bottom: 1px solid #1e1e14 !important;
+  transition: background 0.15s ease;
+}
+
+tbody tr:last-child {
+  border-bottom: none !important;
+}
+
+tbody tr:hover {
+  background: #1e1e14 !important;
+}
+
+/* ALL td text forced visible */
+tbody td {
+  color: #e0e0e0 !important;
+  font-size: 0.875rem !important;
+  padding: 0.9rem 1.25rem !important;
+  vertical-align: middle !important;
+  background: transparent !important;
+}
+
+/* Force ALL child elements inside td to be visible */
+tbody td *,
+tbody td span,
+tbody td p,
+tbody td div,
+tbody td a,
+tbody td strong,
+tbody td small {
+  color: inherit !important;
+}
+
+/* ── Named cell helpers ─────────────────────────────────────── */
+.cell-name,
+.cell-title,
+.cell-primary,
+.member-name,
+.coach-name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+}
+
+.cell-id,
+.cell-email,
+.cell-phone,
+.cell-date,
+.cell-secondary,
+.member-id,
+.coach-id,
+small {
+  color: #999999 !important;
+  font-size: 0.78rem !important;
+}
+
+/* ── STATUS BADGES ─────────────────────────────────────────── */
+.badge,
+[class*="badge"],
+[class*="status"],
+[class*="statut"] {
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 20px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Active / Actif / Disponible */
+.badge-active, .status-active, .badge-success,
+[class*="actif"], [class*="disponible"] {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.25) !important;
+}
+
+/* Pending / En attente */
+.badge-warning, .badge-pending, [class*="attente"], [class*="pending"] {
+  background: rgba(212, 160, 23, 0.15) !important;
+  color: #D4A017 !important;
+  border: 1px solid rgba(212, 160, 23, 0.25) !important;
+}
+
+/* Failed / Échoué / Inactif */
+.badge-danger, .badge-failed,
+[class*="echoue"], [class*="inactif"], [class*="failed"] {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Resolved / Fermé / Completed */
+.badge-resolved, .badge-closed,
+[class*="resolu"], [class*="ferme"], [class*="completed"] {
+  background: rgba(99, 102, 241, 0.15) !important;
+  color: #818cf8 !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Specialty / Type tags */
+.badge-specialty, .badge-type, .badge-info {
+  background: rgba(212, 160, 23, 0.12) !important;
+  color: #D4A017 !important;
+  border: 1px solid rgba(212, 160, 23, 0.2) !important;
+  border-radius: 6px !important;
+}
+
+/* ── ACTION BUTTONS in tables ─────────────────────────────── */
+.action-btn,
+.btn-icon {
+  background: #252515 !important;
+  border: 1px solid #2e2e1e !important;
+  color: #aaaaaa !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  margin: 0 2px !important;
+}
+
+.action-btn:hover,
+.btn-icon:hover {
+  background: rgba(212, 160, 23, 0.2) !important;
+  color: #D4A017 !important;
+  border-color: #D4A017 !important;
+}
+
+.btn-delete:hover,
+.action-delete:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.empty-state,
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #666666 !important;
+  font-size: 0.9rem;
+}
+
+/* ── AMOUNT / PRICE text ──────────────────────────────────── */
+.amount,
+.price {
+  color: #D4A017 !important;
+  font-weight: 600 !important;
+}
+
+/* ── RESPONSIVE — tables on small screens ─────────────────── */
+@media (max-width: 768px) {
+  thead { display: none; }
+
+  tbody tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    border: 1px solid #2a2a1a !important;
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0.5rem !important;
+    border: none !important;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    color: #888888 !important;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+}
+
+/* ── Light mode table overrides ────────────────────────────── */
+body.light thead          { background: #f8f8f5 !important; }
+body.light thead th       { color: #555555 !important; }
+body.light thead tr       { border-bottom-color: #e8e8e8 !important; }
+body.light tbody tr       { border-bottom-color: #eeeeee !important; }
+body.light tbody tr:hover { background: #f5f5f0 !important; }
+body.light tbody td       { color: #333333 !important; }

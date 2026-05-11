@@ -2,6 +2,7 @@ package com.gymapp.controller;
 
 import com.gymapp.dto.EventDTO;
 import com.gymapp.dto.EventRegistrationDTO;
+import com.gymapp.security.CustomUserDetails;
 import com.gymapp.security.JwtService;
 import com.gymapp.service.EventService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,9 +29,11 @@ public class EventController {
         return jwtService.extractUsername(token);
     }
 
-    @PostMapping("/creator/{creatorId}")
+    @PostMapping
     public ResponseEntity<EventDTO> createEvent(
-            @PathVariable Long creatorId, @Valid @RequestBody EventDTO dto) {
+            @Valid @RequestBody EventDTO dto,
+            Authentication authentication) {
+        Long creatorId = ((CustomUserDetails) authentication.getPrincipal()).getUser().getId();
         return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEvent(dto, creatorId));
     }
 

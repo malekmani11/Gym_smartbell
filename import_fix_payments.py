@@ -1,11 +1,11 @@
-import pymysql
+﻿import pymysql
 import random
 from datetime import datetime, timedelta
 
 random.seed(42)
 
 DB_CONFIG = {
-    'host': 'localhost', 'port': 3306,
+    'host': 'localhost', 'port': 3308,
     'user': 'root', 'password': '',
     'database': 'gym_smartbell', 'charset': 'utf8mb4',
 }
@@ -20,12 +20,12 @@ PLANS = {
 PLAN_NAMES   = list(PLANS.keys())
 PLAN_WEIGHTS = [PLANS[p]['weight'] for p in PLAN_NAMES]
 
-print("💰 Import Payments & Subscriptions")
+print("ðŸ’° Import Payments & Subscriptions")
 print("=" * 45)
 
 conn   = pymysql.connect(**DB_CONFIG)
 cursor = conn.cursor()
-print("✅ Connexion OK")
+print("âœ… Connexion OK")
 
 def get_columns(table):
     cursor.execute(f"DESCRIBE {table}")
@@ -35,23 +35,24 @@ def table_exists(table):
     cursor.execute(f"SHOW TABLES LIKE '{table}'")
     return cursor.fetchone() is not None
 
-# Récupère les user_ids des membres
+# RÃ©cupÃ¨re les user_ids des membres
 cursor.execute("SELECT user_id FROM members LIMIT 800")
 mids = [r[0] for r in cursor.fetchall()]
-print(f"   Membres trouvés : {len(mids)}")
+print(f"   Membres trouvÃ©s : {len(mids)}")
 
-# ═══════════════════════════════════════════════════════
-# SUBSCRIPTIONS D'ABORD (car payments référence subscription_id)
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import subscriptions...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# SUBSCRIPTIONS D'ABORD (car payments rÃ©fÃ©rence subscription_id)
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+sub_ids = {}  # toujours defini avant if/else
+print("\nðŸ“¥ Import subscriptions...")
 cursor.execute("SELECT COUNT(*) FROM subscriptions")
 if cursor.fetchone()[0] >= 100:
-    print("   ℹ️  Déjà présents — skip")
+    print("   â„¹ï¸  DÃ©jÃ  prÃ©sents â€” skip")
 else:
     sub_cols = get_columns('subscriptions')
     print(f"   Colonnes : {sub_cols}")
     
-    # Trouver plan_id valide si nécessaire
+    # Trouver plan_id valide si nÃ©cessaire
     plan_id = None
     if 'plan_id' in sub_cols:
         cursor.execute("SELECT id FROM subscription_plans LIMIT 1") if table_exists('subscription_plans') else None
@@ -59,7 +60,7 @@ else:
         plan_id = r[0] if r else 1
 
     n = 0
-    sub_ids = {}  # user_id → sub_id
+    sub_ids = {}  # user_id â†’ sub_id
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
     
     for mid in mids:
@@ -92,24 +93,24 @@ else:
                 sub_ids[mid] = sub_id
                 n += 1
             except Exception as e:
-                if n < 3: print(f"   ⚠️  {e}")
+                if n < 3: print(f"   âš ï¸  {e}")
 
     conn.commit()
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-    print(f"   ✅ {n} abonnements importés")
+    print(f"   âœ… {n} abonnements importÃ©s")
 
-# Recharge les sub_ids si déjà existants
+# Recharge les sub_ids si dÃ©jÃ  existants
 if not sub_ids:
     cursor.execute("SELECT user_id, id FROM subscriptions LIMIT 800")
     sub_ids = {r[0]: r[1] for r in cursor.fetchall()}
 
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PAYMENTS
-# ═══════════════════════════════════════════════════════
-print("\n📥 Import payments...")
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+print("\nðŸ“¥ Import payments...")
 cursor.execute("SELECT COUNT(*) FROM payments")
 if cursor.fetchone()[0] >= 100:
-    print("   ℹ️  Déjà présents — skip")
+    print("   â„¹ï¸  DÃ©jÃ  prÃ©sents â€” skip")
 else:
     pay_cols = get_columns('payments')
     print(f"   Colonnes : {pay_cols}")
@@ -158,25 +159,25 @@ else:
                     )
                     n += 1
                 except Exception as e:
-                    if n < 3: print(f"   ⚠️  {e}")
+                    if n < 3: print(f"   âš ï¸  {e}")
 
     conn.commit()
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
-    print(f"   ✅ {n} paiements importés")
+    print(f"   âœ… {n} paiements importÃ©s")
 
-# ═══════════════════════════════════════════════════════
-# RÉSUMÉ
-# ═══════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# RÃ‰SUMÃ‰
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 print("\n" + "="*45)
-print("📊 RÉSUMÉ gym_smartbell")
+print("ðŸ“Š RÃ‰SUMÃ‰ gym_smartbell")
 print("="*45)
 for t in ['users','members','coaches','payments','subscriptions','complaints','courses']:
     cursor.execute(f"SHOW TABLES LIKE '{t}'")
     if cursor.fetchone():
         cursor.execute(f"SELECT COUNT(*) FROM {t}")
-        print(f"  ✅ {t:<20} → {cursor.fetchone()[0]:>6} lignes")
+        print(f"  âœ… {t:<20} â†’ {cursor.fetchone()[0]:>6} lignes")
 print("="*45)
-print("\n✅ Terminé ! 🚀")
+print("\nâœ… TerminÃ© ! ðŸš€")
 
 cursor.close()
 conn.close()

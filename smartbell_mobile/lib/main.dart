@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,14 +16,36 @@ import 'core/network/app_router.dart';
 import 'core/network/connectivity_service.dart';
 import 'core/network/jwt_interceptor.dart';
 import 'core/storage/hive_service.dart';
+import 'core/services/device_token_service.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/adherent/training/providers/training_provider.dart';
+
+// Gérer les notifications reçues quand l'app est en arrière-plan/fermée
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
   await initializeDateFormatting('fr_TN', null);
   await HiveService.initHive();
+
+  // Initialiser Firebase (mobile uniquement — pas Windows ni Web)
+  final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  if (isMobile) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      await FirebaseMessaging.instance.requestPermission();
+    } catch (_) {
+      // Firebase non configuré — l'app continue sans FCM
+    }
+  }
+
   DioClient.instance.init();
   ApiClient().init();
   runApp(
@@ -53,7 +80,12 @@ class _SmartBellAppState extends State<SmartBellApp> {
     final bool showOnboarding = !(prefs.getBool('onboarding_done') ?? false);
     
     await _auth.tryAutoLogin();
-    
+
+    // Enregistrer le token FCM si l'user est connecté
+    if (_auth.isAuth) {
+      await DeviceTokenService.registerToken();
+    }
+
     if (mounted) {
       _router = createAppRouter(_auth, showOnboarding);
       setState(() {

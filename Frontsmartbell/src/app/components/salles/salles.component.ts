@@ -1,21 +1,8 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { SalleApiService, Salle, SalleStatus } from '../../services/salle-api.service';
-import { environment } from '../../../environments/environment';
-
-interface SalleOccupancy {
-  salleId: number;
-  salleName: string;
-  capacity: number;
-  currentOccupancy: number;
-  occupancyRate: number | null;
-  hasCourses: boolean;
-  totalCoursesToday: number;
-  status: string;
-}
 
 const EMPTY_SALLE = (): Salle => ({
   name: '', capacity: 20, currentOccupancy: 0, status: 'DISPONIBLE', location: '', description: '',
@@ -31,10 +18,6 @@ const EMPTY_SALLE = (): Salle => ({
 export class SallesComponent implements OnInit {
   private salleApi = inject(SalleApiService);
   private toast    = inject(ToastService);
-  private http     = inject(HttpClient);
-  private readonly BASE = `${environment.apiUrl}/salles`;
-
-  occupancies = new Map<number, SalleOccupancy>();
 
   salles        = signal<Salle[]>([]);
   statusFilter  = signal<SalleStatus | ''>('');
@@ -56,32 +39,13 @@ export class SallesComponent implements OnInit {
   disponibleCount  = computed(() => this.salles().filter(s => s.status === 'DISPONIBLE').length);
   maintenanceCount = computed(() => this.salles().filter(s => s.status === 'MAINTENANCE').length);
 
-  // Taux global calculé uniquement sur les salles avec cours
   globalFillRate = computed(() => {
-    const withCourses = this.salles().filter(s => s.hasCourses && s.occupancyRate != null);
-    if (!withCourses.length) return 0;
-    const sum = withCourses.reduce((acc, s) => acc + (s.occupancyRate ?? 0), 0);
-    return Math.round(sum / withCourses.length);
+    const cap = this.totalCapacity();
+    return cap ? Math.round((this.totalOccupied() / cap) * 100) : 0;
   });
 
   ngOnInit() {
     this.load();
-    this.loadOccupancies();
-  }
-
-  loadOccupancies() {
-    this.http.get<SalleOccupancy[]>(`${this.BASE}/occupancy`).subscribe({
-      next: (data) => {
-        const map = new Map<number, SalleOccupancy>();
-        data.forEach(o => map.set(o.salleId, o));
-        this.occupancies = map;
-      },
-      error: () => {} // silencieux : les données de base suffisent
-    });
-  }
-
-  getOccupancy(salleId?: number): SalleOccupancy | null {
-    return salleId != null ? (this.occupancies.get(salleId) ?? null) : null;
   }
 
   load() {
@@ -169,14 +133,14 @@ export class SallesComponent implements OnInit {
   }
 
   fillColor(salle: Salle): string {
-    const pct = salle.occupancyRate ?? (salle.capacity ? (salle.currentOccupancy / salle.capacity) * 100 : 0);
+    const pct = salle.capacity ? (salle.currentOccupancy / salle.capacity) * 100 : 0;
     if (pct >= 85) return 'bg-red-500';
     if (pct >= 60) return 'bg-[#D4A017]';
     return 'bg-green-500';
   }
 
   fillPct(salle: Salle): number {
-    return Math.round(salle.occupancyRate ?? (salle.capacity ? Math.min(100, (salle.currentOccupancy / salle.capacity) * 100) : 0));
+    return salle.capacity ? Math.round(Math.min(100, (salle.currentOccupancy / salle.capacity) * 100)) : 0;
   }
 
   updateForm(patch: Partial<Salle>) {

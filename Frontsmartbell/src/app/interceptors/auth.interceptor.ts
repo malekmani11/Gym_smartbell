@@ -1,13 +1,16 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
-import { Router } from '@angular/router';
 import { ToastService } from '../services/toast.service';
+import { AuthService } from '../services/auth.service';
+
+// Drapeau global pour éviter plusieurs redirections/toasts sur 401 simultanés
+let _redirecting401 = false;
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const router = inject(Router);
-  const toast  = inject(ToastService);
-  const token  = localStorage.getItem('gym_token');
+  const injector = inject(Injector);
+  const toast    = inject(ToastService);
+  const token    = localStorage.getItem('gym_token');
 
   const authReq = token
     ? req.clone({
@@ -19,10 +22,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       switch (error.status) {
         case 401:
-          localStorage.removeItem('gym_token');
-          localStorage.removeItem('gym_user');
-          router.navigate(['/login']);
-          toast.error('Session expirée', 'Veuillez vous reconnecter.');
+          if (!_redirecting401) {
+            _redirecting401 = true;
+            toast.error('Session expirée', 'Veuillez vous reconnecter.');
+            // Injection lazy pour éviter la dépendance circulaire HttpClient ↔ Intercepteur
+            const auth = injector.get(AuthService, null);
+            if (auth) {
+              auth.clearLocalSession();
+            }
+            setTimeout(() => { _redirecting401 = false; }, 3000);
+          }
           break;
         case 403:
           // Only show toast for write operations — silent fail for read-only data loading

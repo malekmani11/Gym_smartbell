@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "359901746452",
+    "project_id": "smartbell-gym",
+    "storage_bucket": "smartbell-gym.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359901746452:android:f20ea9067a0ac44659de01",
+        "android_client_info": {
+          "package_name": "com.gymapp.smartbell_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASy13I1pJRMouC6B3SOxX25bqrjuHSTzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

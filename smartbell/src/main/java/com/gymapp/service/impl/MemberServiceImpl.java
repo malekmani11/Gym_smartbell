@@ -54,11 +54,14 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalStateException("Email already exists: " + dto.getEmail());
         }
 
+        String rawPassword = (dto.getPassword() != null && !dto.getPassword().isBlank())
+                ? dto.getPassword() : "Gym@123456";
+
         Member member = Member.builder()
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .email(dto.getEmail())
-                .password(passwordEncoder.encode("Gym@123456"))
+                .password(passwordEncoder.encode(rawPassword))
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
                 .dateOfBirth(dto.getDateOfBirth())
@@ -100,6 +103,12 @@ public class MemberServiceImpl implements MemberService {
     @Transactional(readOnly = true)
     public Page<MemberDTO> getMembersByStatus(MembershipStatus status, Pageable pageable) {
         return memberRepository.findByMembershipStatus(status, pageable).map(mapper::toMemberDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MemberDTO> searchMembers(String query, Pageable pageable) {
+        return memberRepository.searchMembers(query, pageable).map(mapper::toMemberDTO);
     }
 
     @Override

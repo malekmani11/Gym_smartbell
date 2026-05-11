@@ -278,4 +278,19 @@ export class ExportService {
     XLSX.utils.book_append_sheet(wb, ws, 'Membres SmartBell');
     XLSX.writeFile(wb, this.filename('Membres', 'xlsx'));
   }
+
+  exportPaymentsCSV(payments: any[]): void {
+    const header = 'ID,Membre,Montant,Date,Méthode,Statut,Référence';
+    const lines  = payments.map(p =>
+      `${p.id},"${p.memberName ?? ''}",${p.amount},${this.formatDate(p.paymentDate)},${p.paymentMethod},${p.status},${p.transactionRef ?? ''}`
+    );
+    const csv  = [header, ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = this.filename('Paiements', 'csv');
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }

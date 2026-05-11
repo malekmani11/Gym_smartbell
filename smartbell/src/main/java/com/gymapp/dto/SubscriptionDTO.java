@@ -25,8 +25,6 @@ public class SubscriptionDTO {
     private Long planId;
 
     private String planName;
-    private Long couponId;
-    private String couponCode;
     private LocalDate startDate;
     private LocalDate endDate;
     private SubscriptionStatus status;

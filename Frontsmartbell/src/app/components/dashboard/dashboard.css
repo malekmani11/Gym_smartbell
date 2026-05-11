@@ -71,101 +71,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   KPI CARD
+   KPI CARD — styles from global tokens (styles.css)
    ═══════════════════════════════════════════════════════════════ */
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-top: 2px solid var(--accent);
-  border-radius: var(--radius-card);
-  padding: 1.5rem;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-card);
-  cursor: default;
-  transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.25s ease, background 0.35s ease;
-}
-
-/* Thick gold shimmer top bar */
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(245,215,122,0.9) 30%, #F5D77A 50%, rgba(245,215,122,0.9) 70%, transparent);
-  pointer-events: none;
-  border-radius: 0 0 4px 4px;
-}
-
-/* Bottom-right ambient glow */
-.kpi-card::after {
-  content: '';
-  position: absolute;
-  bottom: -20px; right: -20px;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(212, 160, 23, 0.18) 0%, transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-}
-
-.kpi-card:hover {
-  border-color: rgba(212, 160, 23, 0.65);
-  border-top-color: rgba(245, 215, 122, 0.9);
-  transform: translateY(-4px);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.75),
-    0 0 50px rgba(212, 160, 23, 0.30),
-    0 0 15px rgba(212, 160, 23, 0.20),
-    inset 0 1px 0 rgba(212, 160, 23, 0.3);
-}
-
-/* ── KPI Accent Line — scaleX animation (#3) ── */
-.kpi-accent-line {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.8s ease;
-  z-index: 5;
-}
-.kpi-accent-line.show { transform: scaleX(1); }
-
-/* Couleur par nth-child */
-.kpi-card:nth-child(1) .kpi-accent-line { background: linear-gradient(90deg, #D4A017, #F5D77A); }
-.kpi-card:nth-child(2) .kpi-accent-line { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-.kpi-card:nth-child(3) .kpi-accent-line { background: linear-gradient(90deg, #10b981, #34d399); }
-.kpi-card:nth-child(4) .kpi-accent-line { background: linear-gradient(90deg, #f97316, #fb923c); }
-.kpi-card:nth-child(5) .kpi-accent-line { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
-.kpi-card:nth-child(6) .kpi-accent-line { background: linear-gradient(90deg, #ef4444, #f87171); }
-
-/* ── Per-card colored left accent ── */
-.kpi-card:nth-child(1) {
-  border-left: 3px solid #D4A017;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.70), 0 0 55px rgba(212,160,23,0.14), 0 0 12px rgba(212,160,23,0.10), inset 0 1px 0 rgba(212,160,23,0.15);
-}
-.kpi-card:nth-child(2) {
-  border-left: 3px solid #3b82f6;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.70), 0 0 55px rgba(59,130,246,0.13), 0 0 12px rgba(59,130,246,0.08), inset 0 1px 0 rgba(59,130,246,0.10);
-}
-.kpi-card:nth-child(3) {
-  border-left: 3px solid #10b981;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.70), 0 0 55px rgba(16,185,129,0.13), 0 0 12px rgba(16,185,129,0.08), inset 0 1px 0 rgba(16,185,129,0.10);
-}
-.kpi-card:nth-child(4) {
-  border-left: 3px solid #f97316;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.70), 0 0 55px rgba(249,115,22,0.13), 0 0 12px rgba(249,115,22,0.08), inset 0 1px 0 rgba(249,115,22,0.10);
-}
-.kpi-card:nth-child(1)::after { background: radial-gradient(circle, rgba(212,160,23,0.25) 0%, transparent 70%); }
-.kpi-card:nth-child(2)::after { background: radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%); }
-.kpi-card:nth-child(3)::after { background: radial-gradient(circle, rgba(16,185,129,0.25) 0%, transparent 70%); }
-.kpi-card:nth-child(4)::after { background: radial-gradient(circle, rgba(249,115,22,0.25) 0%, transparent 70%); }
-
-.kpi-card:nth-child(1):hover { box-shadow: 0 22px 65px rgba(0,0,0,0.80), 0 0 70px rgba(212,160,23,0.32), 0 0 20px rgba(212,160,23,0.20), inset 0 1px 0 rgba(212,160,23,0.30); }
-.kpi-card:nth-child(2):hover { box-shadow: 0 22px 65px rgba(0,0,0,0.80), 0 0 70px rgba(59,130,246,0.28),  0 0 20px rgba(59,130,246,0.18),  inset 0 1px 0 rgba(59,130,246,0.20);  }
-.kpi-card:nth-child(3):hover { box-shadow: 0 22px 65px rgba(0,0,0,0.80), 0 0 70px rgba(16,185,129,0.28),  0 0 20px rgba(16,185,129,0.18),  inset 0 1px 0 rgba(16,185,129,0.20);  }
-.kpi-card:nth-child(4):hover { box-shadow: 0 22px 65px rgba(0,0,0,0.80), 0 0 70px rgba(249,115,22,0.28),  0 0 20px rgba(249,115,22,0.18),  inset 0 1px 0 rgba(249,115,22,0.20);  }
 
 /* ═══════════════════════════════════════════════════════════════
    SECTION ACCENT (left border stripe)
@@ -193,17 +100,6 @@
 .metric-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em; color: #6B7280; margin-bottom: 0.4rem; }
 .metric-value { font-size: 1.35rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.3rem; }
 .metric-sub   { font-size: 0.6875rem; color: #4B5563; font-weight: 500; }
-
-/* ═══════════════════════════════════════════════════════════════
-   KPI VALUE TEXT
-   ═══════════════════════════════════════════════════════════════ */
-.kpi-value-text {
-  font-size: 3rem !important;
-  line-height: 1 !important;
-  color: #F5D77A;
-  text-shadow: 0 0 24px rgba(212, 160, 23, 0.45);
-  font-weight: 800 !important;
-}
 
 /* ═══════════════════════════════════════════════════════════════
    ANIMATIONS KEYFRAMES
@@ -440,26 +336,7 @@ select option { background-color: #161616; color: #fff; }
    LIGHT MODE
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── KPI Cards ── */
-body.light .kpi-card { background: #ffffff !important; border: 1px solid #ebebeb !important; border-top: 3px solid #f0a500 !important; border-left: 1px solid #ebebeb !important; border-radius: 12px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important; }
-body.light .kpi-card::before,
-body.light .kpi-card::after { display: none !important; }
-body.light .kpi-card:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important; }
-body.light .kpi-card:nth-child(1) { border-top-color: #f0a500 !important; }
-body.light .kpi-card:nth-child(2) { border-top-color: #2980b9 !important; }
-body.light .kpi-card:nth-child(3) { border-top-color: #27ae60 !important; }
-body.light .kpi-card:nth-child(4) { border-top-color: #9b59b6 !important; }
-body.light .kpi-card:nth-child(1):hover,
-body.light .kpi-card:nth-child(2):hover,
-body.light .kpi-card:nth-child(3):hover,
-body.light .kpi-card:nth-child(4):hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important; }
-
-/* Accent line — teinte plus sombre en light mode */
-body.light .kpi-accent-line { opacity: 0.7; }
-
-/* KPI value */
-body.light .kpi-value-text { color: #1a1a1a !important; text-shadow: none !important; font-size: 1.75rem !important; }
-body.light .kpi-card > div.absolute { opacity: 0 !important; pointer-events: none; }
+/* ── KPI Cards — light mode handled by global styles.css ── */
 
 /* ── Panel Cards ── */
 body.light .panel-card { background: #ffffff !important; border: 1px solid #ebebeb !important; border-top: 1px solid #ebebeb !important; border-radius: 12px !important; box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; }

@@ -5,8 +5,10 @@ import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { MemberApiService } from '../../services/member-api.service';
 import { SubscriptionApiService } from '../../services/subscription-api.service';
+import { PaymentApiService } from '../../services/payment-api.service';
 import { environment } from '../../../environments/environment';
 import { ExportButtonComponent } from '../export-button/export-button.component';
+import { ExportService } from '../../services/export.service';
 import { MemberDTO, SubscriptionDTO, SubscriptionPlanDTO } from '../../models/api.models';
 
 type PayStatus  = 'COMPLETED' | 'PENDING' | 'FAILED' | 'REFUNDED';
@@ -57,10 +59,12 @@ const EMPTY_STATS: PaymentStats = {
   styleUrl: './paiement.component.css',
 })
 export class PaiementComponent implements OnInit {
-  private http      = inject(HttpClient);
-  private toast     = inject(ToastService);
-  private memberApi = inject(MemberApiService);
-  private subApi    = inject(SubscriptionApiService);
+  private http       = inject(HttpClient);
+  private toast      = inject(ToastService);
+  private memberApi  = inject(MemberApiService);
+  private subApi     = inject(SubscriptionApiService);
+  private paymentApi = inject(PaymentApiService);
+  private exportSvc  = inject(ExportService);
   private BASE      = `${environment.apiUrl}/payments`;
 
   payments     = signal<Payment[]>([]);
@@ -144,8 +148,15 @@ export class PaiementComponent implements OnInit {
       .sort((a, b) => new Date(b.lastPaymentDate).getTime() - new Date(a.lastPaymentDate).getTime());
   });
 
-  selectedGroup  = signal<MemberPaymentGroup | null>(null);
+  selectedGroup    = signal<MemberPaymentGroup | null>(null);
   showHistoryModal = signal(false);
+
+  // Edit payment
+  showEditModal  = signal(false);
+  editingPayment = signal<Payment | null>(null);
+  editStatus     = signal<PayStatus>('COMPLETED');
+  editMethod     = signal<PayMethod>('CASH');
+  isSavingEdit   = signal(false);
 
   revenueGrowth = computed(() => {
     const curr = this.stats().revenueThisMonth;
@@ -311,18 +322,74 @@ export class PaiementComponent implements OnInit {
     this.selectedGroup.set(null);
   }
 
+  openEditPayment(payment: Payment) {
+    this.editingPayment.set(payment);
+    this.editStatus.set(payment.status);
+    this.editMethod.set(payment.paymentMethod);
+    this.showEditModal.set(true);
+  }
+
+  closeEditPayment() {
+    this.showEditModal.set(false);
+    this.editingPayment.set(null);
+  }
+
+  saveEditPayment() {
+    const p = this.editingPayment();
+    if (!p) return;
+    this.isSavingEdit.set(true);
+    this.paymentApi.update(Number(p.id), {
+      id:             p.id,
+      subscriptionId: p.subscriptionId,
+      amount:         p.amount as any,
+      status:         this.editStatus() as any,
+      paymentMethod:  this.editMethod() as any,
+    }).subscribe({
+      next: (updated) => {
+        this.payments.update(list =>
+          list.map(x => x.id === updated.id
+            ? { ...x, status: updated.status as PayStatus, paymentMethod: updated.paymentMethod as PayMethod }
+            : x)
+        );
+        this.toast.success('Paiement modifié', `Statut → ${this.editStatus()}`);
+        this.isSavingEdit.set(false);
+        this.closeEditPayment();
+      },
+      error: (err) => {
+        this.toast.error('Erreur', err.error?.message || 'Impossible de modifier le paiement.');
+        this.isSavingEdit.set(false);
+      },
+    });
+  }
+
+  deletePayment(payment: Payment) {
+    if (!confirm(`Supprimer ce paiement de ${payment.amount} DT ?`)) return;
+    this.http.delete(`${this.BASE}/${payment.id}`).subscribe({
+      next: () => {
+        this.payments.update(list => list.filter(x => x.id !== payment.id));
+        // Also remove from selected group if history modal is open
+        const grp = this.selectedGroup();
+        if (grp) {
+          const updated = { ...grp, payments: grp.payments.filter(x => x.id !== payment.id) };
+          updated.paymentCount = updated.payments.length;
+          updated.totalAmount  = updated.payments.reduce((s, x) => s + x.amount, 0);
+          if (updated.payments.length === 0) {
+            this.closeHistory();
+          } else {
+            this.selectedGroup.set(updated);
+          }
+        }
+        this.toast.success('Supprimé', 'Paiement supprimé avec succès.');
+      },
+      error: (err) => {
+        this.toast.error('Erreur', err.error?.message || 'Impossible de supprimer le paiement.');
+      },
+    });
+  }
+
   exportCsv() {
     const rows = this.filtered();
-    const header = 'ID,Membre,Montant,Date,Méthode,Statut,Référence';
-    const lines = rows.map(p =>
-      `${p.id},"${p.memberName ?? ''}",${p.amount},${new Date(p.paymentDate).toLocaleDateString('fr-FR')},${p.paymentMethod},${p.status},${p.transactionRef ?? ''}`
-    );
-    const csv  = [header, ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `paiements_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+    this.exportSvc.exportPaymentsCSV(rows);
     this.toast.success('Export CSV', `${rows.length} paiement(s) exporté(s).`);
   }
 

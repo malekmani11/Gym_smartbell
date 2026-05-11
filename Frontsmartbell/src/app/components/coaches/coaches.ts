@@ -3,18 +3,41 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../services/toast.service';
 import { CoachApiService } from '../../services/coach-api.service';
+import { CoachRatingService } from '../../services/coach-rating.service';
+import { AuthService } from '../../services/auth.service';
+
+type Specialization =
+  | 'BODYBUILDING' | 'YOGA' | 'PILATES' | 'CROSSFIT'
+  | 'HIIT' | 'CARDIO' | 'NUTRITION' | 'STRETCHING' | 'FUNCTIONAL';
+
+const SPECIALIZATION_LABELS: Record<Specialization, string> = {
+  BODYBUILDING: 'Musculation',
+  YOGA:         'Yoga',
+  PILATES:      'Pilates',
+  CROSSFIT:     'CrossFit',
+  HIIT:         'HIIT',
+  CARDIO:       'Cardio',
+  NUTRITION:    'Nutrition',
+  STRETCHING:   'Stretching',
+  FUNCTIONAL:   'Entraînement fonctionnel',
+};
+
+const SPECIALIZATIONS = Object.keys(SPECIALIZATION_LABELS) as Specialization[];
 
 interface Coach {
   id: string;
+  rawId: number;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   avatar: string;
   specialty: string;
+  specialization?: Specialization;
   status: 'active' | 'inactive' | 'away';
   hireDate: Date;
   profileImageUrl?: string;
+  ratingAvg?: number;
 }
 
 @Component({
@@ -25,8 +48,10 @@ interface Coach {
   styleUrl: './coaches.css'
 })
 export class Coaches implements OnInit {
-  private toast    = inject(ToastService);
-  private coachApi = inject(CoachApiService);
+  private toast       = inject(ToastService);
+  private coachApi    = inject(CoachApiService);
+  private ratingApi   = inject(CoachRatingService);
+  private auth        = inject(AuthService);
 
   ngOnInit() {
     this.loadCoaches();
@@ -40,15 +65,18 @@ export class Coaches implements OnInit {
         const list = response.content || [];
         const mapped = list.map((c: any) => ({
           id:              `C-${String(c.id).padStart(3, '0')}`,
+          rawId:           c.id,
           firstName:       c.firstName || '',
           lastName:        c.lastName  || '',
           email:           c.email     || '',
           phone:           c.phone     || '—',
           avatar:          c.profileImageUrl || `https://i.pravatar.cc/150?u=coach${c.id}`,
-          specialty:       c.specialization  || 'Non défini',
+          specialization:  c.specialization  as Specialization | undefined,
+          specialty:       c.specialization ? (SPECIALIZATION_LABELS[c.specialization as Specialization] ?? c.specialization) : 'Non défini',
           status:          this.mapAvailabilityStatus(c.availabilityStatus),
           hireDate:        c.hireDate ? new Date(c.hireDate) : new Date(),
           profileImageUrl: c.profileImageUrl,
+          ratingAvg:       c.ratingAvg ?? 0,
         }));
         this.coachesList.set(mapped);
         this.loading.set(false);
@@ -63,10 +91,10 @@ export class Coaches implements OnInit {
 
   private mapAvailabilityStatus(status?: string): Coach['status'] {
     switch (status) {
-      case 'AVAILABLE': return 'active';
+      case 'AVAILABLE':   return 'active';
       case 'UNAVAILABLE': return 'inactive';
-      case 'ON_LEAVE': return 'away';
-      default: return 'active';
+      case 'ON_LEAVE':    return 'away';
+      default:            return 'active';
     }
   }
 
@@ -77,17 +105,125 @@ export class Coaches implements OnInit {
   isProcessing    = signal(false);
   selectedCoach   = signal<Coach | null>(null);
 
-  viewCoach(coach: Coach)   { this.selectedCoach.set(coach); }
-  closeCoachProfile()       { this.selectedCoach.set(null); }
+  // ── Rating state ──────────────────────────────────────
+  ratingAvg            = signal<number>(0);
+  ratingCount          = signal<number>(0);
+  selectedStars        = signal<number>(0);
+  hoverStars           = signal<number>(0);
+  ratingComment        = signal<string>('');
+  hasRated             = signal<boolean>(false);
+  isSubmittingRating   = signal<boolean>(false);
+  ratingLoading        = signal<boolean>(false);
 
-  /** Années d'expérience depuis la date d'embauche */
-  yearsExp(coach: Coach): number {
-    return Math.max(1, new Date().getFullYear() - coach.hireDate.getFullYear());
+  /** Étoiles affichées = hover si actif, sinon sélection */
+  displayStars = computed(() => this.hoverStars() || this.selectedStars());
+
+  viewCoach(coach: Coach) {
+    this.selectedCoach.set(coach);
+    this.loadRatingData(coach.rawId);
+  }
+
+  closeCoachProfile() {
+    this.selectedCoach.set(null);
+    this.resetRatingState();
+  }
+
+  private resetRatingState() {
+    this.ratingAvg.set(0);
+    this.ratingCount.set(0);
+    this.selectedStars.set(0);
+    this.hoverStars.set(0);
+    this.ratingComment.set('');
+    this.hasRated.set(false);
+    this.isSubmittingRating.set(false);
+  }
+
+  loadRatingData(coachId: number) {
+    this.ratingLoading.set(true);
+    const currentUserId = this.auth.currentUserId();
+
+    // Charger la moyenne
+    this.ratingApi.getAverageRating(coachId).subscribe({
+      next: (avg) => this.ratingAvg.set(avg ?? 0),
+      error: () => {}
+    });
+
+    // Charger la liste pour compter et détecter si l'utilisateur a déjà noté
+    this.ratingApi.getCoachRatings(coachId).subscribe({
+      next: (ratings) => {
+        this.ratingCount.set(ratings.length);
+        if (currentUserId) {
+          const userRating = ratings.find(r => r.memberId === currentUserId);
+          if (userRating) {
+            this.hasRated.set(true);
+            this.selectedStars.set(userRating.rating);
+            this.ratingComment.set(userRating.comment ?? '');
+          }
+        }
+        this.ratingLoading.set(false);
+      },
+      error: () => { this.ratingLoading.set(false); }
+    });
+  }
+
+  setHoverStars(n: number)  { if (!this.hasRated()) this.hoverStars.set(n); }
+  clearHover()              { this.hoverStars.set(0); }
+  selectStar(n: number)     { if (!this.hasRated()) this.selectedStars.set(n); }
+
+  starLabel(n: number): string {
+    const labels = ['', 'Mauvais', 'Passable', 'Correct', 'Bien', 'Excellent'];
+    return labels[n] ?? '';
+  }
+
+  submitRating() {
+    const stars = this.selectedStars();
+    if (stars < 1 || stars > 5) {
+      this.toast.error('Note requise', 'Veuillez sélectionner une note entre 1 et 5 étoiles.');
+      return;
+    }
+    const coach = this.selectedCoach();
+    if (!coach) return;
+
+    this.isSubmittingRating.set(true);
+    this.ratingApi.rateCoach(coach.rawId, {
+      rating:  stars,
+      comment: this.ratingComment().trim() || undefined,
+    }).subscribe({
+      next: () => {
+        this.hasRated.set(true);
+        this.isSubmittingRating.set(false);
+        // Recharger la vraie moyenne depuis le backend
+        this.ratingApi.getAverageRating(coach.rawId).subscribe({
+          next: (avg) => {
+            this.ratingAvg.set(avg ?? 0);
+            this.coachesList.update(list =>
+              list.map(c => c.rawId === coach.rawId ? { ...c, ratingAvg: avg } : c)
+            );
+          },
+          error: () => {}
+        });
+        this.ratingCount.update(n => n + 1);
+        this.toast.success('Note soumise', 'Merci pour votre évaluation !');
+      },
+      error: (err) => {
+        this.isSubmittingRating.set(false);
+        const msg = err.error?.message || 'Impossible de soumettre la note.';
+        if (msg.includes('déjà')) {
+          this.hasRated.set(true);
+        }
+        this.toast.error('Erreur', msg);
+      }
+    });
   }
 
   /** 5 étoiles SVG : retourne tableau [true/false] selon la note */
   starFill(rating: number): boolean[] {
     return Array.from({ length: 5 }, (_, i) => i < Math.round(rating));
+  }
+
+  /** Années d'expérience depuis la date d'embauche */
+  yearsExp(coach: Coach): number {
+    return Math.max(1, new Date().getFullYear() - coach.hireDate.getFullYear());
   }
 
   editingCoach = signal<Coach | null>(null);
@@ -113,8 +249,7 @@ export class Coaches implements OnInit {
     );
     if (!confirmed) return;
 
-    const numericId = parseInt(id.replace('C-', ''), 10);
-    this.coachApi.delete(numericId).subscribe({
+    this.coachApi.delete(coach.rawId).subscribe({
       next: () => {
         this.coachesList.update(list => list.filter(c => c.id !== id));
         this.toast.success('Coach supprimé', `${coach.firstName} ${coach.lastName} a été retiré de l'équipe.`);
@@ -128,25 +263,24 @@ export class Coaches implements OnInit {
   saveCoach() {
     const edited = this.editingCoach();
     if (!edited) return;
-    const numericId = parseInt(edited.id.replace('C-', ''), 10);
-    
+
     const statusMap: Record<string, string> = {
       'active':   'AVAILABLE',
       'inactive': 'UNAVAILABLE',
       'away':     'ON_LEAVE',
     };
 
-    this.coachApi.update(numericId, {
-      firstName:       edited.firstName,
-      lastName:        edited.lastName,
-      email:           edited.email,
-      phone:           edited.phone,
-      specialization:  edited.specialty,
-      profileImageUrl: edited.profileImageUrl,
+    this.coachApi.update(edited.rawId, {
+      firstName:          edited.firstName,
+      lastName:           edited.lastName,
+      email:              edited.email,
+      phone:              edited.phone,
+      specialization:     edited.specialization,
+      profileImageUrl:    edited.profileImageUrl,
       availabilityStatus: (statusMap[edited.status] ?? 'AVAILABLE') as any,
     }).subscribe({
       next: () => {
-        this.loadCoaches(); // Force reload from DB
+        this.loadCoaches();
         this.editingCoach.set(null);
         this.toast.success('Coach mis à jour', 'Les modifications ont été enregistrées.');
       },
@@ -162,7 +296,7 @@ export class Coaches implements OnInit {
     email: '',
     password: '',
     phone: '',
-    specialty: '',
+    specialty: '' as Specialization | '',
     status: 'active' as Coach['status'],
     photoUrl: '',
   });
@@ -177,7 +311,7 @@ export class Coaches implements OnInit {
     this.showAddModal.set(false);
   }
 
-  updateForm(patch: Partial<{ firstName: string; lastName: string; email: string; password: string; phone: string; specialty: string; status: Coach['status']; photoUrl: string }>) {
+  updateForm(patch: Partial<{ firstName: string; lastName: string; email: string; password: string; phone: string; specialty: Specialization | ''; status: Coach['status']; photoUrl: string }>) {
     this.newCoachForm.update(f => ({ ...f, ...patch }));
   }
 
@@ -201,7 +335,7 @@ export class Coaches implements OnInit {
       email:          f.email.trim(),
       password:       f.password.trim(),
       phone:          f.phone.trim() || undefined,
-      specialization: f.specialty.trim() || undefined,
+      specialization: f.specialty || undefined,
     }).subscribe({
       next: (created) => {
         this.loadCoaches();
@@ -225,6 +359,15 @@ export class Coaches implements OnInit {
         }
       }
     });
+  }
+
+  isAdmin = computed(() => this.auth.isAdmin());
+
+  readonly specializations = SPECIALIZATIONS;
+  readonly specializationLabels = SPECIALIZATION_LABELS;
+
+  specializationLabel(s?: string): string {
+    return s ? (SPECIALIZATION_LABELS[s as Specialization] ?? s) : 'Non défini';
   }
 
   searchQuery   = signal('');
@@ -253,19 +396,19 @@ export class Coaches implements OnInit {
 
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'active': return 'bg-green-500/15 text-green-400 border border-green-500/30';
+      case 'active':   return 'bg-green-500/15 text-green-400 border border-green-500/30';
       case 'inactive': return 'bg-red-500/15 text-red-400 border border-red-500/30';
-      case 'away': return 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30';
-      default: return 'bg-green-500/15 text-green-400 border border-green-500/30';
+      case 'away':     return 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30';
+      default:         return 'bg-green-500/15 text-green-400 border border-green-500/30';
     }
   }
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'active': return 'Actif';
+      case 'active':   return 'Actif';
       case 'inactive': return 'Inactif';
-      case 'away': return 'Absent';
-      default: return status;
+      case 'away':     return 'Absent';
+      default:         return status;
     }
   }
 }

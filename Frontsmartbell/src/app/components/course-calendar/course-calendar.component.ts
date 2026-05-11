@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, input, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
@@ -46,7 +46,9 @@ export class CourseCalendarComponent implements OnInit, AfterViewInit {
   private coachApi  = inject(CoachApiService);
   private toast     = inject(ToastService);
 
-  typeFilter = input<string>('all');
+  typeFilter = signal<string>('all');
+
+  printSchedule() { window.print(); }
 
   allEvents     = signal<EventInput[]>([]);
   isLoading     = signal(true);

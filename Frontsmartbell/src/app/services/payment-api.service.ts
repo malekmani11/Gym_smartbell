@@ -39,4 +39,21 @@ export class PaymentApiService {
       `${this.BASE}/${id}/status`, null, { params: { status } }
     );
   }
+
+  // PUT /payments/{id}
+  update(id: number, dto: Partial<PaymentDTO>): Observable<PaymentDTO> {
+    return this.http.put<PaymentDTO>(`${this.BASE}/${id}`, dto);
+  }
+
+  // GET /payments
+  getAll(status?: string, page: number = 0, size: number = 20): Observable<PageResponse<PaymentDTO>> {
+    let params: any = { page, size };
+    if (status) params['status'] = status;
+    return this.http.get<PageResponse<PaymentDTO>>(this.BASE, { params });
+  }
+
+  // GET /payments/stats
+  getStats(): Observable<any> {
+    return this.http.get<any>(`${this.BASE}/stats`);
+  }
 }

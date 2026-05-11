@@ -36,6 +36,7 @@ export interface MemberDTO {
   firstName: string;
   lastName: string;
   email: string;
+  password?: string;
   phone?: string;
   address?: string;
   dateOfBirth?: string;
@@ -45,8 +46,19 @@ export interface MemberDTO {
   medicalNotes?: string;
   membershipStatus?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'EXPIRED';
   joinDate?: string;
-  planName?: string;
   profileImageUrl?: string;
+  loyaltyPoints?: number;
+  // Active subscription
+  subscriptionId?: number;
+  planName?: string;
+  planId?: number;
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
+  subscriptionStatus?: string;
+  // Last payment
+  lastPaymentStatus?: string;
+  lastPaymentMethod?: string;
+  lastPaymentAmount?: number;
 }
 
 // ── Coach ────────────────────────────────────────
@@ -63,6 +75,23 @@ export interface CoachDTO {
   hireDate?: string;
   availabilityStatus?: string;
   profileImageUrl?: string;
+  ratingAvg?: number;
+}
+
+// ── Coach Rating ──────────────────────────────────
+export interface CoachRatingDTO {
+  id: number;
+  coachId: number;
+  memberId: number;
+  memberName?: string;
+  rating: number;
+  comment?: string;
+  createdAt?: string;
+}
+
+export interface RatingRequest {
+  rating: number;
+  comment?: string;
 }
 
 export interface CreateCoachRequest {
@@ -133,10 +162,12 @@ export interface SubscriptionPlanDTO {
   id: number;
   name: string;
   description?: string;
-  durationMonths: number;   // Backend field name
+  durationMonths: number;
   price: number;
   active?: boolean;
   createdAt?: string;
+  subscribersCount?: number;
+  totalRevenue?: number;
 }
 
 // ── Payment ───────────────────────────────────────
@@ -258,4 +289,120 @@ export interface EventRegistrationDTO {
   profileImageUrl?: string;
   registrationDate: string;
   status: string;
+}
+
+// ── User ──────────────────────────────────────────
+export interface UserDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  profileImageUrl?: string;
+  enabled: boolean;
+  role: string;
+  createdAt?: string;
+}
+
+// ── Salle ─────────────────────────────────────────
+export interface SalleDTO {
+  id?: number;
+  name: string;
+  capacity: number;
+  currentOccupancy: number;
+  status: 'DISPONIBLE' | 'OCCUPEE' | 'MAINTENANCE';
+  location?: string;
+  description?: string;
+}
+
+// ── Coupon ────────────────────────────────────────
+export interface CouponDTO {
+  id?: number;
+  code: string;
+  discountPercentage: number;
+  validFrom?: string;
+  validUntil?: string;
+  maxUses?: number;
+  currentUses?: number;
+  active?: boolean;
+}
+
+// ── Loyalty ───────────────────────────────────────
+export type LoyaltyTransactionType = 'EARN' | 'REDEEM' | 'ADMIN_ADJUST' | 'EXPIRE';
+export type LoyaltyTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+
+export interface LoyaltyTransactionDTO {
+  id: number;
+  memberId: number;
+  type: LoyaltyTransactionType;
+  points: number;
+  description?: string;
+  createdAt?: string;
+}
+
+export interface LoyaltyBalanceDTO {
+  memberId: number;
+  firstName: string;
+  lastName: string;
+  loyaltyPoints: number;
+  tier: LoyaltyTier;
+  nextTierPoints?: number;
+}
+
+export interface LoyaltyEarnRequest {
+  memberId: number;
+  points: number;
+  description: string;
+}
+
+export interface LoyaltyRedeemRequest {
+  memberId: number;
+  points: number;
+}
+
+// ── Message ───────────────────────────────────────
+export interface MessageDTO {
+  id?: number;
+  receiverId: number;
+  senderId?: number;
+  senderName?: string;
+  receiverName?: string;
+  content: string;
+  sentAt?: string;
+  isRead?: boolean;
+}
+
+// ── CRM ───────────────────────────────────────────
+export type CrmStage = 'PROSPECT' | 'ACTIVE' | 'AT_RISK' | 'CHURNED';
+
+export interface CrmMemberDTO {
+  memberId: number;
+  userId?: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  membershipType?: string;
+  membershipStatus?: string;
+  crmStage: CrmStage;
+  joinDate?: string;
+  expiryDate?: string;
+  daysUntilExpiry?: number;
+  lastVisit?: string;
+  notes?: string;
+}
+
+// ── Machine ───────────────────────────────────────
+export interface MachineDTO {
+  id?: number;
+  name: string;
+  description?: string;
+  location?: string;
+  status: 'AVAILABLE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
+  imageUrl?: string;
+  tutorialUrl?: string;
+  qrCodeData?: string;
 }

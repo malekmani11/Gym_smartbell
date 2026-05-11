@@ -1,6 +1,7 @@
 package com.gymapp.entity;
 
 import com.gymapp.entity.enums.AvailabilityStatus;
+import com.gymapp.entity.enums.Specialization;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -19,8 +20,9 @@ import java.util.Set;
 @SuperBuilder
 public class Coach extends User {
 
-    @Column(length = 200)
-    private String specialization;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private Specialization specialization;
 
     @Column(columnDefinition = "TEXT")
     private String bio;
@@ -34,6 +36,9 @@ public class Coach extends User {
     @Column(name = "availability_status", nullable = false)
     @Builder.Default
     private AvailabilityStatus availabilityStatus = AvailabilityStatus.AVAILABLE;
+
+    @Column(name = "rating_avg")
+    private Double ratingAvg;
 
     // ── Relationships ──────────────────────────────────────
 

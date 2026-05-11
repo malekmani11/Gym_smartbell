@@ -1,89 +1,39 @@
+
 <div class="space-y-6 animate-fade-in pb-10">
 
   <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-playfair font-bold text-white tracking-wide">
-        Abonnements <span class="text-[#D4AF37]">&amp; Formules</span>
-      </h1>
-      <p class="text-gray-400 font-inter mt-1">
-        Gérez les plans, contrats et paiements de vos membres.
-      </p>
+  <div class="page-header-row">
+    <div class="page-header">
+      <p class="page-label">SMARTBELL · ABONNEMENTS</p>
+      <h1>Abonnements &amp; <span class="accent">Formules</span></h1>
+      <p class="page-subtitle">Gérez les plans, contrats et paiements de vos membres</p>
     </div>
-    <button (click)="showAddPlan.set(true)"
-            class="btn-gold text-sm py-2.5 px-5 flex items-center gap-2">
-      <i class="fas fa-plus"></i>
-      Nouvelle formule
-    </button>
+    <div class="page-actions">
+      <button (click)="showAddPlan.set(true)" class="btn-gold text-sm py-2.5 px-5 flex items-center gap-2">
+        <i class="fas fa-plus"></i>
+        Nouvelle formule
+      </button>
+    </div>
   </div>
 
   <!-- KPI Cards -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-    <div class="premium-card p-5 flex items-center gap-4">
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5
-                  flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-euro-sign text-[#D4AF37] text-lg"></i>
-      </div>
-      <div class="min-w-0">
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">
-          CA Mensuel
-        </p>
-        <p class="text-2xl font-black text-white font-montserrat truncate">
-          {{ totalRevenue() | number:'1.0-0' }} DT
-        </p>
-      </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <p class="kpi-label">CA MENSUEL</p>
+      <p class="kpi-value">{{ totalRevenue() | number:'1.0-0' }}<span style="font-size:1rem;color:var(--text-secondary)"> DT</span></p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4">
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5
-                  flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-users text-green-400 text-lg"></i>
-      </div>
-      <div class="min-w-0">
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">
-          Actifs
-        </p>
-        <p class="text-2xl font-black text-white font-montserrat">
-          {{ activeCount() }}
-        </p>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">ACTIFS</p>
+      <p class="kpi-value">{{ activeCount() }}</p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4">
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5
-                  flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-clock text-yellow-400 text-lg"></i>
-      </div>
-      <div class="min-w-0">
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">
-          Expirent bientôt
-        </p>
-        <p class="text-2xl font-black text-white font-montserrat">
-          {{ expiringCount() }}
-        </p>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">EXPIRENT BIENTÔT</p>
+      <p class="kpi-value">{{ expiringCount() }}</p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4">
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5
-                  flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-percent text-[#D4AF37] text-lg"></i>
-      </div>
-      <div class="min-w-0">
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">
-          Recouvrement
-        </p>
-        <p class="text-2xl font-black text-white font-montserrat">
-          {{ recoveryRate() }}%
-        </p>
-        <div class="h-1 w-20 bg-white/5 rounded-full overflow-hidden mt-1">
-          <div class="h-full bg-[#D4AF37] rounded-full"
-               [style.width.%]="recoveryRate()"></div>
-        </div>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">RECOUVREMENT</p>
+      <p class="kpi-value">{{ recoveryRate() }}%</p>
     </div>
-
   </div>
 
   <!-- Graphiques -->

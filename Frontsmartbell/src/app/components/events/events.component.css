@@ -1,8 +1,7 @@
 .events-container {
-  padding: 1.5rem;
-  min-height: 100vh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  padding-bottom: 2rem;
 }
 
 .header-title {
@@ -12,35 +11,7 @@
   margin-bottom: 0.25rem;
 }
 
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-.kpi-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.kpi-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-.kpi-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-bright);
-}
+/* KPI cards — global tokens from styles.css */
 
 .filters-bar {
   display: flex;

@@ -83,4 +83,17 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         return mapper.toComplaintDTO(complaintRepository.save(complaint));
     }
+
+    @Override
+    public ComplaintDTO markAsRead(Long id) {
+        log.info("Marking complaint {} as read", id);
+        if (id == null) throw new EntityNotFoundException("Complaint id is null");
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
+        if (complaint.getStatus() == ComplaintStatus.OPEN) {
+            complaint.setStatus(ComplaintStatus.IN_PROGRESS);
+            return mapper.toComplaintDTO(complaintRepository.save(complaint));
+        }
+        return mapper.toComplaintDTO(complaint);
+    }
 }

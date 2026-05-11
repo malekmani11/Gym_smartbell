@@ -57,4 +57,15 @@ public class PaymentController {
     public ResponseEntity<PaymentStatsDTO> getStats() {
         return ResponseEntity.ok(paymentService.getStats());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
+        paymentService.deletePayment(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PaymentDTO> updatePayment(@PathVariable Long id, @RequestBody PaymentDTO dto) {
+        return ResponseEntity.ok(paymentService.updatePayment(id, dto));
+    }
 }

@@ -42,7 +42,11 @@ public class MemberController {
     @GetMapping
     public ResponseEntity<Page<MemberDTO>> getAllMembers(
             @RequestParam(required = false) MembershipStatus status,
+            @RequestParam(required = false) String search,
             Pageable pageable) {
+        if (search != null && !search.isBlank()) {
+            return ResponseEntity.ok(memberService.searchMembers(search.trim(), pageable));
+        }
         if (status != null) {
             return ResponseEntity.ok(memberService.getMembersByStatus(status, pageable));
         }

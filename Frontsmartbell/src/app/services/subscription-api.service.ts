@@ -35,6 +35,11 @@ export class SubscriptionApiService {
     return this.http.patch<SubscriptionDTO>(`${this.BASE}/${id}/cancel`, {});
   }
 
+  // PATCH /subscriptions/{id}/renew
+  renew(subscriptionId: number): Observable<SubscriptionDTO> {
+    return this.http.patch<SubscriptionDTO>(`${this.BASE}/${subscriptionId}/renew`, {});
+  }
+
   // ── Plans ──────────────────────────────────────
 
   // GET /subscription-plans  (activeOnly defaults to true on backend)

@@ -31,11 +31,19 @@ public class EntityMapper {
     // ── Member ─────────────────────────────────────────────
 
     public MemberDTO toMemberDTO(Member member) {
-        String activePlan = member.getSubscriptions().stream()
+        com.gymapp.entity.Subscription activeSub = member.getSubscriptions().stream()
                 .filter(s -> s.getStatus() == com.gymapp.entity.enums.SubscriptionStatus.ACTIVE)
+                .filter(s -> s.getPlan() != null)
                 .findFirst()
-                .map(s -> s.getPlan().getName())
-                .orElse("Aucun");
+                .orElse(null);
+
+        // Latest payment of the active subscription
+        com.gymapp.entity.Payment lastPayment = activeSub == null ? null :
+                activeSub.getPayments().stream()
+                        .max(java.util.Comparator.comparing(
+                                p -> p.getPaymentDate() != null ? p.getPaymentDate()
+                                        : java.time.LocalDateTime.MIN))
+                        .orElse(null);
 
         return MemberDTO.builder()
                 .id(member.getId())
@@ -52,8 +60,19 @@ public class EntityMapper {
                 .medicalNotes(member.getMedicalNotes())
                 .membershipStatus(member.getMembershipStatus())
                 .joinDate(member.getJoinDate())
-                .planName(activePlan)
                 .profileImageUrl(member.getProfileImageUrl())
+                .loyaltyPoints(member.getLoyaltyPoints())
+                // Active subscription
+                .subscriptionId(activeSub != null ? activeSub.getId() : null)
+                .planName(activeSub != null ? activeSub.getPlan().getName() : "Aucun")
+                .planId(activeSub != null ? activeSub.getPlan().getId() : null)
+                .subscriptionStartDate(activeSub != null ? activeSub.getStartDate() : null)
+                .subscriptionEndDate(activeSub != null ? activeSub.getEndDate() : null)
+                .subscriptionStatus(activeSub != null ? activeSub.getStatus() : null)
+                // Last payment
+                .lastPaymentStatus(lastPayment != null ? lastPayment.getStatus().name() : null)
+                .lastPaymentMethod(lastPayment != null ? lastPayment.getPaymentMethod().name() : null)
+                .lastPaymentAmount(lastPayment != null ? lastPayment.getAmount() : null)
                 .build();
     }
 
@@ -73,6 +92,7 @@ public class EntityMapper {
                 .hireDate(coach.getHireDate())
                 .availabilityStatus(coach.getAvailabilityStatus())
                 .profileImageUrl(coach.getProfileImageUrl())
+                .ratingAvg(coach.getRatingAvg())
                 .build();
     }
 
@@ -103,42 +123,29 @@ public class EntityMapper {
                 .status(subscription.getStatus())
                 .createdAt(subscription.getCreatedAt())
                 .build();
-        if (subscription.getCoupon() != null) {
-            dto.setCouponId(subscription.getCoupon().getId());
-            dto.setCouponCode(subscription.getCoupon().getCode());
-        }
         return dto;
     }
 
     // ── Payment ────────────────────────────────────────────
 
     public PaymentDTO toPaymentDTO(Payment payment) {
-        User member = payment.getSubscription().getUser();
+        com.gymapp.entity.Subscription sub = payment.getSubscription();
+        // Guard: subscription proxy may reference a non-existent row (e.g. subscription_id=0).
+        // getId() is safe on a Hibernate proxy (no DB hit); any other accessor triggers loading.
+        Long subId = (sub != null) ? sub.getId() : null;
+        boolean subValid = (subId != null && subId > 0);
+
+        User member = subValid ? sub.getUser() : null;
         return PaymentDTO.builder()
                 .id(payment.getId())
-                .subscriptionId(payment.getSubscription().getId())
+                .subscriptionId(subId)
                 .amount(payment.getAmount())
                 .paymentDate(payment.getPaymentDate())
                 .paymentMethod(payment.getPaymentMethod())
                 .status(payment.getStatus())
                 .transactionRef(payment.getTransactionRef())
-                .memberName(member.getFirstName() + " " + member.getLastName())
-                .memberEmail(member.getEmail())
-                .build();
-    }
-
-    // ── Coupon ─────────────────────────────────────────────
-
-    public CouponDTO toCouponDTO(Coupon coupon) {
-        return CouponDTO.builder()
-                .id(coupon.getId())
-                .code(coupon.getCode())
-                .discountPercentage(coupon.getDiscountPercentage())
-                .validFrom(coupon.getValidFrom())
-                .validUntil(coupon.getValidUntil())
-                .maxUses(coupon.getMaxUses())
-                .currentUses(coupon.getCurrentUses())
-                .active(coupon.getActive())
+                .memberName(member != null ? member.getFirstName() + " " + member.getLastName() : "N/A")
+                .memberEmail(member != null ? member.getEmail() : null)
                 .build();
     }
 

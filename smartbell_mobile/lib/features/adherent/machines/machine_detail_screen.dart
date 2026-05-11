@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
@@ -32,6 +33,12 @@ class MachineDetailScreen extends StatelessWidget {
 
             if (machine.exercises.isNotEmpty) ...[
               _ExercisesSection(exercises: machine.exercises),
+              const SizedBox(height: 20),
+            ],
+
+            // QR Code
+            if (machine.qrData != null && machine.qrData!.isNotEmpty) ...[
+              _QrSection(machine: machine),
               const SizedBox(height: 20),
             ],
 
@@ -456,6 +463,90 @@ class _DiffBadge extends StatelessWidget {
         style: TextStyle(
             color: color, fontSize: 10, fontWeight: FontWeight.w600),
       ),
+    );
+  }
+}
+
+// ─── QR Code Section ─────────────────────────────────────────────────────────
+
+class _QrSection extends StatelessWidget {
+  final Machine machine;
+  const _QrSection({required this.machine});
+
+  String get _qrUrl =>
+      'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(machine.qrData!)}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('QR CODE', style: AppTheme.sectionTitle),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.border, width: 0.5),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Image.network(
+                  _qrUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) => progress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.qr_code, size: 80, color: Colors.black54),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                machine.qrData!,
+                style: const TextStyle(
+                  color: AppTheme.textMuted,
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: machine.qrData!));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Données QR copiées'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 2),
+                    ));
+                  },
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copier les données QR'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primary,
+                    side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

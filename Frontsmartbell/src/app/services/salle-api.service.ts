@@ -13,9 +13,6 @@ export interface Salle {
   status: SalleStatus;
   location: string;
   description: string;
-  occupancyRate?: number | null;
-  hasCourses?: boolean;
-  confirmedReservationsToday?: number;
 }
 
 @Injectable({ providedIn: 'root' })

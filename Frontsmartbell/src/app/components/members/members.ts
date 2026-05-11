@@ -1,7 +1,10 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ToastService } from '../../services/toast.service';
 import { MemberApiService } from '../../services/member-api.service';
 import { SubscriptionApiService } from '../../services/subscription-api.service';
+import { PaymentApiService } from '../../services/payment-api.service';
+import { NotificationApiService } from '../../services/notification-api.service';
 import { MemberDTO } from '../../models/api.models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,15 +23,28 @@ interface Plan {
 
 interface MemberSubscription {
   id: string;
+  userId: number;
   memberName: string;
   memberAvatar: string;
   email: string;
+  phone?: string;
   planName: string;
+  planId?: number;
+  subscriptionId?: number;
   startDate: Date;
   expiryDate: Date;
   status: 'Actif' | 'Expiré' | 'Expire bientôt';
   paymentStatus: 'Payé' | 'En attente' | 'Échoué';
   paymentMethod: 'Carte' | 'Cash' | 'Virement';
+  lastPaymentAmount?: number;
+  gender?: 'MALE' | 'FEMALE';
+  birthDate?: string;
+  address?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  medicalNotes?: string;
+  profileImageUrl?: string;
+  loyaltyPoints?: number;
 }
 
 @Component({
@@ -38,12 +54,25 @@ interface MemberSubscription {
   templateUrl: './members.html',
   styleUrl: './members.css'
 })
-export class Members implements OnInit {
-  private toast     = inject(ToastService);
-  private memberApi = inject(MemberApiService);
-  private subApi    = inject(SubscriptionApiService);
-  isApiLoading = signal(false);
-  loadError    = signal(false);
+export class Members implements OnInit, OnDestroy {
+  private searchSubject = new Subject<string>();
+  private destroy$      = new Subject<void>();
+  private toast        = inject(ToastService);
+  private memberApi    = inject(MemberApiService);
+  private subApi       = inject(SubscriptionApiService);
+  private paymentApi   = inject(PaymentApiService);
+  private notifApi     = inject(NotificationApiService);
+  isApiLoading  = signal(false);
+  loadError     = signal(false);
+
+  // ── Pagination ────────────────────────────────
+  currentPage   = signal(0);
+  pageSize      = signal(20);
+  totalElements = signal(0);
+  totalPages    = signal(0);
+
+  pageStart = computed(() => this.currentPage() * this.pageSize() + 1);
+  pageEnd   = computed(() => Math.min((this.currentPage() + 1) * this.pageSize(), this.totalElements()));
 
   plans               = signal<Plan[]>([]);
   memberSubscriptions = signal<MemberSubscription[]>([]);
@@ -78,7 +107,7 @@ export class Members implements OnInit {
   newMemberPhone = '';
   newMemberAddress = '';
   newMemberBirthDate = '';
-  newMemberGender = 'HOMME';
+  newMemberGender = 'MALE';
   newMemberEmergencyContact = '';
   newMemberEmergencyPhone = '';
   newMemberMedicalNotes = '';
@@ -92,8 +121,23 @@ export class Members implements OnInit {
       localStorage.removeItem('gym_open_modal');
       setTimeout(() => this.openNewMemberModal(), 100);
     }
+    this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(q => this.loadMembers(0, q, this.statusFilter()));
     this.loadMembers();
     this.loadPlans();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string) {
+    this.searchTerm.set(value);
+    this.searchSubject.next(value.trim());
   }
 
   loadPlans() {
@@ -105,9 +149,9 @@ export class Members implements OnInit {
           price:            p.price,
           duration:         (p.durationMonths === 12 ? 'Annuel' : 'Mensuel') as 'Mensuel' | 'Annuel',
           access:           p.description ? p.description.split(', ') : [],
-          subscribersCount: 0, // Would need another API call or filter from members
+          subscribersCount: p.subscribersCount ?? 0,
           color:            p.price > 100 ? 'purple' : p.price > 50 ? 'blue' : 'gold',
-          revenue:          0,
+          revenue:          Number(p.totalRevenue ?? 0),
         }));
         this.plans.set(mapped);
       },
@@ -122,7 +166,7 @@ export class Members implements OnInit {
     this.newMemberPhone    = '';
     this.newMemberAddress  = '';
     this.newMemberBirthDate = '';
-    this.newMemberGender   = 'HOMME';
+    this.newMemberGender   = 'MALE';
     this.newMemberEmergencyContact = '';
     this.newMemberEmergencyPhone   = '';
     this.newMemberMedicalNotes     = '';
@@ -141,55 +185,69 @@ export class Members implements OnInit {
     this.showNewMemberModal.set(false);
   }
 
-  private readonly CACHE_KEY = 'gym_members_cache';
-
-  loadMembers() {
+  loadMembers(page = this.currentPage(), search = this.searchTerm(), status = this.statusFilter()) {
     this.isApiLoading.set(true);
     this.loadError.set(false);
 
-    // Show cached data immediately while fetching
-    const cached = localStorage.getItem(this.CACHE_KEY);
-    if (cached) {
-      try {
-        const parsed: MemberSubscription[] = JSON.parse(cached);
-        const revived = parsed.map(m => ({
-          ...m,
-          startDate:  new Date(m.startDate),
-          expiryDate: new Date(m.expiryDate),
-        }));
-        this.memberSubscriptions.set(revived);
-        this.isApiLoading.set(false);
-      } catch { /* ignore corrupt cache */ }
-    }
-
-    this.memberApi.getAll().subscribe({
+    const apiStatus = this.mapStatusToApi(status);
+    this.memberApi.getAll(page, this.pageSize(), search, apiStatus).subscribe({
       next: (response) => {
-        // response is PageResponse<MemberDTO>
         const list = response.content || [];
         const mapped: MemberSubscription[] = list.map((m: MemberDTO) => ({
-          id:            String(m.id),
-          memberName:    `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'Membre #' + m.id,
-          memberAvatar:  m.profileImageUrl || `https://i.pravatar.cc/150?u=member${m.id}`,
-          email:         m.email || '',
-          planName:      m.planName || 'Standard',
-          startDate:     m.joinDate ? new Date(m.joinDate) : new Date(),
-          expiryDate:    new Date(Date.now() + 30 * 864e5), // Dynamic logic could go here
-          status:        this.mapStatus(m.membershipStatus || 'ACTIVE'),
-          paymentStatus: 'Payé' as const,
-          paymentMethod: 'Carte' as const,
+          id:              String(m.id),
+          userId:          m.userId ?? m.id ?? 0,
+          memberName:      `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'Membre #' + m.id,
+          memberAvatar:    m.profileImageUrl || `https://i.pravatar.cc/150?u=member${m.id}`,
+          email:           m.email || '',
+          phone:           m.phone || undefined,
+          planName:        m.planName || 'Sans plan',
+          planId:          m.planId || undefined,
+          subscriptionId:  m.subscriptionId || undefined,
+          startDate:       m.subscriptionStartDate ? new Date(m.subscriptionStartDate)
+                             : m.joinDate ? new Date(m.joinDate) : new Date(),
+          expiryDate:      m.subscriptionEndDate ? new Date(m.subscriptionEndDate)
+                             : new Date(Date.now() + 30 * 864e5),
+          status:          this.mapStatus(m.membershipStatus || 'ACTIVE'),
+          paymentStatus:   this.mapPaymentStatus(m.lastPaymentStatus),
+          paymentMethod:   this.mapPaymentMethod(m.lastPaymentMethod),
+          lastPaymentAmount: m.lastPaymentAmount || undefined,
+          gender:           (m.gender === 'MALE' || m.gender === 'FEMALE') ? m.gender : undefined,
+          birthDate:        m.dateOfBirth?.toString() || undefined,
+          address:          m.address || undefined,
+          emergencyContact: m.emergencyContact || undefined,
+          emergencyPhone:   m.emergencyPhone || undefined,
+          medicalNotes:     m.medicalNotes || undefined,
+          profileImageUrl:  m.profileImageUrl || undefined,
+          loyaltyPoints:    m.loyaltyPoints ?? 0,
         }));
         this.memberSubscriptions.set(mapped);
-        localStorage.setItem(this.CACHE_KEY, JSON.stringify(mapped));
+        this.totalElements.set(response.totalElements);
+        this.totalPages.set(response.totalPages);
+        this.currentPage.set(response.number);
         this.isApiLoading.set(false);
       },
       error: (err) => {
         console.error('Load members error:', err);
         this.isApiLoading.set(false);
-        if (!cached) {
-          this.loadError.set(true);
-        }
+        this.loadError.set(true);
       }
     });
+  }
+
+  goToPage(page: number) {
+    if (page < 0 || page >= this.totalPages()) return;
+    this.loadMembers(page, this.searchTerm());
+  }
+
+  nextPage() { this.goToPage(this.currentPage() + 1); }
+  prevPage() { this.goToPage(this.currentPage() - 1); }
+
+  pageRange(): number[] {
+    const total   = this.totalPages();
+    const current = this.currentPage();
+    const start   = Math.max(0, current - 2);
+    const end     = Math.min(total - 1, current + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   private mapStatus(apiStatus: string): 'Actif' | 'Expiré' | 'Expire bientôt' {
@@ -200,6 +258,35 @@ export class Members implements OnInit {
       'EXPIRED':   'Expiré'
     };
     return map[apiStatus] ?? 'Actif';
+  }
+
+  private mapPaymentStatus(s?: string | null): 'Payé' | 'En attente' | 'Échoué' {
+    if (!s) return 'En attente';
+    if (s === 'COMPLETED') return 'Payé';
+    if (s === 'FAILED' || s === 'REFUNDED') return 'Échoué';
+    return 'En attente';
+  }
+
+  private mapPaymentMethod(m?: string | null): 'Carte' | 'Cash' | 'Virement' {
+    if (!m) return 'Carte';
+    if (m === 'CASH') return 'Cash';
+    if (m === 'VIREMENT' || m === 'BANK_TRANSFER') return 'Virement';
+    return 'Carte';
+  }
+
+  private mapMethodToApi(method: string): string {
+    if (method === 'Cash') return 'CASH';
+    if (method === 'Virement') return 'VIREMENT';
+    return 'CARD';
+  }
+
+  private mapStatusToApi(status: string): string {
+    const map: Record<string, string> = {
+      'Actif':          'ACTIVE',
+      'Expiré':         'INACTIVE',
+      'Expire bientôt': ''
+    };
+    return map[status] ?? '';
   }
 
   confirmNewMember() {
@@ -213,12 +300,19 @@ export class Members implements OnInit {
     const firstName = parts[0];
     const lastName  = parts.slice(1).join(' ') || firstName;
 
-    this.memberApi.register({
+    this.memberApi.create({
       firstName,
       lastName,
-      email:    this.newMemberEmail.trim(),
-      password: this.newMemberPassword.trim(),
-      phone:    this.newMemberPhone.trim() || undefined,
+      email:            this.newMemberEmail.trim(),
+      password:         this.newMemberPassword.trim(),
+      phone:            this.newMemberPhone.trim()             || undefined,
+      address:          this.newMemberAddress.trim()           || undefined,
+      dateOfBirth:      this.newMemberBirthDate                || undefined,
+      gender:           this.newMemberGender                   || undefined,
+      emergencyContact: this.newMemberEmergencyContact.trim()  || undefined,
+      emergencyPhone:   this.newMemberEmergencyPhone.trim()    || undefined,
+      medicalNotes:     this.newMemberMedicalNotes.trim()      || undefined,
+      profileImageUrl:  this.newMemberPhotoUrl.trim()          || undefined,
     }).subscribe({
       next: (created) => {
         const selectedPlan = this.plans().find(p => p.name === this.newMemberPlan);
@@ -227,25 +321,36 @@ export class Members implements OnInit {
           this.isProcessing.set(false);
           this.closeNewMemberModal();
         };
-        if (selectedPlan && created.id) {
+        if (selectedPlan && created.userId) {
           const today = new Date().toISOString().slice(0, 10);
           this.subApi.create({
-            userId: Number(created.id),
-            planId: Number(selectedPlan.id),
+            userId:    Number(created.userId),
+            planId:    Number(selectedPlan.id),
             startDate: today as any,
           } as any).subscribe({
-            next: () => { finish(); this.toast.success('Membre ajouté ✓', `${created.firstName} inscrit avec plan ${selectedPlan.name}.`); },
-            error: () => { finish(); this.toast.success('Membre ajouté ✓', `${created.firstName} inscrit (erreur lors de l'abonnement).`); }
+            next: (subscription) => {
+              this.paymentApi.create({
+                subscriptionId: subscription.id,
+                amount:         selectedPlan.price,
+                paymentDate:    today,
+                paymentMethod:  this.mapMethodToApi(this.newMemberMethod),
+                status:         'COMPLETED',
+              }).subscribe({
+                next:  () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit avec plan ${selectedPlan.name}.`); },
+                error: () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit (paiement non enregistré).`); }
+              });
+            },
+            error: () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit (erreur lors de l'abonnement).`); }
           });
         } else {
           finish();
-          this.toast.success('Membre ajouté ✓', `${created.firstName} ${created.lastName} a été inscrit.`);
+          this.toast.success('Membre ajouté ✓', `${firstName} ${lastName} a été inscrit.`);
         }
       },
       error: (err) => {
         this.isProcessing.set(false);
-        const msg = err.error?.message || '';
-        if (msg.includes('déjà')) {
+        const msg: string = err.error?.message || '';
+        if (msg.toLowerCase().includes('email') || err.status === 409) {
           this.toast.error('Email déjà utilisé', 'Un compte avec cet email existe déjà.');
         } else {
           this.toast.error(`Erreur ${err.status}`, msg || 'Une erreur est survenue.');
@@ -286,7 +391,15 @@ export class Members implements OnInit {
       firstName,
       lastName,
       email,
+      phone:            edited.phone            || undefined,
+      address:          edited.address          || undefined,
+      dateOfBirth:      edited.birthDate        || undefined,
+      emergencyContact: edited.emergencyContact || undefined,
+      emergencyPhone:   edited.emergencyPhone   || undefined,
+      medicalNotes:     edited.medicalNotes     || undefined,
+      profileImageUrl:  edited.profileImageUrl  || undefined,
       membershipStatus: (statusMap[edited.status] ?? 'ACTIVE') as any,
+      gender: (edited.gender === 'MALE' || edited.gender === 'FEMALE') ? edited.gender as any : undefined,
     };
 
     this.memberApi.update(Number(edited.id), dto).subscribe({
@@ -329,8 +442,18 @@ export class Members implements OnInit {
     const sub = this.memberSubscriptions().find(s => s.id === subId);
     if (!sub) return;
 
-    this.reminderSentIds.update(s => new Set([...s, subId]));
-    this.toast.success('Rappel envoyé', `Email de relance envoyé à ${sub.memberName}.`);
+    this.notifApi.send({
+      userId:  sub.userId,
+      title:   'Rappel de paiement',
+      message: `Bonjour ${sub.memberName}, votre abonnement "${sub.planName}" a un paiement en attente. Merci de régulariser votre situation.`,
+      type:    'REMINDER',
+    }).subscribe({
+      next: () => {
+        this.reminderSentIds.update(s => new Set([...s, subId]));
+        this.toast.success('Rappel envoyé', `Notification envoyée à ${sub.memberName}.`);
+      },
+      error: () => this.toast.error('Erreur', 'Impossible d\'envoyer le rappel.'),
+    });
   }
 
   sendAllReminders() {
@@ -469,7 +592,30 @@ export class Members implements OnInit {
   }
 
   renewSubscription() {
-    this.toast.success('Abonnement renouvelé', 'L\'abonnement a été renouvelé avec succès.');
+    const sub = this.selectedSubscription();
+    if (!sub) return;
+
+    if (sub.paymentStatus !== 'Payé') {
+      this.toast.error(
+        'Paiement requis',
+        'L\'abonnement ne peut pas être renouvelé tant que le paiement n\'est pas confirmé.'
+      );
+      return;
+    }
+
+    this.isProcessing.set(true);
+    this.subApi.renew(Number(sub.id)).subscribe({
+      next: () => {
+        this.isProcessing.set(false);
+        this.loadMembers();
+        this.toast.success('Abonnement renouvelé ✓', `L'abonnement de ${sub.memberName} a été renouvelé.`);
+        this.closeMember();
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.toast.error('Erreur', err.error?.message || 'Impossible de renouveler l\'abonnement.');
+      }
+    });
   }
 
   filteredSubscriptions = computed(() => {
@@ -486,7 +632,7 @@ export class Members implements OnInit {
     );
   });
 
-  totalSubscribers = computed(() => this.memberSubscriptions().length);
+  totalSubscribers = computed(() => this.totalElements() || this.memberSubscriptions().length);
 
   totalRevenue = computed(() =>
     this.plans().reduce((sum, p) => sum + p.revenue, 0)

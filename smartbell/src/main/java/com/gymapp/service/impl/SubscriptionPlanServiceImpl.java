@@ -47,14 +47,21 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     @Transactional(readOnly = true)
     public List<SubscriptionPlanDTO> getAllActivePlans() {
         return planRepository.findByActiveTrue().stream()
-                .map(mapper::toSubscriptionPlanDTO).collect(Collectors.toList());
+                .map(this::toEnrichedDTO).collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SubscriptionPlanDTO> getAllPlans() {
         return planRepository.findAll().stream()
-                .map(mapper::toSubscriptionPlanDTO).collect(Collectors.toList());
+                .map(this::toEnrichedDTO).collect(Collectors.toList());
+    }
+
+    private SubscriptionPlanDTO toEnrichedDTO(com.gymapp.entity.SubscriptionPlan plan) {
+        SubscriptionPlanDTO dto = mapper.toSubscriptionPlanDTO(plan);
+        dto.setSubscribersCount(planRepository.countActiveSubscribersByPlan(plan.getId()));
+        dto.setTotalRevenue(planRepository.sumRevenueByPlan(plan.getId()));
+        return dto;
     }
 
     @Override

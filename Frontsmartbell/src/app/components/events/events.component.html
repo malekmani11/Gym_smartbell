@@ -1,31 +1,34 @@
 <div class="events-container">
-  <header class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="header-title">Événements & Activités</h1>
-      <p class="text-gray-500 text-sm">Gérez les animations et sorties de la communauté</p>
+  <div class="page-header-row">
+    <div class="page-header">
+      <p class="page-label">SMARTBELL · ÉVÉNEMENTS</p>
+      <h1>Événements & <span class="accent">Activités</span></h1>
+      <p class="page-subtitle">Gérez les animations et sorties de la communauté</p>
     </div>
-    <button class="btn btn-amber" (click)="openCreateModal()">
-      <i class="fas fa-plus mr-2"></i> Nouvel événement
-    </button>
-  </header>
+    <div class="page-actions">
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fas fa-plus"></i> Nouvel événement
+      </button>
+    </div>
+  </div>
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi-card">
-      <span class="kpi-label">Événements actifs</span>
-      <span class="kpi-value">{{ stats().active }}</span>
+      <p class="kpi-label">ÉVÉNEMENTS ACTIFS</p>
+      <p class="kpi-value">{{ stats().active }}</p>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">À venir</span>
-      <span class="kpi-value text-green-500">{{ stats().upcoming }}</span>
+      <p class="kpi-label">À VENIR</p>
+      <p class="kpi-value">{{ stats().upcoming }}</p>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">Total inscrits</span>
-      <span class="kpi-value text-blue-400">{{ stats().totalRegistrations }}</span>
+      <p class="kpi-label">TOTAL INSCRITS</p>
+      <p class="kpi-value" style="color: var(--accent)">{{ stats().totalRegistrations }}</p>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">Taux remplissage</span>
-      <span class="kpi-value text-amber-500">{{ stats().avgFillRate }}%</span>
+      <p class="kpi-label">TAUX REMPLISSAGE</p>
+      <p class="kpi-value">{{ stats().avgFillRate }}%</p>
     </div>
   </div>
 

@@ -1,94 +1,39 @@
 <div class="space-y-6 animate-fade-in relative">
 
   <!-- Header Actions -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-playfair font-bold text-white mb-2 tracking-wide">Gestion Membres</h1>
-      <p class="text-gray-400 font-inter">Gérez vos membres, leurs abonnements et leurs paiements.</p>
+  <div class="page-header-row">
+    <div class="page-header">
+      <p class="page-label">SMARTBELL · MEMBRES</p>
+      <h1>Gestion <span class="accent">Membres</span></h1>
+      <p class="page-subtitle">Gérez vos membres, leurs abonnements et leurs paiements</p>
     </div>
-    <div class="flex gap-3">
-
-      <!-- Search -->
-      <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <i class="fas fa-search text-gray-500"></i>
-        </div>
-        <input type="text"
-               class="bg-black-card border border-white/5 text-sm rounded-lg focus:ring-1 focus:ring-gold-main/50 focus:border-gold-main/50 block w-full pl-10 p-2.5 placeholder-gray-600 focus:shadow-gold-lg transition-all"
-               placeholder="Rechercher un membre..."
-               [ngModel]="searchTerm()"
-               (ngModelChange)="searchTerm.set($event)">
-      </div>
-
-      <!-- Status filter -->
-      <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <i class="fas fa-filter text-gold-main text-xs"></i>
-        </div>
-        <select class="btn-gold-outline text-sm py-2 pl-9 pr-4 shadow-gold appearance-none cursor-pointer bg-transparent focus:outline-none focus:ring-1 focus:ring-gold-main/50"
-                (change)="onStatusChange($event)">
-          <option value="">Tous</option>
-          <option value="Actif">Actif</option>
-          <option value="Expiré">Expiré</option>
-        </select>
-      </div>
-
+    <div class="page-actions">
       <app-export-button [data]="memberSubscriptions()" type="members" label="Membres"></app-export-button>
-
       <button (click)="openNewMemberModal()" class="btn-gold text-sm py-2 px-4 shadow-gold flex items-center gap-2">
         <i class="fas fa-plus text-black-bg"></i>
-        <span class="hidden sm:inline">Nouveau membre</span>
+        <span>Nouveau membre</span>
       </button>
     </div>
   </div>
 
   <!-- KPI Cards -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500">
-      <div class="absolute -right-3 -top-3 w-16 h-16 bg-yellow-500/5 rounded-full blur-xl group-hover:bg-yellow-500/10 transition-colors"></div>
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
-        <i class="fas fa-clock text-yellow-400 text-lg"></i>
-      </div>
-      <div>
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Expirent cette semaine</p>
-        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ expiringThisWeek() }}</p>
-      </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <p class="kpi-label">EXPIRENT CETTE SEMAINE</p>
+      <p class="kpi-value">{{ expiringThisWeek() }}</p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-gold-main/30 transition-all duration-500">
-      <div class="absolute -right-3 -top-3 w-16 h-16 bg-gold-main/5 rounded-full blur-xl group-hover:bg-gold-main/10 transition-colors"></div>
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
-        <i class="fas fa-users text-gold-main text-lg"></i>
-      </div>
-      <div>
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Total Membres</p>
-        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ totalSubscribers() }}</p>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">TOTAL MEMBRES</p>
+      <p class="kpi-value">{{ totalSubscribers() }}</p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-gold-main/30 transition-all duration-500">
-      <div class="absolute -right-3 -top-3 w-16 h-16 bg-gold-main/5 rounded-full blur-xl group-hover:bg-gold-main/10 transition-colors"></div>
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
-        <i class="fas fa-chart-line text-gold-main text-lg"></i>
-      </div>
-      <div>
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Revenus</p>
-        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ totalRevenue() | number }}<span class="text-base text-gray-500 ml-1">DT</span></p>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">REVENUS</p>
+      <p class="kpi-value">{{ totalRevenue() | number }}<span style="font-size:1rem;color:var(--text-secondary)"> DT</span></p>
     </div>
-
-    <div class="premium-card p-5 flex items-center gap-4 relative overflow-hidden group hover:border-green-500/30 transition-all duration-500">
-      <div class="absolute -right-3 -top-3 w-16 h-16 bg-green-500/5 rounded-full blur-xl group-hover:bg-green-500/10 transition-colors"></div>
-      <div class="w-11 h-11 rounded-2xl bg-black-bg border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
-        <i class="fas fa-user-check text-green-400 text-lg"></i>
-      </div>
-      <div>
-        <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold font-montserrat">Membres Actifs</p>
-        <p class="text-3xl font-bold text-white tracking-tight font-montserrat">{{ activeSubscribers() }}</p>
-      </div>
+    <div class="kpi-card">
+      <p class="kpi-label">MEMBRES ACTIFS</p>
+      <p class="kpi-value">{{ activeSubscribers() }}</p>
     </div>
-
   </div>
 
   <!-- PLANS -->
@@ -196,7 +141,41 @@
 
   <!-- MEMBERS TABLE -->
   @if (viewMode() === 'members') {
+
     <div class="premium-card overflow-hidden">
+
+      <!-- Barre de recherche intégrée dans le card -->
+      <div class="flex items-center gap-3 px-6 py-4 border-b border-white/5">
+        <div class="relative flex-1">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+          <input type="text"
+                 [value]="searchTerm()"
+                 (input)="onSearchChange($any($event.target).value)"
+                 placeholder="Rechercher par nom, email…"
+                 class="w-full bg-black-bg border border-white/10 rounded-xl pl-9 pr-9 py-2
+                        text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#D4AF37]/50
+                        transition-colors">
+          @if (searchTerm()) {
+            <button (click)="onSearchChange('')"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          }
+        </div>
+        <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)"
+                class="bg-black-bg border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-300
+                       focus:outline-none focus:border-[#D4AF37]/50 transition-colors appearance-none cursor-pointer">
+          <option value="">Tous les statuts</option>
+          <option value="Actif">Actif</option>
+          <option value="Expiré">Expiré</option>
+          <option value="Expire bientôt">Expire bientôt</option>
+        </select>
+        @if (isApiLoading()) {
+          <i class="fas fa-circle-notch fa-spin text-[#D4AF37] text-sm shrink-0"></i>
+        }
+        <span class="text-xs text-gray-500 shrink-0">{{ totalElements() }} membres</span>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left font-inter">
           <thead class="text-xs text-gray-400 uppercase bg-black-sidebar/80 border-b border-gold-dark/20">
@@ -334,6 +313,38 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="flex items-center justify-between px-6 py-4 border-t border-white/5">
+          <span class="text-sm text-gray-500">
+            {{ pageStart() }}–{{ pageEnd() }} sur <span class="text-white font-semibold">{{ totalElements() }}</span> membres
+          </span>
+          <div class="flex items-center gap-1.5">
+            <button (click)="prevPage()" [disabled]="currentPage() === 0"
+                    class="w-8 h-8 rounded-lg bg-black-bg border border-white/10 text-gray-400
+                           hover:text-white hover:border-white/30 disabled:opacity-30 disabled:cursor-not-allowed
+                           transition-all flex items-center justify-center">
+              <i class="fas fa-chevron-left text-xs"></i>
+            </button>
+            @for (p of pageRange(); track p) {
+              <button (click)="goToPage(p)"
+                      [class]="p === currentPage()
+                        ? 'w-8 h-8 rounded-lg bg-[#D4AF37] text-black font-bold text-sm flex items-center justify-center'
+                        : 'w-8 h-8 rounded-lg bg-black-bg border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-all flex items-center justify-center text-sm'">
+                {{ p + 1 }}
+              </button>
+            }
+            <button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1"
+                    class="w-8 h-8 rounded-lg bg-black-bg border border-white/10 text-gray-400
+                           hover:text-white hover:border-white/30 disabled:opacity-30 disabled:cursor-not-allowed
+                           transition-all flex items-center justify-center">
+              <i class="fas fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+      }
+
     </div>
   }
 
@@ -569,97 +580,219 @@
   <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showEditModal.set(false)"></div>
 
-    <div class="premium-card w-full max-w-md p-8 relative z-10 border-blue-500/30">
+    <div class="premium-card w-full max-w-2xl relative z-10 border-blue-500/30 flex flex-col max-h-[90vh]">
 
-      <div class="text-center mb-6">
-        <div class="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
-          <i class="fas fa-pen text-blue-400 text-xl"></i>
-        </div>
-        <h2 class="text-xl font-playfair font-bold text-white">Modifier le Membre</h2>
-        <p class="text-gray-500 text-sm mt-1">{{ editingMember()!.memberName }}</p>
-      </div>
-
-      <div class="space-y-4 mb-6">
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Email</label>
-          <div class="relative">
-            <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
-            <input type="email"
-                   [ngModel]="editingMember()!.email"
-                   (ngModelChange)="editingMember.update(m => m ? {...m, email: $event} : m); editEmailError.set('')"
-                   placeholder="email@exemple.com"
-                   [class]="'w-full bg-black-bg border rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none transition-colors ' + (editEmailError() ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-blue-400')">
+      <!-- Header fixe -->
+      <div class="p-8 pb-4 border-b border-white/5 flex-shrink-0">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-pen text-blue-400 text-lg"></i>
           </div>
-          @if (editEmailError()) {
-            <p class="text-[10px] text-red-400 flex items-center gap-1">
-              <i class="fas fa-circle-exclamation text-[9px]"></i>
-              {{ editEmailError() }}
-            </p>
-          } @else {
-            <p class="text-[10px] text-gray-600">Modifier changera aussi l'identifiant de connexion</p>
-          }
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Statut</label>
-          <select
-            [ngModel]="editingMember()!.status"
-            (ngModelChange)="editingMember.update(m => m ? {...m, status: $event} : m)"
-            class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
-            <option value="Actif">Actif</option>
-            <option value="Expiré">Expiré / Inactif</option>
-          </select>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Plan souscrit</label>
-          <select
-            [ngModel]="editingMember()!.planName"
-            (ngModelChange)="editingMember.update(m => m ? {...m, planName: $event} : m)"
-            class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
-            @for (plan of plans(); track plan.id) {
-              <option [value]="plan.name">{{ plan.name }} — {{ plan.price }}DT/mois</option>
-            }
-            @if (plans().length === 0) {
-              <option disabled>Aucun plan disponible</option>
-            }
-          </select>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Statut paiement</label>
-          <select
-            [ngModel]="editingMember()!.paymentStatus"
-            (ngModelChange)="editingMember.update(m => m ? {...m, paymentStatus: $event} : m)"
-            class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
-            <option>Payé</option>
-            <option>En attente</option>
-            <option>Échoué</option>
-          </select>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Mode de paiement</label>
-          <select
-            [ngModel]="editingMember()!.paymentMethod"
-            (ngModelChange)="editingMember.update(m => m ? {...m, paymentMethod: $event} : m)"
-            class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
-            <option>Carte</option>
-            <option>Cash</option>
-            <option>Virement</option>
-          </select>
+          <div>
+            <h2 class="text-xl font-playfair font-bold text-white">Modifier le Membre</h2>
+            <p class="text-gray-500 text-sm">{{ editingMember()!.memberName }}</p>
+          </div>
         </div>
       </div>
 
-      <div class="flex gap-3">
+      <!-- Contenu scrollable -->
+      <div class="overflow-y-auto flex-1 p-8 pt-5 space-y-6 custom-scrollbar">
+
+        <!-- Section : Identité -->
+        <div>
+          <p class="text-[10px] text-blue-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-user text-[9px]"></i>Identité
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Nom complet -->
+            <div class="col-span-2 space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Nom complet</label>
+              <div class="relative">
+                <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="text"
+                       [ngModel]="editingMember()!.memberName"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, memberName: $event} : m)"
+                       placeholder="Prénom Nom"
+                       class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+              </div>
+            </div>
+            <!-- Email -->
+            <div class="col-span-2 space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Email</label>
+              <div class="relative">
+                <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="email"
+                       [ngModel]="editingMember()!.email"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, email: $event} : m); editEmailError.set('')"
+                       placeholder="email@exemple.com"
+                       [class]="'w-full bg-black-bg border rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none transition-colors ' + (editEmailError() ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-blue-400')">
+              </div>
+              @if (editEmailError()) {
+                <p class="text-[10px] text-red-400 flex items-center gap-1">
+                  <i class="fas fa-circle-exclamation text-[9px]"></i>{{ editEmailError() }}
+                </p>
+              } @else {
+                <p class="text-[10px] text-gray-600">Modifier changera aussi l'identifiant de connexion</p>
+              }
+            </div>
+            <!-- Téléphone -->
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Téléphone</label>
+              <div class="relative">
+                <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="tel"
+                       [ngModel]="editingMember()!.phone"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, phone: $event} : m)"
+                       placeholder="+216 XX XXX XXX"
+                       class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+              </div>
+            </div>
+            <!-- Genre -->
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Genre</label>
+              <select [ngModel]="editingMember()!.gender"
+                      (ngModelChange)="editingMember.update(m => m ? {...m, gender: $event} : m)"
+                      class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
+                <option value="MALE">♂ Homme</option>
+                <option value="FEMALE">♀ Femme</option>
+              </select>
+            </div>
+            <!-- Date de naissance -->
+            <div class="col-span-2 space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Date de naissance</label>
+              <div class="relative">
+                <i class="fas fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="date"
+                       [ngModel]="editingMember()!.birthDate"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, birthDate: $event} : m)"
+                       class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section : Adresse -->
+        <div>
+          <p class="text-[10px] text-blue-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-map-marker-alt text-[9px]"></i>Adresse
+          </p>
+          <div class="space-y-1">
+            <div class="relative">
+              <i class="fas fa-home absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+              <input type="text"
+                     [ngModel]="editingMember()!.address"
+                     (ngModelChange)="editingMember.update(m => m ? {...m, address: $event} : m)"
+                     placeholder="Rue, Ville, Code postal"
+                     class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section : Contact d'urgence -->
+        <div>
+          <p class="text-[10px] text-orange-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-phone-alt text-[9px]"></i>Contact d'urgence
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Nom du contact</label>
+              <div class="relative">
+                <i class="fas fa-user-friends absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="text"
+                       [ngModel]="editingMember()!.emergencyContact"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, emergencyContact: $event} : m)"
+                       placeholder="Nom du contact"
+                       class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Tél. urgence</label>
+              <div class="relative">
+                <i class="fas fa-phone-square absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="tel"
+                       [ngModel]="editingMember()!.emergencyPhone"
+                       (ngModelChange)="editingMember.update(m => m ? {...m, emergencyPhone: $event} : m)"
+                       placeholder="+216 XX XXX XXX"
+                       class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section : Informations médicales -->
+        <div>
+          <p class="text-[10px] text-red-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-notes-medical text-[9px]"></i>Notes médicales
+          </p>
+          <textarea [ngModel]="editingMember()!.medicalNotes"
+                    (ngModelChange)="editingMember.update(m => m ? {...m, medicalNotes: $event} : m)"
+                    placeholder="Allergies, contre-indications, remarques médicales…"
+                    rows="3"
+                    class="w-full bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3 text-white text-sm focus:border-red-400/50 focus:outline-none transition-colors resize-none placeholder-gray-600"></textarea>
+        </div>
+
+        <!-- Section : Abonnement -->
+        <div>
+          <p class="text-[10px] text-blue-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-id-card text-[9px]"></i>Abonnement
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Statut membre</label>
+              <select [ngModel]="editingMember()!.status"
+                      (ngModelChange)="editingMember.update(m => m ? {...m, status: $event} : m)"
+                      class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
+                <option value="Actif">Actif</option>
+                <option value="Expiré">Expiré / Inactif</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Plan souscrit</label>
+              <select [ngModel]="editingMember()!.planName"
+                      (ngModelChange)="editingMember.update(m => m ? {...m, planName: $event} : m)"
+                      class="w-full bg-black-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer">
+                @for (plan of plans(); track plan.id) {
+                  <option [value]="plan.name">{{ plan.name }} — {{ plan.price }}DT/mois</option>
+                }
+                @if (plans().length === 0) {
+                  <option disabled>Aucun plan disponible</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section : Photo -->
+        <div>
+          <p class="text-[10px] text-blue-400/70 uppercase font-black tracking-widest mb-3 flex items-center gap-2">
+            <i class="fas fa-image text-[9px]"></i>Photo de profil
+          </p>
+          <div class="relative">
+            <i class="fas fa-link absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+            <input type="url"
+                   [ngModel]="editingMember()!.profileImageUrl"
+                   (ngModelChange)="editingMember.update(m => m ? {...m, profileImageUrl: $event} : m)"
+                   placeholder="https://... (URL de la photo)"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-blue-400 focus:outline-none transition-colors">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer fixe -->
+      <div class="p-8 pt-4 border-t border-white/5 flex-shrink-0 flex gap-3">
         <button (click)="showEditModal.set(false)"
                 class="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 transition-colors">
           Annuler
         </button>
         <button (click)="saveEditedMember()"
-                class="flex-1 py-3 rounded-xl text-sm font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i>
-          Sauvegarder
+                [disabled]="isProcessing()"
+                class="flex-1 py-3 rounded-xl text-sm font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          @if (isProcessing()) {
+            <i class="fas fa-circle-notch fa-spin text-xs"></i>Sauvegarde…
+          } @else {
+            <i class="fas fa-save"></i>Sauvegarder
+          }
         </button>
       </div>
 
@@ -726,6 +859,31 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Genre</label>
+            <select [(ngModel)]="newMemberGender"
+                    class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                           focus:border-[#D4AF37] focus:outline-none transition-colors appearance-none cursor-pointer">
+              <option value="MALE">♂ Homme</option>
+              <option value="FEMALE">♀ Femme</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Date de naissance</label>
+            <input type="date" [(ngModel)]="newMemberBirthDate"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors [color-scheme:dark]">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Adresse</label>
+          <input type="text" [(ngModel)]="newMemberAddress" placeholder="Ex : 12 rue de la Paix, Tunis"
+                 class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                        focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
             <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Plan</label>
             <select [(ngModel)]="newMemberPlan"
                     class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
@@ -748,6 +906,37 @@
               <option>Virement</option>
             </select>
           </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <div class="flex-1 h-px bg-white/5"></div>
+          <span class="text-[9px] text-gray-600 uppercase tracking-widest font-bold">Contact d'urgence</span>
+          <div class="flex-1 h-px bg-white/5"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Nom contact</label>
+            <input type="text" [(ngModel)]="newMemberEmergencyContact" placeholder="Prénom Nom"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Tél. urgence</label>
+            <input type="tel" [(ngModel)]="newMemberEmergencyPhone" placeholder="0612345678"
+                   class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                          focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest flex items-center gap-1.5">
+            <i class="fas fa-notes-medical text-red-400"></i>Notes médicales
+          </label>
+          <textarea rows="2" [(ngModel)]="newMemberMedicalNotes"
+                    placeholder="Allergies, contre-indications, informations médicales importantes…"
+                    class="w-full bg-black-bg border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
+                           focus:border-[#D4AF37] focus:outline-none transition-colors placeholder-gray-600 resize-none"></textarea>
         </div>
 
         <div class="space-y-1">
@@ -839,6 +1028,33 @@
               <span [class]="sub.status === 'Expiré' ? 'text-red-400 font-bold' : 'text-white'">{{ sub.expiryDate | date:'longDate' }}</span>
             </div>
           </div>
+          @if (sub.gender) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Genre</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-venus-mars text-gray-400"></i>
+                <span class="text-white">{{ sub.gender === 'MALE' ? '♂ Homme' : '♀ Femme' }}</span>
+              </div>
+            </div>
+          }
+          @if (sub.birthDate) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Date de naissance</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-birthday-cake text-gray-400"></i>
+                <span class="text-white">{{ sub.birthDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          }
+          @if (sub.address) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Adresse</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-map-marker-alt text-gray-400"></i>
+                <span class="text-white">{{ sub.address }}</span>
+              </div>
+            </div>
+          }
           <div class="flex flex-col gap-1 text-xs pt-2">
             <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5">
               <span class="text-gray-400">Séances ce mois</span>
@@ -862,6 +1078,34 @@
               {{ sub.paymentStatus }}
             </span>
           </div>
+          @if (sub.emergencyContact) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Contact d'urgence</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-phone-alt text-gray-400"></i>
+                <span class="text-white">{{ sub.emergencyContact }}</span>
+              </div>
+            </div>
+          }
+          @if (sub.emergencyPhone) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Tél. urgence</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-phone text-gray-400"></i>
+                <span class="text-white">{{ sub.emergencyPhone }}</span>
+              </div>
+            </div>
+          }
+          @if (sub.medicalNotes) {
+            <div class="flex flex-col gap-1">
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                <i class="fas fa-notes-medical text-red-400 text-xs"></i>Notes médicales
+              </span>
+              <div class="bg-red-500/5 border border-red-500/10 text-red-300 text-xs px-3 py-2 rounded-xl">
+                {{ sub.medicalNotes }}
+              </div>
+            </div>
+          }
           <div class="flex flex-col gap-1 text-xs pt-2">
             <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5">
               <span class="text-gray-400">Total payé</span>
@@ -878,8 +1122,16 @@
             {{ isReminderSent(sub.id) ? 'Rappel envoyé' : 'Envoyer un rappel' }}
           </button>
         }
-        <button (click)="renewSubscription()" class="flex-1 btn-gold flex items-center justify-center gap-2 shadow-gold">
-          <i class="fas fa-rotate"></i> Renouveler abonnement
+        <button (click)="renewSubscription()"
+                [disabled]="isProcessing() || sub.paymentStatus !== 'Payé'"
+                [title]="sub.paymentStatus !== 'Payé' ? 'Paiement requis avant renouvellement' : 'Renouveler l\'abonnement'"
+                class="flex-1 btn-gold flex items-center justify-center gap-2 shadow-gold
+                       disabled:opacity-40 disabled:cursor-not-allowed">
+          @if (isProcessing()) {
+            <i class="fas fa-spinner animate-spin"></i> Renouvellement…
+          } @else {
+            <i class="fas fa-rotate"></i> Renouveler abonnement
+          }
         </button>
         <button (click)="closeMember()" class="px-8 py-3 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-all font-bold">
           Fermer

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SubscriptionApiService } from '../../services/subscription-api.service';
 import { MemberApiService } from '../../services/member-api.service';
+import { ToastService } from '../../services/toast.service';
 
 interface Plan {
   id: string;
@@ -41,6 +42,7 @@ const PLAN_COLORS: Plan['color'][] = ['blue', 'gold', 'purple', 'green'];
 export class Subscriptions implements OnInit {
   private subApi    = inject(SubscriptionApiService);
   private memberApi = inject(MemberApiService);
+  private toast     = inject(ToastService);
 
   ngOnInit() {
     this.loadPlans();
@@ -290,29 +292,32 @@ export class Subscriptions implements OnInit {
   }
 
   renewMember(id: string) {
-    // Optimistic local update
-    this.members.update(list => list.map(m =>
-      m.id === id ? {
-        ...m,
-        status:        'Actif' as const,
-        expiry:        new Date(Date.now() + 30 * 864e5),
-        paymentStatus: 'Payé' as const,
-      } : m
-    ));
-    // Try to create a new subscription on the backend
-    const plan = this.plans().find(p => {
-      const member = this.members().find(m => m.id === id);
-      return member ? p.name === member.plan : false;
+    const member = this.members().find(m => m.id === id);
+    const plan   = this.plans().find(p => p.name === member?.plan);
+    if (!plan) return;
+
+    this.subApi.create({
+      userId:    Number(id),
+      planId:    Number(plan.id),
+      startDate: new Date().toISOString().split('T')[0],
+      endDate:   new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0],
+      status:    'ACTIVE',
+    }).subscribe({
+      next: () => {
+        this.members.update(list => list.map(m =>
+          m.id === id ? {
+            ...m,
+            status:        'Actif' as const,
+            expiry:        new Date(Date.now() + 30 * 864e5),
+            paymentStatus: 'Payé' as const,
+          } : m
+        ));
+        this.toast.success('Abonnement renouvelé', `L'abonnement de ${member?.name} a été renouvelé.`);
+      },
+      error: (err) => {
+        this.toast.error('Erreur', err.error?.message || 'Impossible de renouveler l\'abonnement.');
+      }
     });
-    if (plan) {
-      this.subApi.create({
-        userId:    Number(id),
-        planId:    Number(plan.id),
-        startDate: new Date().toISOString().split('T')[0],
-        endDate:   new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0],
-        status:    'ACTIVE',
-      }).subscribe({ error: () => {} });
-    }
   }
 
   openEditPlan(plan: Plan) {
@@ -356,21 +361,9 @@ export class Subscriptions implements OnInit {
         this.showEditPlan.set(false);
         this.editingPlan.set(null);
       },
-      error: () => {
-        // Offline fallback
-        this.plans.update(list => list.map(p =>
-          p.id === plan.id ? {
-            ...p,
-            name:     this.editPlan.name.trim(),
-            price:    this.editPlan.price,
-            duration: this.editPlan.duration,
-            color:    this.editPlan.color,
-            access:   this.editPlan.access.split('\n').filter(a => a.trim()),
-          } : p
-        ));
+      error: (err) => {
         this.isProcessing.set(false);
-        this.showEditPlan.set(false);
-        this.editingPlan.set(null);
+        this.toast.error('Erreur', err.error?.message || 'Impossible de modifier le plan.');
       }
     });
   }
@@ -385,9 +378,8 @@ export class Subscriptions implements OnInit {
         this.plans.update(list => list.filter(p => p.id !== planId));
         this.showDeleteConfirm.set(null);
       },
-      error: () => {
-        // Offline fallback
-        this.plans.update(list => list.filter(p => p.id !== planId));
+      error: (err) => {
+        this.toast.error('Erreur', err.error?.message || 'Impossible de supprimer le plan.');
         this.showDeleteConfirm.set(null);
       }
     });

@@ -12,7 +12,6 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   }
 
   const userRole  = auth.currentUser()?.role ?? '';
-  // Route can declare required roles via data: { roles: ['ADMIN'] }
   const required: string[] = route.data?.['roles'] ?? ['ADMIN'];
   const hasAccess = required.some(r => userRole === `ROLE_${r}`);
 

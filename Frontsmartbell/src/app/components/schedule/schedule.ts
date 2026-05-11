@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CourseCalendarComponent } from '../course-calendar/course-calendar.component';
 
@@ -9,10 +9,4 @@ import { CourseCalendarComponent } from '../course-calendar/course-calendar.comp
   templateUrl: './schedule.html',
   styleUrl: './schedule.css'
 })
-export class Schedule {
-  typeFilter = signal('all');
-
-  printSchedule() {
-    window.print();
-  }
-}
+export class Schedule {}

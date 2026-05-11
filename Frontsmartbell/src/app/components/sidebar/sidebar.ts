@@ -1,7 +1,8 @@
-import { Component, signal, computed, inject, Input, Output, EventEmitter } from '@angular/core';
+import { Component, signal, computed, inject, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { StatisticsApiService } from '../../services/statistics-api.service';
 
 interface NavItem {
   icon: string;
@@ -20,9 +21,10 @@ interface NavItem {
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css'
 })
-export class Sidebar {
-  private router = inject(Router);
-  private auth   = inject(AuthService);
+export class Sidebar implements OnInit {
+  private router  = inject(Router);
+  private auth    = inject(AuthService);
+  private statsApi = inject(StatisticsApiService);
 
   userName = computed(() => {
     const user = this.auth.currentUser();
@@ -63,6 +65,23 @@ export class Sidebar {
 
   showLogoutConfirm = signal(false);
 
+  ngOnInit() {
+    this.statsApi.getDashboard().subscribe({
+      next: (stats) => {
+        this.navItems.update(items => items.map(item => {
+          if (item.route === '/members')       return { ...item, badge: stats.expiringSoonCount   || undefined };
+          if (item.route === '/subscriptions') return { ...item, badge: stats.expiredSubscriptions || undefined };
+          if (item.route === '/schedule')      return { ...item, badge: stats.totalCourses         || undefined };
+          if (item.route === '/payments')      return { ...item, badge: undefined };
+          return item;
+        }));
+      },
+      error: () => {
+        // leave static badges as-is on error
+      }
+    });
+  }
+
   toggle() {
     this.toggleCollapse.emit();
   }
@@ -74,12 +93,12 @@ export class Sidebar {
 
   navItems = signal<NavItem[]>([
     { icon: 'fas fa-th-large',          label: 'Dashboard',      route: '/dashboard',      roles: ['ADMIN'] },
-    { icon: 'fas fa-users',             label: 'Membres',        route: '/members',        roles: ['ADMIN'], badge: 3, badgeColor: 'gold' },
+    { icon: 'fas fa-users',             label: 'Membres',        route: '/members',        roles: ['ADMIN'], badgeColor: 'gold' },
     { icon: 'fas fa-user-tie',          label: 'Coachs',         route: '/coaches',        roles: ['ADMIN'] },
-    { icon: 'fas fa-id-card',           label: 'Abonnements',    route: '/subscriptions',  roles: ['ADMIN'], badge: 5, badgeColor: 'red' },
-    { icon: 'fas fa-calendar-alt',      label: 'Cours',          route: '/schedule',       roles: ['ADMIN', 'COACH'], badge: 2, badgeColor: 'blue' },
+    { icon: 'fas fa-id-card',           label: 'Abonnements',    route: '/subscriptions',  roles: ['ADMIN'], badgeColor: 'red' },
+    { icon: 'fas fa-calendar-alt',      label: 'Cours',          route: '/schedule',       roles: ['ADMIN', 'COACH'], badgeColor: 'blue' },
     // ── Gestion & Outils ───────────────────────────────────────────────────
-    { icon: 'fas fa-credit-card',       label: 'Paiement',       route: '/payments',       roles: ['ADMIN'], badge: 4, badgeColor: 'red', section: 'Gestion' },
+    { icon: 'fas fa-credit-card',       label: 'Paiement',       route: '/payments',       roles: ['ADMIN'], section: 'Gestion' },
     { icon: 'fas fa-door-open',         label: 'Salles',         route: '/rooms',          roles: ['ADMIN'] },
     { icon: 'fas fa-ticket-alt',        label: 'Événements',     route: '/events',         roles: ['ADMIN'] },
     { icon: 'fas fa-dumbbell',          label: 'Machines',       route: '/equipment',      roles: ['ADMIN'] },

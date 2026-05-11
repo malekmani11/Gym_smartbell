@@ -1,5 +1,6 @@
 package com.gymapp.dto.auth;
 
+import com.gymapp.entity.enums.Specialization;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -40,5 +41,5 @@ public class RegisterRequest {
 
     private String roleName; // e.g. "ROLE_MEMBER"
 
-    private String specialization; // used when roleName = ROLE_COACH
+    private Specialization specialization; // used when roleName = ROLE_COACH
 }

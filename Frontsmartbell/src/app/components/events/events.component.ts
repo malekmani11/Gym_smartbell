@@ -2,7 +2,6 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventApiService } from '../../services/event-api.service';
-import { AuthService } from '../../services/auth.service';
 import { EventDTO, EventRegistrationDTO } from '../../models/api.models';
 import { ToastService } from '../../services/toast.service';
 
@@ -15,7 +14,6 @@ import { ToastService } from '../../services/toast.service';
 })
 export class EventsComponent implements OnInit {
   private eventApi = inject(EventApiService);
-  private auth     = inject(AuthService);
   private toast    = inject(ToastService);
 
   events = signal<EventDTO[]>([]);
@@ -158,9 +156,6 @@ export class EventsComponent implements OnInit {
     this.dateEndTouched.set(true);
     if (!this.isFormDatesValid()) return;
 
-    const creatorId = this.auth.currentUser()?.id;
-    if (!creatorId) return;
-
     if (this.isEditing() && this.selectedEvent()) {
       this.eventApi.update(this.selectedEvent()!.id, this.eventForm()).subscribe({
         next: (updated) => {
@@ -171,7 +166,7 @@ export class EventsComponent implements OnInit {
         error: () => this.toast.error('Erreur', 'Mise à jour échouée')
       });
     } else {
-      this.eventApi.create(this.eventForm(), creatorId).subscribe({
+      this.eventApi.create(this.eventForm()).subscribe({
         next: (created) => {
           this.events.update(list => [...list, created]);
           this.toast.success('Succès', 'Événement créé');

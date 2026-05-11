@@ -1,56 +1,54 @@
 <div class="notifications-container">
-  <header class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="header-title">Notifications</h1>
-      <p class="text-gray-500 text-sm">Gérez et diffusez des informations à vos membres</p>
+  <div class="page-header-row">
+    <div class="page-header">
+      <p class="page-label">SMARTBELL · NOTIFICATIONS</p>
+      <h1>Gestion des <span class="accent">Notifications</span></h1>
+      <p class="page-subtitle">Gérez et diffusez des informations à vos membres</p>
     </div>
-    <div class="flex gap-3">
-      <button class="btn btn-outline" (click)="markAllAsRead()">
+    <div class="page-actions">
+      <button class="btn-secondary" (click)="markAllAsRead()">
         <i class="fas fa-check-double"></i> Tout marquer lu
       </button>
-      <button class="btn btn-outline" style="color:#ef4444;border-color:#ef444440" (click)="deleteAll()">
+      <button class="btn-secondary btn-danger" (click)="deleteAll()">
         <i class="fas fa-trash"></i> Tout supprimer
       </button>
-      <button class="btn btn-amber" (click)="openCreateModal()">
+      <button class="btn-primary" (click)="openCreateModal()">
         <i class="fas fa-plus"></i> Nouvelle notification
       </button>
     </div>
-  </header>
+  </div>
 
-  <!-- KPI Bar -->
-  <div class="kpi-grid">
+  <!-- KPI Cards -->
+  <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr)">
     <div class="kpi-card">
-      <span class="kpi-label">TOTAL</span>
-      <span class="kpi-value text-white">{{ stats().total }}</span>
+      <p class="kpi-label">TOTAL</p>
+      <p class="kpi-value">{{ stats().total }}</p>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label text-red-400">NON LUES</span>
-      <span class="kpi-value text-red-500">{{ stats().unread }}</span>
+      <p class="kpi-label">NON LUES</p>
+      <p class="kpi-value">{{ stats().unread }}</p>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">AUJOURD'HUI</span>
-      <span class="kpi-value text-amber-500">{{ stats().today }}</span>
+      <p class="kpi-label">AUJOURD'HUI</p>
+      <p class="kpi-value">{{ stats().today }}</p>
     </div>
   </div>
 
   <!-- Filters -->
-  <div class="filters-bar">
-    <button class="filter-btn" [class.active]="filterType() === 'ALL' && !filterUnread()" 
+  <div class="filter-tabs">
+    <button class="filter-btn" [class.active]="filterType() === 'ALL' && !filterUnread()"
       (click)="filterType.set('ALL'); filterUnread.set(false)">Toutes</button>
-    
-    <button class="filter-btn" [class.active]="filterUnread()" 
+    <button class="filter-btn" [class.active]="filterUnread()"
       (click)="filterUnread.set(true)">Non lues</button>
-
-    <div class="h-6 w-px bg-gray-700 mx-2"></div>
-    
-    <button class="filter-btn" [class.active]="filterType() === 'INFO'" 
-      (click)="filterType.set('INFO')">INFO</button>
-    <button class="filter-btn" [class.active]="filterType() === 'WARNING'" 
-      (click)="filterType.set('WARNING')">WARNING</button>
-    <button class="filter-btn" [class.active]="filterType() === 'ALERT'" 
-      (click)="filterType.set('ALERT')">ALERT</button>
-    <button class="filter-btn" [class.active]="filterType() === 'REMINDER'" 
-      (click)="filterType.set('REMINDER')">REMINDER</button>
+    <div style="width:1px;background:#333;margin:0 4px;align-self:stretch"></div>
+    <button class="filter-btn" [class.active]="filterType() === 'INFO' && !filterUnread()"
+      (click)="filterType.set('INFO'); filterUnread.set(false)">Info</button>
+    <button class="filter-btn" [class.active]="filterType() === 'WARNING' && !filterUnread()"
+      (click)="filterType.set('WARNING'); filterUnread.set(false)">Warning</button>
+    <button class="filter-btn" [class.active]="filterType() === 'ALERT' && !filterUnread()"
+      (click)="filterType.set('ALERT'); filterUnread.set(false)">Alert</button>
+    <button class="filter-btn" [class.active]="filterType() === 'REMINDER' && !filterUnread()"
+      (click)="filterType.set('REMINDER'); filterUnread.set(false)">Reminder</button>
   </div>
 
   <!-- List -->

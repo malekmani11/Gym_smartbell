@@ -37,11 +37,19 @@ public class Member extends User {
     @Column(name = "medical_notes", columnDefinition = "TEXT")
     private String medicalNotes;
 
+    @Column(name = "loyalty_points", nullable = false)
+    @Builder.Default
+    private Integer loyaltyPoints = 0;
+
     // ── Relationships ──────────────────────────────────────
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<CourseReservation> courseReservations = new HashSet<>();
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<LoyaltyTransaction> loyaltyTransactions = new HashSet<>();
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

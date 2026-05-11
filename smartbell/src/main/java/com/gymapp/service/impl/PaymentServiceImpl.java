@@ -4,6 +4,8 @@ import com.gymapp.dto.PaymentDTO;
 import com.gymapp.entity.Payment;
 import com.gymapp.entity.Subscription;
 import com.gymapp.entity.enums.PaymentStatus;
+import com.gymapp.entity.enums.SubscriptionStatus;
+import com.gymapp.exception.ActiveSubscriptionException;
 import com.gymapp.mapper.EntityMapper;
 import com.gymapp.repository.PaymentRepository;
 import com.gymapp.repository.SubscriptionRepository;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -35,10 +38,18 @@ public class PaymentServiceImpl implements PaymentService {
         Subscription subscription = subscriptionRepository.findById(dto.getSubscriptionId())
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found"));
 
+        LocalDateTime now = LocalDateTime.now();
+        Long userId = subscription.getUser().getId();
+        long existing = paymentRepository.countCompletedPaymentsForUserInMonth(
+                userId, now.getYear(), now.getMonthValue());
+        if (existing > 0) {
+            throw new BadRequestException("Ce membre a déjà un paiement complété ce mois-ci");
+        }
+
         Payment payment = Payment.builder()
                 .subscription(subscription)
                 .amount(dto.getAmount())
-                .paymentDate(LocalDateTime.now())
+                .paymentDate(now)
                 .paymentMethod(dto.getPaymentMethod())
                 .status(PaymentStatus.COMPLETED)
                 .transactionRef(dto.getTransactionRef())
@@ -109,8 +120,31 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public Page<PaymentDTO> getAll(PaymentStatus status, Pageable pageable) {
         if (status != null) {
-            return paymentRepository.findByStatus(status, pageable).map(mapper::toPaymentDTO);
+            return paymentRepository.findByStatusWithValidSubscription(status, pageable).map(mapper::toPaymentDTO);
         }
-        return paymentRepository.findAll(pageable).map(mapper::toPaymentDTO);
+        return paymentRepository.findAllWithValidSubscription(pageable).map(mapper::toPaymentDTO);
+    }
+
+    @Override
+    public void deletePayment(Long id) {
+        log.info("Deleting payment {}", id);
+        if (!paymentRepository.existsById(id)) {
+            throw new EntityNotFoundException("Payment not found with id: " + id);
+        }
+        paymentRepository.deleteById(id);
+    }
+
+    @Override
+    public PaymentDTO updatePayment(Long id, PaymentDTO dto) {
+        log.info("Updating payment {} status={} method={}", id, dto.getStatus(), dto.getPaymentMethod());
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found with id: " + id));
+        if (dto.getStatus() != null) {
+            payment.setStatus(dto.getStatus());
+        }
+        if (dto.getPaymentMethod() != null) {
+            payment.setPaymentMethod(dto.getPaymentMethod());
+        }
+        return mapper.toPaymentDTO(paymentRepository.save(payment));
     }
 }

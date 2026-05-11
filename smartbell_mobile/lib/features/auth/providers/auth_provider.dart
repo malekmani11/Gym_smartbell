@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/device_token_service.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../models/auth_response.dart';
 import '../services/auth_service.dart';
@@ -48,6 +49,7 @@ class AuthProvider extends ChangeNotifier {
       await _persist();
       _status = AuthStatus.authenticated;
       _setLoading(false);
+      DeviceTokenService.registerToken();
       return true;
     } catch (e) {
       _error = DioClient.errorMessage(e);
@@ -81,11 +83,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    DeviceTokenService.removeToken();
     try {
       await SecureStorage.clear();
-    } catch (_) {
-      // ignore storage errors on web
-    }
+    } catch (_) {}
     _user   = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();

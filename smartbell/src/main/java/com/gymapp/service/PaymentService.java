@@ -25,4 +25,8 @@ public interface PaymentService {
     com.gymapp.dto.PaymentStatsDTO getStats();
 
     Page<PaymentDTO> getAll(com.gymapp.entity.enums.PaymentStatus status, Pageable pageable);
+
+    void deletePayment(Long id);
+
+    PaymentDTO updatePayment(Long id, PaymentDTO dto);
 }

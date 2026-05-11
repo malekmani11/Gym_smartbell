@@ -51,8 +51,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/nutrition-plans/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers(HttpMethod.GET, "/api/coaches/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.POST, "/api/coaches/*/ratings").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers("/api/notifications/user/**").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers("/api/messages/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers("/api/devices/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         // Admin-only endpoints
                         .requestMatchers("/api/members/**").hasRole("ADMIN")
                         .requestMatchers("/api/coaches/**").hasRole("ADMIN")

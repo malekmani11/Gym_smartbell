@@ -1,6 +1,7 @@
 package com.gymapp.dto;
 
 import com.gymapp.entity.enums.AvailabilityStatus;
+import com.gymapp.entity.enums.Specialization;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,10 +21,11 @@ public class CoachDTO {
     private String lastName;
     private String email;
     private String phone;
-    private String specialization;
+    private Specialization specialization;
     private String bio;
     private String certification;
     private LocalDate hireDate;
     private AvailabilityStatus availabilityStatus;
     private String profileImageUrl;
+    private Double ratingAvg;
 }

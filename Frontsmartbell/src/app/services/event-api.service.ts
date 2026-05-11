@@ -17,8 +17,8 @@ export class EventApiService {
     return this.http.get<EventDTO>(`${this.BASE}/${id}`);
   }
 
-  create(dto: Partial<EventDTO>, creatorId: number): Observable<EventDTO> {
-    return this.http.post<EventDTO>(`${this.BASE}/creator/${creatorId}`, dto);
+  create(dto: Partial<EventDTO>): Observable<EventDTO> {
+    return this.http.post<EventDTO>(this.BASE, dto);
   }
 
   update(id: number, dto: Partial<EventDTO>): Observable<EventDTO> {
