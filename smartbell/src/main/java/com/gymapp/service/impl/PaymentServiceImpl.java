@@ -6,6 +6,7 @@ import com.gymapp.entity.Subscription;
 import com.gymapp.entity.enums.PaymentStatus;
 import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.exception.ActiveSubscriptionException;
+import com.gymapp.exception.BadRequestException;
 import com.gymapp.mapper.EntityMapper;
 import com.gymapp.repository.PaymentRepository;
 import com.gymapp.repository.SubscriptionRepository;
