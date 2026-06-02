@@ -1,10 +1,16 @@
 package com.gymapp.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymapp.dto.AiProgramRequest;
 import com.gymapp.dto.AiProgramResponse;
 import com.gymapp.dto.FastApiProgramRequest;
 import com.gymapp.dto.FastApiProgramResponse;
+import com.gymapp.entity.Member;
+import com.gymapp.entity.SavedAiProgram;
+import com.gymapp.entity.enums.AiProgramStatus;
 import com.gymapp.repository.MemberRepository;
+import com.gymapp.repository.SavedAiProgramRepository;
 import com.gymapp.service.AiProgramService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -26,20 +32,21 @@ import java.util.Objects;
 public class AiProgramServiceImpl implements AiProgramService {
 
     private final MemberRepository memberRepository;
+    private final SavedAiProgramRepository savedAiProgramRepository;
     private final WebClient        webClient;
+    private final ObjectMapper     objectMapper;
 
     @Value("${ml.api.url:http://localhost:8000}")
     private String mlApiBaseUrl;
 
     @Override
+    @Transactional
     public AiProgramResponse generateProgram(Long memberId, AiProgramRequest request) {
         Objects.requireNonNull(memberId, "memberId ne peut pas être null");
         log.info("Génération de programme ML pour le membre id={}", memberId);
 
-        // Valide que le membre existe en base
-        if (!memberRepository.existsById(memberId)) {
-            throw new EntityNotFoundException("Membre introuvable : " + memberId);
-        }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Membre introuvable : " + memberId));
 
         FastApiProgramResponse fastApiRes = callMlApi(
                 FastApiProgramRequest.builder()
@@ -53,14 +60,38 @@ public class AiProgramServiceImpl implements AiProgramService {
                         .build()
         );
 
+        saveProgram(member, request.getCoachId(), fastApiRes);
+
         return AiProgramResponse.builder()
-                .programme    (fastApiRes.getProgramme())
+                .seances      (fastApiRes.getSeances())
+                .noteCoach    (fastApiRes.getNoteCoach())
                 .typeProgramme(fastApiRes.getTypeProgramme())
                 .intensite    (fastApiRes.getIntensite())
                 .split        (fastApiRes.getSplit())
                 .imc          (fastApiRes.getImc())
                 .imcCategorie (fastApiRes.getImcCategorie())
                 .build();
+    }
+
+    private void saveProgram(Member member, Long coachId, FastApiProgramResponse res) {
+        try {
+            String json = objectMapper.writeValueAsString(res.getSeances());
+            savedAiProgramRepository.save(SavedAiProgram.builder()
+                    .member(member)
+                    .coachId(coachId)
+                    .status(AiProgramStatus.PENDING)
+                    .programJson(json)
+                    .noteCoach(res.getNoteCoach())
+                    .typeProgramme(res.getTypeProgramme())
+                    .intensite(res.getIntensite())
+                    .split(res.getSplit())
+                    .imc(res.getImc())
+                    .imcCategorie(res.getImcCategorie())
+                    .build());
+            log.info("Programme sauvegardé en base pour le membre {}", member.getId());
+        } catch (JsonProcessingException e) {
+            log.warn("Impossible de sauvegarder le programme en base : {}", e.getMessage());
+        }
     }
 
     // ── Appel FastAPI ─────────────────────────────────────────────────────────

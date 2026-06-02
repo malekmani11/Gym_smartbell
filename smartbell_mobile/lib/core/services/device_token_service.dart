@@ -14,9 +14,10 @@ class DeviceTokenService {
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null) return;
 
+      final platform = Platform.isIOS ? 'IOS' : 'ANDROID';
       await _dio.post('/devices/token', data: {
         'token': token,
-        'platform': 'ANDROID',
+        'platform': platform,
       });
     } catch (e) {
       // Non bloquant — l'app fonctionne sans FCM

@@ -1,9 +1,13 @@
 package com.gymapp.service.impl;
 
 import com.gymapp.dto.auth.AuthResponse;
+import com.gymapp.dto.auth.ForgotPasswordRequest;
 import com.gymapp.dto.auth.LoginRequest;
 import com.gymapp.dto.auth.RefreshTokenRequest;
 import com.gymapp.dto.auth.RegisterRequest;
+import com.gymapp.dto.auth.ResetPasswordRequest;
+import com.gymapp.entity.PasswordResetToken;
+import com.gymapp.repository.PasswordResetTokenRepository;
 import com.gymapp.entity.Coach;
 import com.gymapp.entity.Member;
 import com.gymapp.entity.RefreshToken;
@@ -19,6 +23,7 @@ import com.gymapp.repository.UserRepository;
 import com.gymapp.security.CustomUserDetails;
 import com.gymapp.security.JwtService;
 import com.gymapp.service.AuthService;
+import com.gymapp.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,8 +32,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -43,6 +50,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Override
     @Transactional
@@ -109,8 +118,12 @@ public class AuthServiceImpl implements AuthService {
                     .build());
         }
 
+        if (userRole == Role.ROLE_MEMBER || userRole == Role.ROLE_COACH) {
+            emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+        }
+
         var jwtToken = jwtService.generateToken(new CustomUserDetails(saved));
-        
+
         // Générer et sauvegarder le refresh token
         String refreshToken = jwtService.generateRefreshToken();
         saveRefreshToken(saved, refreshToken, null, null);
@@ -236,6 +249,51 @@ public class AuthServiceImpl implements AuthService {
         
         // Nettoyer les tokens expirés (garder max 5 tokens par utilisateur)
         cleanupOldTokens(user);
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            // Supprimer les anciens tokens de cet utilisateur
+            passwordResetTokenRepository.deleteAllByUser(user);
+
+            // Générer un token sécurisé
+            byte[] bytes = new byte[32];
+            new SecureRandom().nextBytes(bytes);
+            String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+
+            passwordResetTokenRepository.save(PasswordResetToken.builder()
+                    .token(token)
+                    .user(user)
+                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .build());
+
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
+            log.info("Token de réinitialisation généré pour {}", user.getEmail());
+        });
+        // Réponse identique même si l'email n'existe pas (sécurité anti-énumération)
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken tokenEntity = passwordResetTokenRepository
+                .findByToken(request.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Token invalide ou expiré"));
+
+        if (!tokenEntity.isValid()) {
+            throw new IllegalArgumentException("Token invalide ou expiré");
+        }
+
+        User user = tokenEntity.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        tokenEntity.setUsed(true);
+        passwordResetTokenRepository.save(tokenEntity);
+
+        log.info("Mot de passe réinitialisé pour {}", user.getEmail());
     }
 
     /**

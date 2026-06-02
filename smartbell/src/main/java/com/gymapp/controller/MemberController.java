@@ -30,25 +30,33 @@ public class MemberController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEMBER')")
     public ResponseEntity<MemberDTO> getMemberById(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.getMemberById(id));
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEMBER')")
     public ResponseEntity<MemberDTO> getMemberByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(memberService.getMemberByUserId(userId));
     }
 
     @GetMapping
     public ResponseEntity<Page<MemberDTO>> getAllMembers(
-            @RequestParam(required = false) MembershipStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
             Pageable pageable) {
         if (search != null && !search.isBlank()) {
             return ResponseEntity.ok(memberService.searchMembers(search.trim(), pageable));
         }
-        if (status != null) {
-            return ResponseEntity.ok(memberService.getMembersByStatus(status, pageable));
+        if (status != null && !status.isBlank()) {
+            try {
+                MembershipStatus membershipStatus = MembershipStatus.valueOf(status.toUpperCase());
+                return ResponseEntity.ok(memberService.getMembersByStatus(membershipStatus, pageable));
+            } catch (IllegalArgumentException e) {
+                // Si le statut est invalide, on ignore le filtre ou on pourrait retourner une erreur.
+                // Ici on choisit d'ignorer le filtre invalide pour éviter l'erreur 400 automatique.
+            }
         }
         return ResponseEntity.ok(memberService.getAllMembers(pageable));
     }
@@ -61,6 +69,22 @@ public class MemberController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> updateMembershipStatus(@PathVariable Long id, @RequestParam MembershipStatus status) {
         memberService.updateMembershipStatus(id, status);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/assign-coach")
+    public ResponseEntity<Void> assignCoach(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long coachId) {
+        memberService.assignCoach(id, coachId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/messaging-access")
+    public ResponseEntity<Void> setMessagingAccess(
+            @PathVariable Long id,
+            @RequestParam boolean enabled) {
+        memberService.setMessagingEnabled(id, enabled);
         return ResponseEntity.ok().build();
     }
 

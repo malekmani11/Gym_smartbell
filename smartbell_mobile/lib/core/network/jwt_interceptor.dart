@@ -13,6 +13,8 @@ class JwtInterceptor extends Interceptor {
     final token = await SecureStorage.getToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
+      options.headers['ngrok-skip-browser-warning'] = 'true';
+
       options.extra[_jwtSentKey] = true;
     }
     handler.next(options);
@@ -22,8 +24,11 @@ class JwtInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // Only auto-logout when we actually sent a token that was rejected.
     // If no token was attached, the 401 is expected and the caller handles it.
-    final jwtWasSent = err.requestOptions.extra[_jwtSentKey] == true;
-    if (err.response?.statusCode == 401 && jwtWasSent) {
+    // Callers can set extra['suppressLogoutOn401'] = true to opt out of auto-logout
+    // (used for optional data fetches that should fail silently, e.g. dashboard widgets).
+    final jwtWasSent      = err.requestOptions.extra[_jwtSentKey] == true;
+    final suppressLogout  = err.requestOptions.extra['suppressLogoutOn401'] == true;
+    if (err.response?.statusCode == 401 && jwtWasSent && !suppressLogout) {
       await SecureStorage.clear();
       await onUnauthorized?.call();
     }

@@ -82,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 colors: [
-                  _pages[_currentIndex].accentColor.withOpacity(0.2),
+                  _pages[_currentIndex].accentColor.withValues(alpha: 0.2),
                   const Color(0xFF111111),
                 ],
                 center: const Alignment(0, -0.5),

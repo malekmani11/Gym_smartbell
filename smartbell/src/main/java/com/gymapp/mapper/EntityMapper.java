@@ -2,12 +2,17 @@ package com.gymapp.mapper;
 
 import com.gymapp.dto.*;
 import com.gymapp.entity.*;
+import com.gymapp.repository.CoachRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
 @Component
 public class EntityMapper {
+
+    @Autowired
+    private CoachRepository coachRepository;
 
     // ── User ───────────────────────────────────────────────
 
@@ -31,19 +36,29 @@ public class EntityMapper {
     // ── Member ─────────────────────────────────────────────
 
     public MemberDTO toMemberDTO(Member member) {
-        com.gymapp.entity.Subscription activeSub = member.getSubscriptions().stream()
-                .filter(s -> s.getStatus() == com.gymapp.entity.enums.SubscriptionStatus.ACTIVE)
+        // Accéder aux abonnements via la classe User parente
+        User user = (User) member;
+        
+        // Get the most recent subscription (by end date or ID) to allow renewal even if expired
+        com.gymapp.entity.Subscription latestSub = user.getSubscriptions().stream()
                 .filter(s -> s.getPlan() != null)
-                .findFirst()
+                .max(java.util.Comparator.comparing(s -> s.getEndDate() != null ? s.getEndDate() : java.time.LocalDate.MIN))
                 .orElse(null);
 
-        // Latest payment of the active subscription
-        com.gymapp.entity.Payment lastPayment = activeSub == null ? null :
-                activeSub.getPayments().stream()
+        // Latest payment of the latest subscription
+        com.gymapp.entity.Payment lastPayment = latestSub == null ? null :
+                latestSub.getPayments().stream()
                         .max(java.util.Comparator.comparing(
                                 p -> p.getPaymentDate() != null ? p.getPaymentDate()
                                         : java.time.LocalDateTime.MIN))
                         .orElse(null);
+
+        // Calculate Total Paid based on all user subscriptions
+        java.math.BigDecimal totalPaid = user.getSubscriptions().stream()
+                .flatMap(s -> s.getPayments().stream())
+                .filter(p -> p.getStatus() == com.gymapp.entity.enums.PaymentStatus.COMPLETED)
+                .map(p -> p.getAmount())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         return MemberDTO.builder()
                 .id(member.getId())
@@ -62,17 +77,28 @@ public class EntityMapper {
                 .joinDate(member.getJoinDate())
                 .profileImageUrl(member.getProfileImageUrl())
                 .loyaltyPoints(member.getLoyaltyPoints())
-                // Active subscription
-                .subscriptionId(activeSub != null ? activeSub.getId() : null)
-                .planName(activeSub != null ? activeSub.getPlan().getName() : "Aucun")
-                .planId(activeSub != null ? activeSub.getPlan().getId() : null)
-                .subscriptionStartDate(activeSub != null ? activeSub.getStartDate() : null)
-                .subscriptionEndDate(activeSub != null ? activeSub.getEndDate() : null)
-                .subscriptionStatus(activeSub != null ? activeSub.getStatus() : null)
+                .assignedCoachId(member.getAssignedCoachId())
+                .assignedCoachName(member.getAssignedCoachId() != null
+                        ? coachRepository.findById(member.getAssignedCoachId())
+                                .map(c -> c.getFirstName() + " " + c.getLastName())
+                                .orElse(null)
+                        : null)
+                .messagingEnabled(member.getMessagingEnabled() != null ? member.getMessagingEnabled() : true)
+                .enabled(member.getEnabled() != null ? member.getEnabled() : true)
+                // Latest subscription
+                .subscriptionId(latestSub != null ? latestSub.getId() : null)
+                .planName(latestSub != null ? latestSub.getPlan().getName() : "Aucun")
+                .planId(latestSub != null ? latestSub.getPlan().getId() : null)
+                .subscriptionStartDate(latestSub != null ? latestSub.getStartDate() : null)
+                .subscriptionEndDate(latestSub != null ? latestSub.getEndDate() : null)
+                .subscriptionStatus(latestSub != null ? latestSub.getStatus() : null)
                 // Last payment
                 .lastPaymentStatus(lastPayment != null ? lastPayment.getStatus().name() : null)
                 .lastPaymentMethod(lastPayment != null ? lastPayment.getPaymentMethod().name() : null)
                 .lastPaymentAmount(lastPayment != null ? lastPayment.getAmount() : null)
+                // Dynamic Stats
+                .totalPaid(totalPaid)
+                .monthlySessions(12) // Placeholder, would need an Attendance table
                 .build();
     }
 
@@ -190,12 +216,27 @@ public class EntityMapper {
     // ── Event ──────────────────────────────────────────────
 
     public EventDTO toEventDTO(Event event) {
+        User creator = event.getCreatedBy();
+        Long creatorId = null;
+        String creatorName = "Admin";
+        
+        try {
+            if (creator != null) {
+                creatorId = creator.getId();
+                creatorName = creator.getFirstName() + " " + creator.getLastName();
+            }
+        } catch (Exception e) {
+            // Handle case where creator proxy might fail to load (e.g. id=0)
+            creatorId = 0L;
+            creatorName = "Système";
+        }
+
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
-                .createdById(event.getCreatedBy().getId())
-                .createdByName(event.getCreatedBy().getFirstName() + " " + event.getCreatedBy().getLastName())
+                .createdById(creatorId)
+                .createdByName(creatorName)
                 .eventDate(event.getEventDate())
                 .endDate(event.getEndDate())
                 .location(event.getLocation())
@@ -209,18 +250,22 @@ public class EntityMapper {
     // ── Event Registration ─────────────────────────────────
 
     public EventRegistrationDTO toEventRegistrationDTO(EventRegistration reg) {
+        User user   = reg.getUser();
+        Event event = reg.getEvent();
+        String first = user != null ? (user.getFirstName() != null ? user.getFirstName() : "") : "";
+        String last  = user != null ? (user.getLastName()  != null ? user.getLastName()  : "") : "";
         return EventRegistrationDTO.builder()
                 .id(reg.getId())
-                .eventId(reg.getEvent().getId())
-                .eventTitle(reg.getEvent().getTitle())
-                .userId(reg.getUser().getId())
-                .userName(reg.getUser().getFirstName() + " " + reg.getUser().getLastName())
-                .firstName(reg.getUser().getFirstName())
-                .lastName(reg.getUser().getLastName())
-                .email(reg.getUser().getEmail())
-                .profileImageUrl(reg.getUser().getProfileImageUrl())
+                .eventId(event != null ? event.getId() : null)
+                .eventTitle(event != null ? event.getTitle() : null)
+                .userId(user != null ? user.getId() : null)
+                .userName((first + " " + last).trim())
+                .firstName(first.isEmpty() ? null : first)
+                .lastName(last.isEmpty()  ? null : last)
+                .email(user != null ? user.getEmail() : null)
+                .profileImageUrl(user != null ? user.getProfileImageUrl() : null)
                 .registrationDate(reg.getRegistrationDate())
-                .status(reg.getStatus())
+                .status(reg.getStatus() != null ? reg.getStatus() : com.gymapp.entity.enums.RegistrationStatus.REGISTERED)
                 .build();
     }
 

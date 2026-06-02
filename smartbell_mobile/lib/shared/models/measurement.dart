@@ -29,7 +29,7 @@ class Measurement {
         id:       j['id'] != null ? (j['id'] as num).toInt() : null,
         memberId: (j['memberId'] ?? 0).toInt(),
         date:     j['date'] != null
-            ? DateTime.parse(j['date'].toString())
+            ? (DateTime.tryParse(j['date'].toString()) ?? DateTime.now())
             : DateTime.now(),
         weight: (j['weight'] as num).toDouble(),
         height: (j['height'] as num).toDouble(),
@@ -39,7 +39,9 @@ class Measurement {
   Map<String, dynamic> toJson() => {
         if (id != null) 'id': id,
         'memberId': memberId,
-        'date':     date.toIso8601String(),
+        'date':     '${date.year.toString().padLeft(4, '0')}-'
+                    '${date.month.toString().padLeft(2, '0')}-'
+                    '${date.day.toString().padLeft(2, '0')}',
         'weight':   weight,
         'height':   height,
         if (notes != null && notes!.isNotEmpty) 'notes': notes,

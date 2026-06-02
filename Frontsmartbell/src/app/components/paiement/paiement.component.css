@@ -19,6 +19,14 @@
     0 18px 50px rgba(0, 0, 0, 0.75),
     0 0 40px rgba(212, 160, 23, 0.28);
 }
+.kpi-card.kc-full {
+  position: relative;
+  overflow: hidden;
+  padding-top: 20px;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+}
 
 .panel-card {
   background: linear-gradient(145deg, #1c1a10 0%, #131108 50%, #0d0b05 100%);

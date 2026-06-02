@@ -1,9 +1,11 @@
 package com.gymapp.controller;
 
 import com.gymapp.dto.auth.AuthResponse;
+import com.gymapp.dto.auth.ForgotPasswordRequest;
 import com.gymapp.dto.auth.LoginRequest;
 import com.gymapp.dto.auth.RefreshTokenRequest;
 import com.gymapp.dto.auth.RegisterRequest;
+import com.gymapp.dto.auth.ResetPasswordRequest;
 import com.gymapp.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
@@ -41,6 +43,18 @@ public class AuthController {
     @PostMapping("/logout-all")
     public ResponseEntity<Void> logoutAll(@RequestParam Long userId) {
         authService.revokeAllUserTokens(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
         return ResponseEntity.ok().build();
     }
 }

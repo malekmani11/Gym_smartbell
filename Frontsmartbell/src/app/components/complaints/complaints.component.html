@@ -7,28 +7,31 @@
       <h1>Gestion des <span class="accent">Plaintes</span></h1>
       <p class="page-subtitle">Suivez et résolvez les réclamations des membres</p>
     </div>
-    <div class="page-actions">
-      <button class="btn-primary-cta" (click)="openNewComplaint()">
-        <i class="fas fa-plus"></i> NOUVELLE PLAINTE
-      </button>
-    </div>
   </div>
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-exclamation-triangle" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">OUVERTES</p>
       <p class="kpi-value">{{ stats().open }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-spinner" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">EN COURS</p>
       <p class="kpi-value">{{ stats().inProgress }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-check-circle" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">RÉSOLUES</p>
-      <p class="kpi-value" style="color:#22c55e">{{ stats().resolved }}</p>
+      <p class="kpi-value">{{ stats().resolved }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-times-circle" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">FERMÉES</p>
       <p class="kpi-value">{{ stats().closed }}</p>
     </div>

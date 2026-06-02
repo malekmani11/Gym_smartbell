@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/network/api_client.dart';
 import '../../models/coach_model.dart';
 
@@ -16,6 +14,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
   List<CoachModel> _coaches = [];
   bool _loading = true;
   String? _error;
+  String _search = '';
 
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
@@ -48,19 +47,11 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
       _error = null;
     });
     try {
-      final res = await ApiClient().dio.get('/users/by-role', queryParameters: {
-        'role': 'ROLE_COACH',
-        'size': 50,
-      });
+      final res = await ApiClient().dio.get('/coaches', queryParameters: {'size': 100});
       final data = res.data;
-      List<dynamic> content = [];
-      if (data is Map && data.containsKey('content')) {
-        content = data['content'] as List<dynamic>;
-      } else if (data is List) {
-        content = data;
-      }
+      final content = data is Map ? (data['content'] ?? []) : (data ?? []);
       setState(() {
-        _coaches = content
+        _coaches = (content as List)
             .map((e) => CoachModel.fromJson(e as Map<String, dynamic>))
             .toList();
         _loading = false;
@@ -81,7 +72,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Veuillez remplir les champs obligatoires'),
-            backgroundColor: AppColors.error),
+            backgroundColor: Color(0xFFA32D2D)),
       );
       return;
     }
@@ -109,7 +100,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Coach ajouté avec succès'),
-              backgroundColor: AppColors.success),
+              backgroundColor: Color(0xFF3B6D11)),
         );
       }
     } on DioException catch (e) {
@@ -118,7 +109,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
           SnackBar(
               content: Text(
                   e.response?.data?['message'] ?? 'Erreur lors de l\'ajout'),
-              backgroundColor: AppColors.error),
+              backgroundColor: const Color(0xFFA32D2D)),
         );
       }
     } finally {
@@ -135,7 +126,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
     _specializationCtrl.clear();
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -156,7 +147,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: const Color(0xFFE8E8E8),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -165,7 +156,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
             const Text(
               'Ajouter un coach',
               style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: Color(0xFF1A1A1A),
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
             ),
@@ -217,8 +208,8 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
               child: ElevatedButton(
                 onPressed: _addLoading ? null : _addCoach,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.black,
+                  backgroundColor: const Color(0xFF1A1A1A),
+                  foregroundColor: const Color(0xFFE5A01A),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
@@ -227,7 +218,7 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.black),
+                            strokeWidth: 2, color: Color(0xFFE5A01A)),
                       )
                     : const Text('Ajouter',
                         style: TextStyle(fontWeight: FontWeight.bold)),
@@ -250,20 +241,20 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: const TextStyle(color: Color(0xFF1A1A1A)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
+        labelStyle: const TextStyle(color: Color(0xFF888888), fontSize: 13),
+        prefixIcon: Icon(icon, color: const Color(0xFF888888), size: 18),
         filled: true,
-        fillColor: AppColors.surface2,
+        fillColor: const Color(0xFFF5F5F0),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(color: Color(0xFFE5A01A)),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -271,98 +262,354 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
     );
   }
 
-  Color _availabilityColor(String? status) {
+  Color _availabilityFg(String? status) {
     switch (status?.toUpperCase()) {
-      case 'AVAILABLE':
-        return AppColors.success;
-      case 'BUSY':
-        return AppColors.warning;
-      case 'UNAVAILABLE':
-        return AppColors.error;
-      default:
-        return AppColors.textMuted;
+      case 'AVAILABLE':   return const Color(0xFF3B6D11);
+      case 'BUSY':        return const Color(0xFF854F0B);
+      case 'UNAVAILABLE': return const Color(0xFFA32D2D);
+      case 'ON_LEAVE':    return const Color(0xFF185FA5);
+      default:            return const Color(0xFFBBBBBB);
+    }
+  }
+
+  Color _availabilityBg(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'AVAILABLE':   return const Color(0xFFEAF3DE);
+      case 'BUSY':        return const Color(0xFFFAEEDA);
+      case 'UNAVAILABLE': return const Color(0xFFFCEBEB);
+      case 'ON_LEAVE':    return const Color(0xFFDCEAF8);
+      default:            return const Color(0xFFF5F5F0);
     }
   }
 
   String _availabilityLabel(String? status) {
     switch (status?.toUpperCase()) {
-      case 'AVAILABLE':
-        return 'Disponible';
-      case 'BUSY':
-        return 'Occupé';
-      case 'UNAVAILABLE':
-        return 'Indisponible';
-      default:
-        return status ?? 'Inconnu';
+      case 'AVAILABLE':   return 'Disponible';
+      case 'BUSY':        return 'Occupé';
+      case 'UNAVAILABLE': return 'Indisponible';
+      case 'ON_LEAVE':    return 'En congé';
+      default:            return status ?? 'Inconnu';
     }
+  }
+
+  List<CoachModel> get _filteredCoaches {
+    if (_search.trim().isEmpty) return _coaches;
+    final q = _search.toLowerCase();
+    return _coaches.where((c) {
+      return c.fullName.toLowerCase().contains(q) ||
+          c.email.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  void _showCoachDetail(CoachModel coach) {
+    final availBg = _availabilityBg(coach.availabilityStatus);
+    final availFg = _availabilityFg(coach.availabilityStatus);
+    final availLabel = _availabilityLabel(coach.availabilityStatus);
+    final initiale = coach.firstName.isNotEmpty ? coach.firstName[0].toUpperCase() : '?';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+        ),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(ctx).padding.bottom + 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            // Handle bar
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8E8E8),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Avatar + nom + badge
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE5A01A),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                initiale,
+                style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              coach.fullName,
+              style: const TextStyle(
+                color: Color(0xFF1A1A1A),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: availBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                availLabel,
+                style: TextStyle(
+                  color: availFg,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Note moyenne (étoiles)
+            if (coach.ratingAvg != null) ...[
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                ...List.generate(5, (i) {
+                  final filled = i < coach.ratingAvg!.round();
+                  return Icon(
+                    filled ? Icons.star : Icons.star_border,
+                    color: const Color(0xFFE5A01A), size: 20,
+                  );
+                }),
+                const SizedBox(width: 6),
+                Text(
+                  coach.ratingAvg!.toStringAsFixed(1),
+                  style: const TextStyle(color: Color(0xFF888888), fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 20),
+
+            // Contact
+            _DetailSection(
+              title: 'Contact',
+              items: [
+                _DetailRow(icon: Icons.email_outlined,   label: 'Email',     value: coach.email),
+                if (coach.phone != null && coach.phone!.isNotEmpty)
+                  _DetailRow(icon: Icons.phone_outlined, label: 'Téléphone', value: coach.phone!),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Profil professionnel
+            _DetailSection(
+              title: 'Profil professionnel',
+              items: [
+                if (coach.specialization != null && coach.specialization!.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.fitness_center,
+                    label: 'Spécialisation',
+                    value: CoachModel.specializationLabel(coach.specialization),
+                  ),
+                if (coach.certification != null && coach.certification!.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.verified_outlined,
+                    label: 'Certification',
+                    value: coach.certification!,
+                  ),
+                if (coach.hireDate != null && coach.hireDate!.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: "Date d'embauche",
+                    value: coach.hireDate!.length >= 10
+                        ? coach.hireDate!.substring(0, 10)
+                        : coach.hireDate!,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Bio
+            if (coach.bio != null && coach.bio!.isNotEmpty) ...[
+              _DetailSection(
+                title: 'Bio',
+                items: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      coach.bio!,
+                      style: const TextStyle(color: Color(0xFF555555), fontSize: 13, height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 10),
+
+            // Bouton fermer
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F0),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Fermer',
+                    style: TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final displayed = _filteredCoaches;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         title: const Text('Coachs',
             style: TextStyle(
-                color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600)),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
+                  color: const Color(0xFFE5A01A),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${_coaches.length}',
                   style: const TextStyle(
-                      color: AppColors.primary,
+                      color: Color(0xFF1A1A1A),
                       fontWeight: FontWeight.bold,
-                      fontSize: 13),
+                      fontSize: 12),
                 ),
               ),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCoachSheet,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.black,
-        child: const Icon(Icons.add),
-      ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
+              child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
           : _error != null
               ? _buildError()
-              : RefreshIndicator(
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.surface,
-                  onRefresh: _loadCoaches,
-                  child: _coaches.isEmpty
-                      ? _buildEmpty()
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _coaches.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (_, i) {
-                            final coach = _coaches[i];
-                            return _CoachCard(
-                              coach: coach,
-                              availabilityColor:
-                                  _availabilityColor(coach.availabilityStatus),
-                              availabilityLabel:
-                                  _availabilityLabel(coach.availabilityStatus),
-                            );
-                          },
+              : Column(
+                  children: [
+                    // Search bar
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(
+                            color: const Color(0xFFE8E8E8), width: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        onChanged: (v) => setState(() => _search = v),
+                        style: const TextStyle(
+                            color: Color(0xFF1A1A1A), fontSize: 13),
+                        decoration: const InputDecoration(
+                          hintText: 'Rechercher un coach...',
+                          hintStyle: TextStyle(
+                              color: Color(0xFFBBBBBB), fontSize: 13),
+                          prefixIcon: Icon(Icons.search,
+                              color: Color(0xFFBBBBBB), size: 18),
+                          border: InputBorder.none,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: RefreshIndicator(
+                        color: const Color(0xFFE5A01A),
+                        onRefresh: _loadCoaches,
+                        child: displayed.isEmpty
+                            ? _buildEmpty()
+                            : ListView.separated(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                                itemCount: displayed.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (_, i) {
+                                  final coach = displayed[i];
+                                  return _CoachCard(
+                                    coach: coach,
+                                    availabilityBg: _availabilityBg(
+                                        coach.availabilityStatus),
+                                    availabilityFg: _availabilityFg(
+                                        coach.availabilityStatus),
+                                    availabilityLabel: _availabilityLabel(
+                                        coach.availabilityStatus),
+                                    onTap: () => _showCoachDetail(coach),
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                    // Bottom button
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: GestureDetector(
+                        onTap: _showAddCoachSheet,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1A1A),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add,
+                                  color: Color(0xFFE5A01A), size: 18),
+                              SizedBox(width: 8),
+                              Text('Ajouter un coach',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
     );
   }
@@ -372,16 +619,16 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+          const Icon(Icons.error_outline, color: Color(0xFFA32D2D), size: 48),
           const SizedBox(height: 12),
           Text(_error!,
-              style: const TextStyle(color: AppColors.textSecondary)),
+              style: const TextStyle(color: Color(0xFF888888))),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadCoaches,
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black),
+                backgroundColor: const Color(0xFF1A1A1A),
+                foregroundColor: const Color(0xFFE5A01A)),
             child: const Text('Réessayer'),
           ),
         ],
@@ -396,14 +643,13 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
         Center(
           child: Column(
             children: [
-              Icon(Icons.school_outlined, color: AppColors.textMuted, size: 64),
+              Icon(Icons.school_outlined, color: Color(0xFFBBBBBB), size: 64),
               SizedBox(height: 16),
               Text('Aucun coach trouvé',
-                  style: TextStyle(
-                      color: AppColors.textSecondary, fontSize: 16)),
+                  style: TextStyle(color: Color(0xFF888888), fontSize: 16)),
               SizedBox(height: 8),
-              Text('Ajoutez un coach via le bouton +',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              Text('Ajoutez un coach via le bouton ci-dessous',
+                  style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 13)),
             ],
           ),
         ),
@@ -414,99 +660,160 @@ class _AdminCoachesPageState extends State<AdminCoachesPage> {
 
 class _CoachCard extends StatelessWidget {
   final CoachModel coach;
-  final Color availabilityColor;
+  final Color availabilityBg;
+  final Color availabilityFg;
   final String availabilityLabel;
+  final VoidCallback onTap;
 
   const _CoachCard({
     required this.coach,
-    required this.availabilityColor,
+    required this.availabilityBg,
+    required this.availabilityFg,
     required this.availabilityLabel,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
+    final initiale =
+        coach.firstName.isNotEmpty ? coach.firstName[0].toUpperCase() : '?';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: AppTheme.cardShadow,
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
-            width: 48, height: 48,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.info.withValues(alpha: 0.15),
-              border: Border.all(
-                  color: AppColors.info.withValues(alpha: 0.3), width: 1),
+              color: const Color(0xFFE5A01A),
+              borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Text(
-              coach.firstName.isNotEmpty ? coach.firstName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: AppColors.info,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
-            ),
+            child: Text(initiale,
+                style: const TextStyle(
+                    color: Color(0xFF1A1A1A),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  coach.fullName,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  coach.email,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13),
-                ),
-                if (coach.specialization != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.fitness_center,
-                          color: AppColors.textMuted, size: 12),
-                      const SizedBox(width: 4),
-                      Text(
-                        coach.specialization!,
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
+                Text(coach.fullName,
+                    style: const TextStyle(
+                        color: Color(0xFF1A1A1A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500)),
+                Text(coach.email,
+                    style: const TextStyle(
+                        color: Color(0xFF888888), fontSize: 11)),
+                if (coach.specialization != null && coach.specialization!.isNotEmpty)
+                  Text(CoachModel.specializationLabel(coach.specialization),
+                      style: const TextStyle(
+                          color: Color(0xFF888888), fontSize: 11)),
               ],
             ),
           ),
-          // Availability badge
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                    color: availabilityBg,
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(availabilityLabel,
+                    style: TextStyle(
+                        color: availabilityFg,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500)),
+              ),
+              const SizedBox(height: 4),
+              const Icon(Icons.chevron_right,
+                  size: 14, color: Color(0xFFCCCCCC)),
+            ],
+          ),
+        ],
+      ),
+    ));
+  }
+}
+
+// ── Detail modal widgets ───────────────────────────────────────────────────────
+
+class _DetailSection extends StatelessWidget {
+  final String title;
+  final List<Widget> items;
+  const _DetailSection({required this.title, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...items,
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            width: 32, height: 32,
             decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: availabilityColor.withValues(alpha: 0.5), width: 1),
-              boxShadow: [
-                BoxShadow(color: availabilityColor.withValues(alpha: 0.15), blurRadius: 8, spreadRadius: -2),
-              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              availabilityLabel,
-              style: TextStyle(
-                  color: availabilityColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600),
-            ),
+            child: Icon(icon, size: 16, color: const Color(0xFFE5A01A)),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 10)),
+              Text(value, style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500)),
+            ],
           ),
         ],
       ),

@@ -61,6 +61,25 @@ export class MemberApiService {
     return this.http.patch<void>(`${this.BASE}/${id}/status`, null, { params: { status } });
   }
 
+  // PATCH /members/{id}/assign-coach?coachId=
+  assignCoach(memberId: number, coachId: number | null): Observable<void> {
+    const params: Record<string, string> = {};
+    if (coachId !== null) params['coachId'] = coachId.toString();
+    return this.http.patch<void>(`${this.BASE}/${memberId}/assign-coach`, null, { params });
+  }
+
+  // PATCH /members/{id}/messaging-access?enabled=
+  setMessagingAccess(memberId: number, enabled: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.BASE}/${memberId}/messaging-access`, null, { params: { enabled: enabled.toString() } });
+  }
+
+  // PATCH /users/{userId}/status?enabled=
+  toggleStatus(userId: number, enabled: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.USERS_BASE}/${userId}/status`, null, {
+      params: { enabled: enabled.toString() }
+    });
+  }
+
   // DELETE /members/{id}
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE}/${id}`);

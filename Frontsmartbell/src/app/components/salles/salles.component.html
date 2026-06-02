@@ -18,19 +18,27 @@
 
   <!-- KPIs -->
   <div class="kpi-grid">
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#4F8EF7,#A855F7)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(79,142,247,.15)"><i class="fas fa-door-open" style="color:#4F8EF7;font-size:16px"></i></div>
       <p class="kpi-label">TOTAL SALLES</p>
       <p class="kpi-value">{{ salles().length }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#10B981,#34D399)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(16,185,129,.15)"><i class="fas fa-check-circle" style="color:#10B981;font-size:16px"></i></div>
       <p class="kpi-label">DISPONIBLES</p>
       <p class="kpi-value">{{ disponibleCount() }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#F59E0B,#FCD34D)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-users" style="color:#F59E0B;font-size:16px"></i></div>
       <p class="kpi-label">OCCUPATION GLOBALE</p>
       <p class="kpi-value">{{ totalOccupied() }}<span style="font-size:1rem;color:var(--text-secondary)">/{{ totalCapacity() }}</span></p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#EF4444,#F87171)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(239,68,68,.15)"><i class="fas fa-wrench" style="color:#EF4444;font-size:16px"></i></div>
       <p class="kpi-label">MAINTENANCE</p>
       <p class="kpi-value">{{ maintenanceCount() }}</p>
     </div>

@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -52,6 +54,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> toggleUserStatus(@PathVariable Long id, @RequestParam boolean enabled) {
         userService.toggleUserStatus(id, enabled);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/password")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COACH', 'MEMBER')")
+    public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        userService.changePassword(id, body.get("currentPassword"), body.get("newPassword"));
         return ResponseEntity.ok().build();
     }
 }

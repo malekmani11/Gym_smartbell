@@ -27,6 +27,7 @@ const SPECIALIZATIONS = Object.keys(SPECIALIZATION_LABELS) as Specialization[];
 interface Coach {
   id: string;
   rawId: number;
+  userId?: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -38,6 +39,7 @@ interface Coach {
   hireDate: Date;
   profileImageUrl?: string;
   ratingAvg?: number;
+  enabled?: boolean;
 }
 
 @Component({
@@ -77,6 +79,8 @@ export class Coaches implements OnInit {
           hireDate:        c.hireDate ? new Date(c.hireDate) : new Date(),
           profileImageUrl: c.profileImageUrl,
           ratingAvg:       c.ratingAvg ?? 0,
+          userId:          c.userId ?? c.id,
+          enabled:         c.enabled !== false,
         }));
         this.coachesList.set(mapped);
         this.loading.set(false);
@@ -105,6 +109,9 @@ export class Coaches implements OnInit {
   isProcessing    = signal(false);
   selectedCoach   = signal<Coach | null>(null);
 
+  // ── Coach stats ───────────────────────────────────────
+  coachStats = signal<{ totalCourses: number; totalEnrollments: number; activeMembers: number; avgOccupancyRate: number } | null>(null);
+
   // ── Rating state ──────────────────────────────────────
   ratingAvg            = signal<number>(0);
   ratingCount          = signal<number>(0);
@@ -121,11 +128,41 @@ export class Coaches implements OnInit {
   viewCoach(coach: Coach) {
     this.selectedCoach.set(coach);
     this.loadRatingData(coach.rawId);
+    this.loadCoachStats(coach.rawId);
   }
 
   closeCoachProfile() {
     this.selectedCoach.set(null);
+    this.coachStats.set(null);
     this.resetRatingState();
+  }
+
+  toggleAccountStatus(coach: Coach) {
+    if (!coach.userId || this.isProcessing()) return;
+    const newEnabled = !coach.enabled;
+    this.isProcessing.set(true);
+    this.coachApi.toggleStatus(coach.userId, newEnabled).subscribe({
+      next: () => {
+        this.coachesList.update(list =>
+          list.map(c => c.rawId === coach.rawId ? { ...c, enabled: newEnabled } : c)
+        );
+        this.selectedCoach.update(c => c ? { ...c, enabled: newEnabled } : c);
+        const action = newEnabled ? 'réactivé' : 'désactivé';
+        this.toast.success(`Compte ${action}`, `${coach.firstName} ${coach.lastName}`);
+        this.isProcessing.set(false);
+      },
+      error: () => {
+        this.toast.error('Erreur', 'Impossible de modifier le statut du compte.');
+        this.isProcessing.set(false);
+      }
+    });
+  }
+
+  loadCoachStats(coachId: number) {
+    this.coachApi.getStats(coachId).subscribe({
+      next: (stats) => this.coachStats.set(stats),
+      error: () => this.coachStats.set(null),
+    });
   }
 
   private resetRatingState() {

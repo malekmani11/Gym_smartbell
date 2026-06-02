@@ -3,16 +3,18 @@
   <!-- Bell Button -->
   <button
     (click)="toggle()"
-    class="w-10 h-10 rounded-full bg-white/5 hover:bg-gold-main/10 border border-white/5 hover:border-gold-main/30 flex items-center justify-center text-gray-400 hover:text-gold-light transition-all duration-300 relative">
+    class="w-10 h-10 rounded-full bg-white/5 hover:bg-gold-main/10 border border-white/5 hover:border-gold-main/30
+           flex items-center justify-center text-gray-400 hover:text-gold-light transition-all duration-300 relative">
     <i class="fas fa-bell"></i>
     @if (unreadCount() > 0) {
-      <span class="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-red-500 rounded-full border border-black-bg text-[0.6rem] font-bold text-white flex items-center justify-center shadow-lg shadow-red-500/20 animate-pulse">
-        {{ unreadCount() }}
+      <span class="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-4 h-4 bg-red-500 rounded-full
+                   border border-black-bg text-[0.6rem] font-bold text-white flex items-center justify-center
+                   shadow-lg shadow-red-500/20 animate-pulse">
+        {{ unreadCount() > 9 ? '9+' : unreadCount() }}
       </span>
     }
   </button>
 
-  <!-- Dropdown Panel -->
   @if (isOpen()) {
 
     <!-- Backdrop -->
@@ -30,7 +32,9 @@
             </div>
             <div>
               <h3 class="text-sm font-bold text-white font-montserrat">Notifications</h3>
-              @if (unreadCount() > 0) {
+              @if (loading()) {
+                <p class="text-[10px] text-gray-500 font-inter">Chargement...</p>
+              } @else if (unreadCount() > 0) {
                 <p class="text-[10px] text-gray-500 font-inter">{{ unreadCount() }} non lue(s)</p>
               } @else {
                 <p class="text-[10px] text-gray-500 font-inter">Tout est à jour</p>
@@ -38,85 +42,93 @@
             </div>
           </div>
           @if (unreadCount() > 0) {
-            <button
-              (click)="markAllRead()"
-              class="text-[10px] text-gold-main font-bold uppercase tracking-widest hover:text-gold-light transition-colors font-montserrat">
+            <button (click)="markAllRead()"
+                    class="text-[10px] text-gold-main font-bold uppercase tracking-widest hover:text-gold-light transition-colors font-montserrat">
               Tout lire
             </button>
           }
         </div>
 
-        <!-- Notifications List -->
-        <div class="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-white/5">
+        <!-- Loading state -->
+        @if (loading()) {
+          <div class="py-10 flex flex-col items-center gap-3">
+            <i class="fas fa-spinner fa-spin text-gold-main text-xl"></i>
+            <p class="text-xs text-gray-500">Chargement des notifications...</p>
+          </div>
+        } @else {
 
-          @for (notif of notifications(); track notif.id) {
-            <div
-              class="px-5 py-4 transition-colors duration-200 group"
-              [class.bg-white/[0.02]]="!notif.read"
-              [class.hover:bg-white/5]="true">
+          <!-- Notifications List -->
+          <div class="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-white/5">
 
-              <div class="flex gap-4">
+            @for (notif of notifications(); track notif.id) {
+              <div class="px-5 py-4 transition-colors duration-200 group relative"
+                   [class.bg-white/[0.02]]="!notif.read">
 
-                <!-- Icon -->
-                <div class="flex-shrink-0 mt-0.5">
-                  <div class="w-9 h-9 rounded-xl border flex items-center justify-center"
-                       [class]="getTypeBg(notif.type)">
-                    <i [class]="getTypeIcon(notif.type) + ' text-sm'"></i>
+                <div class="flex gap-4">
+
+                  <!-- Icon -->
+                  <div class="flex-shrink-0 mt-0.5">
+                    <div class="w-9 h-9 rounded-xl border flex items-center justify-center"
+                         [class]="getTypeBg(notif.type)">
+                      <i [class]="getTypeIcon(notif.type) + ' text-sm'"></i>
+                    </div>
                   </div>
+
+                  <!-- Content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                      <p class="text-xs font-bold text-white truncate font-montserrat">{{ notif.title }}</p>
+                      <div class="flex items-center gap-1.5 flex-shrink-0">
+                        @if (!notif.read) {
+                          <span class="w-2 h-2 rounded-full bg-gold-main mt-1"></span>
+                        }
+                        <!-- Delete button -->
+                        <button (click)="onDelete(notif.id, $event)"
+                                class="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center
+                                       text-gray-600 hover:text-red-400 hover:bg-red-500/10">
+                          <i class="fas fa-times text-[9px]"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 leading-relaxed font-inter mb-2">{{ notif.message }}</p>
+
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] text-gray-600 font-inter">{{ notif.time }}</span>
+                      @if (notif.actionLabel) {
+                        <button (click)="onAction(notif)"
+                                class="text-[10px] font-bold uppercase tracking-wider transition-colors font-montserrat"
+                                [class]="getActionColor(notif.type)">
+                          {{ notif.actionLabel }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+
                 </div>
+              </div>
+            }
 
-                <!-- Content -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-2 mb-1">
-                    <p class="text-xs font-bold text-white truncate font-montserrat">
-                      {{ notif.title }}
-                    </p>
-                    @if (!notif.read) {
-                      <span class="flex-shrink-0 w-2 h-2 rounded-full bg-gold-main mt-1"></span>
-                    }
-                  </div>
-
-                  <p class="text-[11px] text-gray-400 leading-relaxed font-inter mb-2">
-                    {{ notif.message }}
-                  </p>
-
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] text-gray-600 font-inter">{{ notif.time }}</span>
-                    @if (notif.actionLabel) {
-                      <button
-                        (click)="onAction(notif)"
-                        class="text-[10px] font-bold uppercase tracking-wider transition-colors font-montserrat"
-                        [class]="notif.type === 'ai'      ? 'text-purple-400 hover:text-purple-300' :
-                                 notif.type === 'payment' ? 'text-green-400 hover:text-green-300'  :
-                                 notif.type === 'alert'   ? 'text-red-400 hover:text-red-300'      :
-                                 'text-gold-main hover:text-gold-light'">
-                        {{ notif.actionLabel }} →
-                      </button>
-                    }
-                  </div>
+            @if (notifications().length === 0) {
+              <div class="py-12 flex flex-col items-center justify-center gap-3 text-center">
+                <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                  <i class="fas fa-check text-gray-500 text-lg"></i>
                 </div>
-
+                <p class="text-sm text-gray-500 font-inter">Aucune notification</p>
               </div>
-            </div>
-          }
+            }
 
-          @if (notifications().length === 0) {
-            <div class="py-12 flex flex-col items-center justify-center gap-3 text-center">
-              <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                <i class="fas fa-check text-gray-500 text-lg"></i>
-              </div>
-              <p class="text-sm text-gray-500 font-inter">Aucune notification</p>
-            </div>
-          }
+          </div>
 
-        </div>
+          <!-- Footer -->
+          <div class="px-5 py-3 border-t border-white/5 bg-black-sidebar/40">
+            <button (click)="viewAll()"
+                    class="w-full text-[10px] text-gray-500 hover:text-gold-main font-bold uppercase tracking-widest transition-colors font-montserrat">
+              Voir tout l'historique →
+            </button>
+          </div>
 
-        <!-- Footer -->
-        <div class="px-5 py-3 border-t border-white/5 bg-black-sidebar/40">
-          <button class="w-full text-[10px] text-gray-500 hover:text-gold-main font-bold uppercase tracking-widest transition-colors font-montserrat">
-            Voir tout l'historique
-          </button>
-        </div>
+        }
 
       </div>
     </div>

@@ -1,8 +1,9 @@
 class ApiConstants {
   // Base URL — change to your machine IP for real device testing
-  static const String baseUrl = 'http://localhost:8080/api';           // backend unique Docker
+  // static const String baseUrl = 'http://localhost:8080/api';        // iOS simulator only
   // static const String baseUrl = 'http://10.0.2.2:8080/api';        // Android emulator
-  // static const String baseUrl = 'http://192.168.1.125:8080/api';   // WiFi direct
+  // static const String baseUrl = 'http://192.168.1.42:8080/api';    // WiFi real device
+  static const String baseUrl = 'https://aspirin-copious-unmoving.ngrok-free.dev/api';           // ADB reverse
 
   // Auth
   static const String login = '/auth/login';
@@ -48,4 +49,11 @@ class ApiConstants {
 
   // Plans
   static const String plans = '/subscription-plans';
+
+  // Group messaging
+  static const String groupMessages = '/messages/group';
+
+  // User profile
+  static String userById(int id) => '/users/$id';
+  static String userPasswordUrl(int id) => '/users/$id/password';
 }

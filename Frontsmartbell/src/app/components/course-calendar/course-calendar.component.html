@@ -1,4 +1,4 @@
-<!-- 1. PAGE HEADER -->
+<!-- PAGE HEADER -->
 <div class="page-header-row">
   <div class="page-header">
     <p class="page-label">SMARTBELL · PLANNING</p>
@@ -6,23 +6,18 @@
     <p class="page-subtitle">Consultez le calendrier et gérez les réservations</p>
   </div>
   <div class="page-actions">
-    <button (click)="printSchedule()"
-            class="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-gray-300 text-xs font-bold hover:bg-white/5 transition-colors">
+    <button (click)="printSchedule()" class="btn-outline">
       <i class="fas fa-print text-[10px]"></i> Imprimer
     </button>
-    <button (click)="showNewModal.set(true)"
-            class="btn-gold text-sm py-2 px-4 shadow-gold flex items-center gap-2">
-      <i class="fas fa-plus text-black-bg"></i>
-      Nouveau cours
+    <button (click)="openNewCourse()" class="btn-gold">
+      <i class="fas fa-plus"></i> Nouveau cours
     </button>
   </div>
 </div>
 
-<!-- 2. FILTERS -->
+<!-- FILTERS -->
 <div class="filters-row">
-  <button class="filter-btn" [class.active]="typeFilter() === 'all'" (click)="typeFilter.set('all')">
-    Tous
-  </button>
+  <button class="filter-btn" [class.active]="typeFilter() === 'all'" (click)="typeFilter.set('all')">Tous</button>
   <button class="filter-btn yoga" [class.active]="typeFilter() === 'yoga'" (click)="typeFilter.set('yoga')">
     <i class="fas fa-om mr-1 text-xs"></i> Yoga
   </button>
@@ -37,338 +32,306 @@
   </button>
 </div>
 
-<!-- 3. Loading skeleton -->
+<!-- LÉGENDE -->
+<div class="legend-row">
+  @for (l of legendItems; track l.label) {
+    <div class="legend-item">
+      <span class="legend-dot" [style.background]="l.color"></span> {{ l.label }}
+    </div>
+  }
+  <div class="legend-sep"></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Disponible</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> Presque complet</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Complet</div>
+</div>
+
+<!-- LOADING -->
 @if (isLoading()) {
-  <div class="premium-card p-6">
-    <div class="h-8 w-48 bg-white/5 rounded-lg animate-pulse mb-4"></div>
-    <div class="grid grid-cols-7 gap-2">
-      @for (col of [1,2,3,4,5,6,7]; track col) {
-        <div class="space-y-2">
-          <div class="h-6 bg-white/5 rounded animate-pulse"></div>
-          @for (row of [1,2,3]; track row) {
-            <div class="h-16 rounded-lg animate-pulse"
-                 [style.background]="col % 4 === 0 ? 'rgba(147,51,234,0.12)' : col % 3 === 0 ? 'rgba(239,68,68,0.1)' : col % 2 === 0 ? 'rgba(59,130,246,0.1)' : 'rgba(249,115,22,0.1)'">
-            </div>
-          }
-        </div>
-      }
+  <div class="cal-card">
+    <div class="animate-pulse space-y-3 p-6">
+      <div class="h-8 w-48 rounded-lg bg-white/5"></div>
+      <div class="h-96 rounded-xl bg-white/5"></div>
     </div>
   </div>
 } @else {
-  <!-- FullCalendar -->
-  <div class="fc-wrapper premium-card p-4">
-    <full-calendar #fcEl [options]="calendarOptions()"></full-calendar>
-  </div>
-}
 
-<!-- ── Event Detail Modal ─────────────────────────────────────────────────── -->
-@if (selectedEvent(); as evt) {
-  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="closeDetail()"></div>
+  <!-- CALENDAR -->
+  <div class="cal-card">
 
-    <div class="relative z-10 w-full max-w-md bg-[#141414] border border-white/10 rounded-2xl p-7
-                shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-slide-up">
-
-      <!-- Header -->
-      <div class="flex items-start justify-between mb-5">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-               [style.background]="evt.backgroundColor + '22'"
-               [style.border]="'1px solid ' + evt.backgroundColor + '44'">
-            <i [class]="getTypeIcon(evt.extendedProps['courseType']) + ' text-xl'"></i>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-white leading-tight">{{ evt.title }}</h2>
-            <span class="text-xs px-2 py-0.5 rounded-full mt-1 inline-block font-bold"
-                  [style.background]="evt.backgroundColor + '22'"
-                  [style.color]="evt.backgroundColor">
-              {{ getTypeLabel(evt.extendedProps['courseType']) }}
-            </span>
-          </div>
-        </div>
-        <button (click)="closeDetail()"
-                class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white shrink-0">
-          <i class="fas fa-times text-sm"></i>
-        </button>
+    <!-- Navigation semaine -->
+    <div class="cal-nav">
+      <div class="cal-nav-left">
+        <button class="cal-nav-btn" (click)="prevWeek()"><i class="fas fa-chevron-left text-xs"></i></button>
+        <button class="cal-nav-btn" (click)="nextWeek()"><i class="fas fa-chevron-right text-xs"></i></button>
+        <button class="cal-today-btn" (click)="goToday()">Aujourd'hui</button>
       </div>
-
-      <div class="h-px bg-white/5 mb-5"></div>
-
-      <!-- Info grid -->
-      <div class="grid grid-cols-2 gap-3 mb-5">
-        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
-          <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Coach</p>
-          <p class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fas fa-user-circle text-[#D4A017]/70 text-xs"></i>
-            {{ evt.extendedProps['coach'] }}
-          </p>
-        </div>
-        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
-          <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Horaire</p>
-          <p class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="far fa-clock text-[#D4A017]/70 text-xs"></i>
-            {{ evt.extendedProps['startTime'] }} - {{ evt.extendedProps['endTime'] }}
-          </p>
-        </div>
-        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
-          <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Niveau</p>
-          <p class="text-sm font-bold text-white">{{ evt.extendedProps['level'] }}</p>
-        </div>
-        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
-          <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Inscrits</p>
-          <p class="text-sm font-bold"
-             [class.text-red-400]="evt.extendedProps['enrolled'] >= evt.extendedProps['capacity']"
-             [class.text-white]="evt.extendedProps['enrolled'] < evt.extendedProps['capacity']">
-            {{ evt.extendedProps['enrolled'] }} / {{ evt.extendedProps['capacity'] }}
-          </p>
-        </div>
+      <div class="cal-week-label">{{ currentWeekLabel() }}</div>
+      <div class="cal-nav-right">
+        <span class="cal-view-badge">SEMAINE</span>
       </div>
+    </div>
 
-      <!-- Capacity gauge -->
-      <div class="mb-5">
-        <div class="flex justify-between text-[9px] text-gray-500 mb-1.5">
-          <span>Taux de remplissage</span>
-          <span class="font-bold text-white">
-            {{ evt.extendedProps['capacity'] > 0
-               ? ((evt.extendedProps['enrolled'] / evt.extendedProps['capacity']) * 100 | number:'1.0-0')
-               : 0 }}%
-          </span>
-        </div>
-        <div class="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-          <div class="h-full rounded-full transition-all duration-700"
-               [style.width.%]="evt.extendedProps['capacity'] > 0
-                 ? (evt.extendedProps['enrolled'] / evt.extendedProps['capacity']) * 100
-                 : 0"
-               [class.bg-red-500]="evt.extendedProps['enrolled'] >= evt.extendedProps['capacity']"
-               [class.bg-[#D4A017]]="evt.extendedProps['enrolled'] >= evt.extendedProps['capacity'] * 0.8 && evt.extendedProps['enrolled'] < evt.extendedProps['capacity']"
-               [class.bg-green-500]="evt.extendedProps['enrolled'] < evt.extendedProps['capacity'] * 0.8">
+    <!-- Grille -->
+    <div class="cal-grid-wrapper">
+
+      <!-- Header jours -->
+      <div class="cal-header">
+        <div class="cal-time-col-head"></div>
+        @for (key of DAY_KEYS; track key; let i = $index) {
+          <div class="cal-day-header" [class.today]="key === todayDayKey()">
+            <div class="cal-day-label">{{ DAY_LABELS[i] }}</div>
+            <div class="cal-day-date" [class.today-date]="key === todayDayKey()">
+              {{ weekDates()[i] | date:'dd/MM' }}
+            </div>
           </div>
-        </div>
-        @if (evt.extendedProps['enrolled'] >= evt.extendedProps['capacity']) {
-          <p class="text-[9px] text-red-400 font-black uppercase tracking-wider mt-1">Complet</p>
         }
       </div>
 
-      <div class="flex gap-2 mt-2">
-        <button (click)="closeDetail()"
-                class="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-xs font-bold hover:bg-white/10 transition-colors">
-          Fermer
-        </button>
-        <button (click)="openEditModal()"
-                class="flex-1 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors">
-          <i class="fas fa-pen mr-1"></i> Modifier
-        </button>
-        <button (click)="cancelCourse()" [disabled]="isProcessing()"
-                class="flex-1 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-bold hover:bg-yellow-500/20 transition-colors disabled:opacity-50">
-          <i class="fas fa-ban mr-1"></i> Annuler
-        </button>
-        <button (click)="deleteCourse()" [disabled]="isProcessing()"
-                class="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors disabled:opacity-50">
-          <i class="fas fa-trash mr-1"></i> Supprimer
-        </button>
-      </div>
-    </div>
-  </div>
-}
+      <!-- Corps -->
+      <div class="cal-body">
 
-<!-- ── Edit Course Modal ──────────────────────────────────────────────────── -->
-@if (showEditModal()) {
-  <div class="fixed inset-0 z-[300] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showEditModal.set(false)"></div>
-    <div class="relative z-10 w-full max-w-md bg-[#141414] border border-white/10 rounded-2xl p-7
-                shadow-[0_0_60px_rgba(0,0,0,0.9)]" (click)="$event.stopPropagation()">
-      <h2 class="text-xl font-bold text-white mb-5">Modifier le cours</h2>
-      <div class="space-y-4">
-        <div>
-          <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1.5">Nom du cours</label>
-          <input type="text" [(ngModel)]="editForm.name"
-                 class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#D4A017]/50">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1.5">Jour</label>
-            <select [(ngModel)]="editForm.dayOfWeek"
-                    class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#D4A017]/50">
-              @for (d of DAY_LABELS; track d.value) {
-                <option [value]="d.value">{{ d.label }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1.5">Capacité max</label>
-            <input type="number" [(ngModel)]="editForm.capacity" min="1"
-                   class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#D4A017]/50">
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1.5">Heure début</label>
-            <input type="time" [(ngModel)]="editForm.timeStart"
-                   class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#D4A017]/50">
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1.5">Heure fin</label>
-            <input type="time" [(ngModel)]="editForm.timeEnd"
-                   class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#D4A017]/50">
-          </div>
-        </div>
-      </div>
-      <div class="flex gap-3 mt-6">
-        <button (click)="showEditModal.set(false)"
-                class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 transition-colors">
-          Annuler
-        </button>
-        <button (click)="saveEdit()" [disabled]="isProcessing()"
-                class="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F5D77A] text-[#0A0A0A] text-sm font-bold
-                       hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all disabled:opacity-50">
-          <i class="fas fa-save mr-1.5"></i> Sauvegarder
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
-<!-- ── New Course Modal ───────────────────────────────────────────────────── -->
-@if (showNewModal()) {
-  <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showNewModal.set(false)"></div>
-
-    <div class="relative z-10 w-full max-w-lg bg-[#141414] border border-[#D4A017]/20 rounded-2xl p-7
-                shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-slide-up"
-         (click)="$event.stopPropagation()">
-
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="text-xl font-bold font-montserrat text-white">Nouveau cours</h2>
-          <p class="text-gray-500 text-xs mt-0.5">Ajouter au planning récurrent</p>
-        </div>
-        <button (click)="showNewModal.set(false)"
-                class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white">
-          <i class="fas fa-times text-sm"></i>
-        </button>
-      </div>
-
-      <div class="h-px bg-white/5 mb-5"></div>
-
-      <div class="grid grid-cols-2 gap-4">
-
-        <!-- Nom (full width) -->
-        <div class="col-span-2 flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Nom du cours</label>
-          <input [(ngModel)]="newForm.name" placeholder="Ex: Yoga Matinal"
-                 class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                        placeholder-gray-600 focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+        <!-- Colonne des heures -->
+        <div class="cal-time-col">
+          @for (slot of timeSlots; track slot) {
+            <div class="cal-time-slot">
+              <span class="cal-time-label">{{ slot }}</span>
+            </div>
+          }
         </div>
 
-        <!-- Coach -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">
-            Coach
-            @if (isLoadingCoaches()) {
-              <i class="fas fa-circle-notch fa-spin ml-1 text-[10px] text-[#D4A017]"></i>
+        <!-- Colonnes des jours -->
+        @for (key of DAY_KEYS; track key; let i = $index) {
+          <div class="cal-day-col" [class.today-col]="key === todayDayKey()">
+            <!-- Lignes de grille -->
+            @for (slot of timeSlots; track slot) {
+              <div class="cal-grid-line"></div>
             }
-          </label>
-          <select [(ngModel)]="newForm.coachId"
-                  class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                         focus:outline-none focus:border-[#D4A017]/50 transition-colors">
-            @if (isLoadingCoaches()) {
-              <option [ngValue]="null">Chargement des coachs...</option>
-            } @else {
-              @for (coach of coaches(); track coach.id) {
-                <option [ngValue]="coach.id">{{ coach.firstName }} {{ coach.lastName }}</option>
-              }
-              @if (coaches().length === 0) {
-                <option [ngValue]="null">Aucun coach disponible</option>
-              }
+            <!-- Cours -->
+            @for (block of coursesByDay()[i]; track block.id) {
+              <div class="course-block"
+                   [style.top.px]="block.top"
+                   [style.height.px]="block.height"
+                   [style.left]="block.left + '%'"
+                   [style.width]="'calc(' + block.widthPct + '% - 4px)'"
+                   [style.background]="block.style.bg"
+                   [style.border-left]="'3px solid ' + block.style.border"
+                   [style.color]="block.style.text"
+                   (click)="openCourse(block)">
+                <div class="course-name">{{ block.name }}</div>
+                <div class="course-time">{{ block.startTime }} - {{ block.endTime }}</div>
+                @if (block.capacity > 0) {
+                  <div class="course-badge"
+                       [style.background]="badgeColor(block) + '30'"
+                       [style.color]="badgeColor(block)"
+                       [style.border]="'1px solid ' + badgeColor(block) + '60'">
+                    {{ badgeLabel(block) }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+
+}
+
+<!-- EDIT MODAL -->
+@if (showEditModal()) {
+  <div class="modal-overlay" (click)="showEditModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Modifier le cours</h2>
+      <div class="modal-fields">
+        <div class="field-group col-span-2">
+          <label class="field-label">Nom du cours</label>
+          <input type="text" [(ngModel)]="editForm.name" class="field-input">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Coach</label>
+          <select [(ngModel)]="editForm.coachId" class="field-input">
+            @for (coach of coaches(); track coach.id) {
+              <option [ngValue]="coach.id">{{ coach.firstName }} {{ coach.lastName }}</option>
             }
           </select>
         </div>
+        <div class="field-group">
+          <label class="field-label">Jour</label>
+          <select [(ngModel)]="editForm.dayOfWeek" class="field-input">
+            @for (d of DAY_FORM_LABELS; track d.value) {
+              <option [value]="d.value">{{ d.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Heure début</label>
+          <input type="time" [(ngModel)]="editForm.timeStart" class="field-input">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Heure fin</label>
+          <input type="time" [(ngModel)]="editForm.timeEnd" class="field-input">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Capacité</label>
+          <input type="number" [(ngModel)]="editForm.capacity" min="1" class="field-input">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button (click)="deleteCourse()" [disabled]="isProcessing()" class="btn-danger">
+          <i class="fas fa-trash text-xs mr-1"></i> Supprimer
+        </button>
+        <button (click)="openAttendanceModal()" class="btn-outline" style="color:#10B981;border-color:#10B981">
+          <i class="fas fa-clipboard-check text-xs mr-1"></i> Présences
+        </button>
+        <button (click)="showEditModal.set(false)" class="btn-cancel">Annuler</button>
+        <button (click)="saveEdit()" [disabled]="isProcessing()" class="btn-save">
+          <i class="fas fa-save mr-1"></i>
+          {{ isProcessing() ? 'Sauvegarde...' : 'Sauvegarder' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
-        <!-- Type -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Type</label>
-          <select [(ngModel)]="newForm.type"
-                  class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                         focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+<!-- NEW MODAL -->
+@if (showNewModal()) {
+  <div class="modal-overlay" (click)="showNewModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="modal-title" style="margin-bottom:0">Nouveau cours</h2>
+          <p class="text-gray-500 text-xs mt-0.5">Ajouter au planning récurrent</p>
+        </div>
+        <button (click)="showNewModal.set(false)" class="modal-close-btn">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+      <div class="modal-fields">
+        <div class="field-group col-span-2">
+          <label class="field-label">Nom du cours</label>
+          <input [(ngModel)]="newForm.name" placeholder="Ex: Yoga Matinal" class="field-input">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Coach</label>
+          <select [(ngModel)]="newForm.coachId" class="field-input">
+            @for (coach of coaches(); track coach.id) {
+              <option [ngValue]="coach.id">{{ coach.firstName }} {{ coach.lastName }}</option>
+            }
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Type</label>
+          <select [(ngModel)]="newForm.type" class="field-input">
             <option value="yoga">Yoga</option>
             <option value="crossfit">CrossFit</option>
             <option value="powerlifting">Powerlifting</option>
             <option value="cardio">Cardio</option>
           </select>
         </div>
-
-        <!-- Jour de la semaine -->
-        <div class="col-span-2 flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Jour de la semaine</label>
-          <select [(ngModel)]="newForm.dayOfWeek"
-                  class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                         focus:outline-none focus:border-[#D4A017]/50 transition-colors">
-            @for (d of DAY_LABELS; track d.value) {
+        <div class="field-group col-span-2">
+          <label class="field-label">Jour de la semaine</label>
+          <select [(ngModel)]="newForm.dayOfWeek" class="field-input">
+            @for (d of DAY_FORM_LABELS; track d.value) {
               <option [value]="d.value">{{ d.label }}</option>
             }
           </select>
         </div>
-
-        <!-- Heure début -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Heure début</label>
-          <input type="time" [(ngModel)]="newForm.timeStart"
-                 class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                        focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+        <div class="field-group">
+          <label class="field-label">Heure début</label>
+          <input type="time" [(ngModel)]="newForm.timeStart" class="field-input">
         </div>
-
-        <!-- Heure fin -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Heure fin</label>
-          <input type="time" [(ngModel)]="newForm.timeEnd"
-                 class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                        focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+        <div class="field-group">
+          <label class="field-label">Heure fin</label>
+          <input type="time" [(ngModel)]="newForm.timeEnd" class="field-input">
         </div>
-
-        <!-- Capacité -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Capacité max</label>
-          <input type="number" [(ngModel)]="newForm.capacity" min="1" max="100"
-                 class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                        focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+        <div class="field-group">
+          <label class="field-label">Capacité max</label>
+          <input type="number" [(ngModel)]="newForm.capacity" min="1" max="100" class="field-input">
         </div>
-
-        <!-- Niveau -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs text-gray-400 uppercase tracking-wider">Niveau</label>
-          <select [(ngModel)]="newForm.level"
-                  class="bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm
-                         focus:outline-none focus:border-[#D4A017]/50 transition-colors">
+        <div class="field-group">
+          <label class="field-label">Niveau</label>
+          <select [(ngModel)]="newForm.level" class="field-input">
             <option>Débutant</option>
             <option>Intermédiaire</option>
             <option>Avancé</option>
             <option>Tous niveaux</option>
           </select>
         </div>
-
       </div>
-
       <div class="h-px bg-white/5 my-5"></div>
-
-      <div class="flex gap-3">
-        <button (click)="showNewModal.set(false)"
-                class="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold
-                       hover:bg-white/5 transition-colors">
-          Annuler
+      <div class="modal-actions" style="justify-content:flex-end">
+        <button (click)="showNewModal.set(false)" class="btn-cancel">Annuler</button>
+        <button (click)="saveNewCourse()" [disabled]="isProcessing() || !newForm.name.trim()" class="btn-save">
+          {{ isProcessing() ? 'Création...' : 'Créer le cours' }}
         </button>
-        <button (click)="saveNewCourse()"
-                [disabled]="isProcessing() || !newForm.name.trim()"
-                class="flex-1 py-3 rounded-xl bg-[#D4A017] text-black text-sm font-black
-                       hover:bg-[#e8b41e] transition-colors shadow-[0_4px_14px_rgba(212,160,23,0.3)]
-                       disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          @if (isProcessing()) {
-            <i class="fas fa-circle-notch fa-spin text-xs"></i> Création...
-          } @else {
-            <i class="fas fa-plus text-xs"></i> Créer le cours
-          }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ATTENDANCE MODAL -->
+@if (showAttendanceModal()) {
+  <div class="modal-overlay" (click)="showAttendanceModal.set(false)">
+    <div class="modal-box" style="max-width:500px" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="modal-title" style="margin-bottom:0">Enregistrer les présences</h2>
+          <p class="text-gray-500 text-xs mt-0.5">{{ selectedCourse()?.name }}</p>
+        </div>
+        <button (click)="showAttendanceModal.set(false)" class="modal-close-btn">
+          <i class="fas fa-times text-sm"></i>
         </button>
       </div>
 
+      <div class="field-group mb-4">
+        <label class="field-label">Date de la séance</label>
+        <input type="date" [ngModel]="attendanceDate()" (ngModelChange)="attendanceDate.set($event)" class="field-input">
+      </div>
+
+      @if (isLoadingAttendance()) {
+        <div class="flex items-center justify-center py-8 gap-2 text-gray-500 text-sm">
+          <i class="fas fa-spinner animate-spin"></i> Chargement des inscrits…
+        </div>
+      } @else if (attendanceRows().length === 0) {
+        <div class="text-center py-8 text-gray-500 text-sm">
+          <i class="fas fa-users mb-2 text-xl block"></i>
+          Aucun membre inscrit à ce cours
+        </div>
+      } @else {
+        <div class="space-y-2 max-h-64 overflow-y-auto pr-1 mb-4">
+          @for (row of attendanceRows(); track row.memberId) {
+            <div class="flex items-center justify-between px-3 py-2.5 rounded-xl border"
+                 [style.background]="row.present ? 'rgba(16,185,129,0.07)' : 'rgba(239,68,68,0.07)'"
+                 [style.border-color]="row.present ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                     [style.background]="row.present ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'"
+                     [style.color]="row.present ? '#10B981' : '#ef4444'">
+                  {{ row.memberName.charAt(0).toUpperCase() }}
+                </div>
+                <span class="text-sm text-white font-inter">{{ row.memberName }}</span>
+              </div>
+              <button (click)="row.present = !row.present"
+                      class="text-xs font-bold px-3 py-1 rounded-lg transition-all"
+                      [style.background]="row.present ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'"
+                      [style.color]="row.present ? '#10B981' : '#ef4444'">
+                <i [class]="row.present ? 'fas fa-check mr-1' : 'fas fa-times mr-1'"></i>
+                {{ row.present ? 'Présent' : 'Absent' }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="modal-actions" style="justify-content:flex-end">
+        <button (click)="showAttendanceModal.set(false)" class="btn-cancel">Annuler</button>
+        <button (click)="saveAttendance()" [disabled]="isProcessing() || attendanceRows().length === 0" class="btn-save"
+                style="background:linear-gradient(135deg,#10B981,#059669)">
+          <i class="fas fa-clipboard-check mr-1"></i>
+          {{ isProcessing() ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
     </div>
   </div>
 }

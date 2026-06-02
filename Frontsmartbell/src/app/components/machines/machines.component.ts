@@ -148,24 +148,72 @@ export class MachinesComponent implements OnInit {
   }
 
   openQr(machine: Machine) {
-    if (machine.id) {
-      this.machineApi.getQrCode(machine.id).subscribe({
-        next: (res) => { 
-          this.qrMachine.set({ ...machine, qrCodeData: res.qrData }); 
-          this.showQrModal.set(true); 
-        },
-        error: () => { 
-          this.qrMachine.set({ ...machine, qrCodeData: `MACHINE-${machine.id}` }); 
-          this.showQrModal.set(true); 
-        },
-      });
-    } else {
-      this.qrMachine.set(machine); 
-      this.showQrModal.set(true);
-    }
+    const qrData = machine.tutorialUrl?.trim()
+      ? machine.tutorialUrl
+      : `MACHINE-${machine.id}-${(machine.name ?? '').replace(/\s+/g, '_').toUpperCase()}`;
+    this.qrMachine.set({ ...machine, qrCodeData: qrData });
+    this.showQrModal.set(true);
   }
 
   closeQr() { this.showQrModal.set(false); this.qrMachine.set(null); }
+
+  getMachineImage(machine: Machine): string {
+    const text = `${machine.name ?? ''} ${machine.description ?? ''}`.toLowerCase();
+    const id   = machine.id ?? 0;
+
+    // Pools de photos par type — on choisit selon id % longueur pour varier
+    const pick = (urls: string[]) => urls[id % urls.length];
+
+    if (text.includes('tapis') || text.includes('treadmill'))
+      return pick([
+        'https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1637666155747-5ac0be5c57a3?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('elliptique') || text.includes('vélo') || text.includes('velo') || text.includes('spinning') || text.includes('bike'))
+      return pick([
+        'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1521673461164-de300ebcfb17?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('rameur') || text.includes('rower'))
+      return pick([
+        'https://images.unsplash.com/photo-1616279969965-f3a091f13f9a?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1580086319619-3ed498161c77?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('barre') || text.includes('haltère') || text.includes('haltere') || text.includes('olympique') || text.includes('poids'))
+      return pick([
+        'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('cage') || text.includes('squat') || text.includes('rack'))
+      return pick([
+        'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('presse') || text.includes('jambe'))
+      return 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80&fit=crop';
+    if (text.includes('corde') || text.includes('boxe') || text.includes('sac'))
+      return 'https://images.unsplash.com/photo-1555597673-b21d5c935865?w=400&q=80&fit=crop';
+    if (text.includes('banc') || text.includes('chest') || text.includes('pec'))
+      return pick([
+        'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?w=400&q=80&fit=crop',
+      ]);
+    if (text.includes('cardio') || text.includes('stepper') || text.includes('crosstrainer'))
+      return pick([
+        'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=400&q=80&fit=crop',
+        'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&q=80&fit=crop',
+      ]);
+    // Défaut : varie selon id
+    return pick([
+      'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=400&q=80&fit=crop',
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80&fit=crop',
+      'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80&fit=crop',
+      'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80&fit=crop',
+    ]);
+  }
 
   statusBadge(status: MachineStatus): string {
     switch (status) {

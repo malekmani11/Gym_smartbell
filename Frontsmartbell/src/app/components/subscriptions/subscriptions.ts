@@ -296,11 +296,15 @@ export class Subscriptions implements OnInit {
     const plan   = this.plans().find(p => p.name === member?.plan);
     if (!plan) return;
 
+    // Calcul basé sur durationMonths du plan (pas hardcodé 30 jours)
+    const durationDays = (plan.duration === 'Annuel' ? 12 : plan.duration === 'Trimestriel' ? 3 : 1) * 30.44;
+    const expiryDate   = new Date(Date.now() + durationDays * 864e5);
+
     this.subApi.create({
       userId:    Number(id),
       planId:    Number(plan.id),
       startDate: new Date().toISOString().split('T')[0],
-      endDate:   new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0],
+      endDate:   expiryDate.toISOString().split('T')[0],
       status:    'ACTIVE',
     }).subscribe({
       next: () => {
@@ -308,7 +312,7 @@ export class Subscriptions implements OnInit {
           m.id === id ? {
             ...m,
             status:        'Actif' as const,
-            expiry:        new Date(Date.now() + 30 * 864e5),
+            expiry:        expiryDate,
             paymentStatus: 'Payé' as const,
           } : m
         ));

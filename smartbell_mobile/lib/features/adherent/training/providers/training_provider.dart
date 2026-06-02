@@ -36,9 +36,7 @@ class TrainingProvider extends ChangeNotifier {
       // Uses OfflineTrainingRepository: fetches fresh from API when online,
       // falls back to Hive cache when offline.
       _programs = await _offlineRepo.getTrainingPrograms(memberId);
-      if (_active == null) {
-        _active = _programs.isNotEmpty ? _programs.first : null;
-      }
+      _active ??= _programs.isNotEmpty ? _programs.first : null;
       _currentExerciseIndex = 0;
       _setLoading(false);
     } catch (e) {

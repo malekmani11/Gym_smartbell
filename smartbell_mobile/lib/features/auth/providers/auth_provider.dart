@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/services/device_token_service.dart';
 import '../../../core/storage/secure_storage.dart';
+
 import '../models/auth_response.dart';
 import '../services/auth_service.dart';
 
@@ -46,10 +49,11 @@ class AuthProvider extends ChangeNotifier {
     try {
       final userResponse = await _service.login(email, password);
       _user = userResponse;
+      _error = null;
       await _persist();
       _status = AuthStatus.authenticated;
       _setLoading(false);
-      DeviceTokenService.registerToken();
+      unawaited(DeviceTokenService.registerToken());
       return true;
     } catch (e) {
       _error = DioClient.errorMessage(e);
@@ -86,10 +90,56 @@ class AuthProvider extends ChangeNotifier {
     DeviceTokenService.removeToken();
     try {
       await SecureStorage.clear();
+      // Clear all local SharedPreferences data tied to this session
+      final prefs = await SharedPreferences.getInstance();
+      final keysToRemove = prefs.getKeys()
+          .where((k) =>
+              k.startsWith('smartbell_measurements_') ||
+              k == 'gym_pending_training' ||
+              k == 'gym_pending_nutrition')
+          .toList();
+      for (final key in keysToRemove) {
+        await prefs.remove(key);
+      }
     } catch (_) {}
     _user   = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();
+  }
+
+  Future<bool> updateProfile({required String firstName, required String lastName}) async {
+    _setLoading(true);
+    try {
+      final updated = await _service.updateProfile(_user!.id, firstName: firstName, lastName: lastName);
+      _user = AuthResponse(
+        id:        _user!.id,
+        email:     _user!.email,
+        firstName: updated['firstName']!,
+        lastName:  updated['lastName']!,
+        token:     _user!.token,
+        role:      _user!.role,
+      );
+      await _persist();
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _error = DioClient.errorMessage(e);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    _setLoading(true);
+    try {
+      await _service.changePassword(_user!.id, currentPassword, newPassword);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _error = DioClient.errorMessage(e);
+      _setLoading(false);
+      return false;
+    }
   }
 
   void clearError() { _error = null; notifyListeners(); }

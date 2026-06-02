@@ -28,7 +28,12 @@ public class CourseController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<CourseDTO>> getActiveCourses(Pageable pageable) {
+    public ResponseEntity<Page<CourseDTO>> getCourses(
+            @RequestParam(required = false, defaultValue = "false") boolean all,
+            Pageable pageable) {
+        if (all) {
+            return ResponseEntity.ok(courseService.getAllCourses(pageable));
+        }
         return ResponseEntity.ok(courseService.getActiveCourses(pageable));
     }
 
@@ -65,5 +70,10 @@ public class CourseController {
     @PatchMapping("/reservations/{id}/cancel")
     public ResponseEntity<CourseReservationDTO> cancelReservation(@PathVariable Long id) {
         return ResponseEntity.ok(courseService.cancelReservation(id));
+    }
+
+    @GetMapping("/{id}/reservations")
+    public ResponseEntity<java.util.List<CourseReservationDTO>> getReservationsByCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(courseService.getReservationsByCourse(id));
     }
 }

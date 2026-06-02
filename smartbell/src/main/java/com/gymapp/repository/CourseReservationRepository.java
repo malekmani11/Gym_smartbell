@@ -17,6 +17,8 @@ public interface CourseReservationRepository extends JpaRepository<CourseReserva
 
     Page<CourseReservation> findByMemberId(Long memberId, Pageable pageable);
 
+    List<CourseReservation> findByCourseId(Long courseId);
+
     List<CourseReservation> findByCourseIdAndReservationDate(Long courseId, LocalDate date);
 
     @Query("SELECT COUNT(cr) FROM CourseReservation cr WHERE cr.course.id = :courseId AND cr.reservationDate = :date AND cr.status = :status")

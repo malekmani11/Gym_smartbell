@@ -57,4 +57,9 @@ export class CourseApiService {
       `${this.BASE}/reservations/${id}/cancel`, {}
     );
   }
+
+  // GET /courses/{id}/reservations
+  getReservationsByCourse(courseId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.BASE}/${courseId}/reservations`);
+  }
 }

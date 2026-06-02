@@ -74,10 +74,7 @@ public class TrainingServiceImpl implements TrainingService {
             }
         }
 
-        return mapper.toTrainingProgramDTO(
-            programRepository.findById(saved.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Program not found after save: " + saved.getId()))
-        );
+        return mapper.toTrainingProgramDTO(programRepository.findById(saved.getId()).get());
     }
 
     @Override

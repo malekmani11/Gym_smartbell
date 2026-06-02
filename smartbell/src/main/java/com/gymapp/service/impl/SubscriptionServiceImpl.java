@@ -1,11 +1,14 @@
 package com.gymapp.service.impl;
 
 import com.gymapp.dto.SubscriptionDTO;
+import com.gymapp.entity.Member;
 import com.gymapp.entity.Subscription;
 import com.gymapp.entity.SubscriptionPlan;
 import com.gymapp.entity.User;
+import com.gymapp.entity.enums.MembershipStatus;
 import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.mapper.EntityMapper;
+import com.gymapp.repository.MemberRepository;
 import com.gymapp.repository.SubscriptionPlanRepository;
 import com.gymapp.repository.SubscriptionRepository;
 import com.gymapp.repository.UserRepository;
@@ -30,6 +33,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final SubscriptionPlanRepository planRepository;
+    private final MemberRepository memberRepository;
     private final EntityMapper mapper;
 
     @Override
@@ -53,6 +57,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .build();
 
         Subscription saved = subscriptionRepository.save(subscription);
+        activateMember(user);
         log.info("Subscription created: {}", saved.getId());
         return mapper.toSubscriptionDTO(saved);
     }
@@ -82,7 +87,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription subscription = subscriptionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found with id: " + id));
         subscription.setStatus(SubscriptionStatus.CANCELLED);
-        return mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
+        SubscriptionDTO result = mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
+        deactivateMemberIfNoActiveSubscription(subscription.getUser());
+        return result;
     }
 
     @Override
@@ -90,16 +97,27 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         log.info("Renewing subscription: {}", id);
         Subscription subscription = subscriptionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found with id: " + id));
+        
         SubscriptionPlan plan = subscription.getPlan();
         if (plan == null) {
-            throw new EntityNotFoundException("Aucun plan associé à cet abonnement (id: " + id + ")");
+            throw new IllegalStateException("Aucun plan associé à cet abonnement (id: " + id + ")");
         }
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate   = startDate.plusMonths(plan.getDurationMonths());
+
+        // Si l'abonnement est encore actif, on commence à partir de la date de fin actuelle
+        // Sinon, on commence à partir d'aujourd'hui
+        LocalDate startDate = subscription.getEndDate().isAfter(LocalDate.now()) 
+                ? subscription.getEndDate() 
+                : LocalDate.now();
+        
+        LocalDate endDate = startDate.plusMonths(plan.getDurationMonths());
+        
         subscription.setStartDate(startDate);
         subscription.setEndDate(endDate);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        return mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
+
+        SubscriptionDTO result = mapper.toSubscriptionDTO(subscriptionRepository.save(subscription));
+        activateMember(subscription.getUser());
+        return result;
     }
 
     @Override
@@ -116,7 +134,47 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         expired.forEach(sub -> {
             sub.setStatus(SubscriptionStatus.EXPIRED);
             subscriptionRepository.save(sub);
+            deactivateMemberIfNoActiveSubscription(sub.getUser());
             log.info("Subscription {} expired", sub.getId());
         });
+    }
+
+    @Override
+    public void syncAllMembershipStatuses() {
+        log.info("Syncing membership statuses for all members...");
+        List<Member> all = memberRepository.findAll();
+        for (Member member : all) {
+            boolean hasActive = member.getSubscriptions().stream()
+                    .anyMatch(s -> s.getStatus() == SubscriptionStatus.ACTIVE
+                            && (s.getEndDate() == null || !s.getEndDate().isBefore(LocalDate.now())));
+            MembershipStatus target = hasActive ? MembershipStatus.ACTIVE : MembershipStatus.INACTIVE;
+            if (member.getMembershipStatus() != target) {
+                member.setMembershipStatus(target);
+                memberRepository.save(member);
+                log.info("Member {} → {}", member.getId(), target);
+            }
+        }
+        log.info("Membership sync done.");
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private void activateMember(User user) {
+        if (user instanceof Member member
+                && member.getMembershipStatus() != MembershipStatus.ACTIVE) {
+            member.setMembershipStatus(MembershipStatus.ACTIVE);
+            memberRepository.save(member);
+        }
+    }
+
+    private void deactivateMemberIfNoActiveSubscription(User user) {
+        if (!(user instanceof Member member)) return;
+        boolean stillActive = member.getSubscriptions().stream()
+                .anyMatch(s -> s.getStatus() == SubscriptionStatus.ACTIVE
+                        && (s.getEndDate() == null || !s.getEndDate().isBefore(LocalDate.now())));
+        if (!stillActive && member.getMembershipStatus() == MembershipStatus.ACTIVE) {
+            member.setMembershipStatus(MembershipStatus.INACTIVE);
+            memberRepository.save(member);
+        }
     }
 }

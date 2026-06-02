@@ -3,6 +3,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import json
+import re
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +27,7 @@ if not HF_API_TOKEN:
 
 # Modèle principal (programme sportif) — puissant
 HF_MODEL         = "Qwen/Qwen2.5-72B-Instruct"
-_hf_client       = InferenceClient(model=HF_MODEL, token=HF_API_TOKEN)
+_hf_client       = InferenceClient(model=HF_MODEL, token=HF_API_TOKEN, timeout=150)
 
 # Modèle nutrition — plus rapide, évite les timeouts
 HF_MODEL_NUTRITION = "Qwen/Qwen2.5-7B-Instruct"
@@ -61,6 +64,22 @@ OBJECTIFS_VALIDES = {"perte_poids", "prise_masse", "endurance", "tonification"}
 NIVEAUX_VALIDES   = {"debutant", "intermediaire", "avance"}
 SEXES_VALIDES     = {"homme", "femme"}
 ALLERGIES_VALIDES = {"gluten", "lactose", "noix", "oeufs", "soja", "aucune"}
+
+# Mapping Spring Boot → valeurs internes du modèle ML
+GOAL_MAPPING = {
+    "perdre_du_poids": "perte_poids",
+    "musculation"    : "prise_masse",
+    "endurance"      : "endurance",
+    "tonification"   : "tonification",
+    # passer directement les valeurs internes aussi
+    "perte_poids"    : "perte_poids",
+    "prise_masse"    : "prise_masse",
+}
+LEVEL_MAPPING = {
+    "debutant"      : "debutant",
+    "intermediaire" : "intermediaire",
+    "avance"        : "avance",
+}
 
 # ─────────────────────────────────────────
 #  Schémas Pydantic — Programme
@@ -99,13 +118,27 @@ class ProfilRequest(BaseModel):
         return v
 
 
+class ExerciceIA(BaseModel):
+    id         : int
+    name       : str
+    sets       : int
+    reps       : int
+    weight     : float = 0.0
+    restSeconds: int   = 90
+    muscles    : str   = ""
+
+class SeanceIA(BaseModel):
+    nom      : str
+    exercices: List[ExerciceIA]
+
 class ProgrammeResponse(BaseModel):
-    programme      : str
-    type_programme : str
-    intensite      : int
-    split          : str
-    imc            : float
-    imc_categorie  : str
+    seances       : List[SeanceIA]
+    note_coach    : str
+    type_programme: str
+    intensite     : int
+    split         : str
+    imc           : float
+    imc_categorie : str
 
 
 # ─────────────────────────────────────────
@@ -173,6 +206,17 @@ class NutritionResponse(BaseModel):
 # ─────────────────────────────────────────
 #  Endpoint 1 : Programme sportif
 # ─────────────────────────────────────────
+def _extraire_json(texte: str) -> dict:
+    """Extrait un objet JSON depuis la réponse LLM (gère les balises markdown)."""
+    texte = re.sub(r"```json\s*", "", texte)
+    texte = re.sub(r"```\s*", "", texte)
+    texte = texte.strip()
+    match = re.search(r"\{.*\}", texte, re.DOTALL)
+    if match:
+        return json.loads(match.group())
+    raise ValueError("Aucun JSON valide trouvé dans la réponse du LLM")
+
+
 @app.post("/api/ai/generate-program", response_model=ProgrammeResponse)
 async def generate_program(profil: ProfilRequest):
     # 1. Prédictions ML + construction du prompt
@@ -195,16 +239,23 @@ async def generate_program(profil: ProfilRequest):
     try:
         hf_response = _hf_client.chat_completion(
             messages=[{"role": "user", "content": ml_result["prompt"]}],
-            max_tokens=2048,
-            temperature=0.7,
+            max_tokens=3000,
+            temperature=0.5,
         )
-        programme_texte = hf_response.choices[0].message.content.strip()
+        raw_text = hf_response.choices[0].message.content.strip()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur Hugging Face API : {e}")
 
-    # 3. Réponse structurée
+    # 3. Parse JSON
+    try:
+        data = _extraire_json(raw_text)
+    except (ValueError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=502, detail=f"Réponse LLM non parseable : {e}\nRaw: {raw_text[:300]}")
+
+    # 4. Réponse structurée
     return ProgrammeResponse(
-        programme     =programme_texte,
+        seances       =data.get("seances", []),
+        note_coach    =data.get("note_coach", ""),
         type_programme=ml_result["type_programme"],
         intensite     =ml_result["intensite"],
         split         =ml_result["split_musculaire"],
@@ -260,6 +311,82 @@ async def generate_nutrition(profil: NutritionRequest):
 
 
 # ─────────────────────────────────────────
+#  Endpoint 3 : /predict — interface Spring Boot
+#  Accepte {height, weight, goal, level}
+#  Retourne {type_programme, intensite, split_musculaire}
+# ─────────────────────────────────────────
+
+class PredictRequest(BaseModel):
+    height: float = Field(..., gt=100, lt=250, description="Taille en cm")
+    weight: float = Field(..., gt=20,  lt=300, description="Poids en kg")
+    goal  : str   = Field(..., description="perdre_du_poids | musculation | endurance")
+    level : str   = Field(..., description="debutant | intermediaire | avance")
+
+    @field_validator("goal")
+    @classmethod
+    def valider_goal(cls, v: str) -> str:
+        v = v.lower().strip()
+        if v not in GOAL_MAPPING:
+            raise ValueError(
+                f"goal '{v}' invalide. Valeurs acceptées : {list(GOAL_MAPPING.keys())}"
+            )
+        return v
+
+    @field_validator("level")
+    @classmethod
+    def valider_level(cls, v: str) -> str:
+        v = v.lower().strip()
+        if v not in LEVEL_MAPPING:
+            raise ValueError(
+                f"level '{v}' invalide. Valeurs acceptées : {list(LEVEL_MAPPING.keys())}"
+            )
+        return v
+
+
+class PredictResponse(BaseModel):
+    type_programme  : str
+    intensite       : str
+    split_musculaire: str
+
+
+@app.post("/predict", response_model=PredictResponse)
+async def predict(req: PredictRequest):
+    """
+    Interface légère pour Spring Boot :
+    - Accepte height/weight/goal/level
+    - Calcule le BMI automatiquement
+    - Encode goal et level pour le Random Forest
+    - Retourne type_programme, intensite, split_musculaire (sans texte généré)
+    """
+    # 1. Mapper goal et level vers les valeurs internes du modèle
+    objectif_interne = GOAL_MAPPING[req.goal]
+    niveau_interne   = LEVEL_MAPPING[req.level]
+
+    # 2. Appel predict_profil (IMC calculé à l'intérieur)
+    try:
+        ml_result = predict_profil(
+            poids   =req.weight,
+            taille  =req.height,
+            age     =30,         # valeur par défaut (non fournie par Spring Boot)
+            sexe    ="homme",    # valeur par défaut (non fournie par Spring Boot)
+            objectif=objectif_interne,
+            niveau  =niveau_interne,
+            seances =4,          # valeur par défaut
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=f"Modèle ML manquant : {e}")
+
+    # 3. Retourner uniquement les prédictions (pas le texte Hugging Face)
+    return PredictResponse(
+        type_programme  =ml_result["type_programme"],
+        intensite       =str(ml_result["intensite"]),
+        split_musculaire=ml_result["split_musculaire"],
+    )
+
+
+# ─────────────────────────────────────────
 #  Health check
 # ─────────────────────────────────────────
 @app.get("/health")
@@ -272,6 +399,7 @@ def health():
             "nutrition" : HF_MODEL_NUTRITION,
         },
         "endpoints": [
+            "POST /predict",
             "POST /api/ai/generate-program",
             "POST /api/ai/generate-nutrition",
         ],

@@ -199,6 +199,34 @@ export class EventsComponent implements OnInit {
     });
   }
 
+  getEventImage(event: EventDTO): string {
+    const title = (event.title ?? '').toLowerCase();
+    const desc  = (event.description ?? '').toLowerCase();
+    const text  = title + ' ' + desc;
+    if (text.includes('padel') || text.includes('tennis'))
+      return 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&q=80&fit=crop';
+    if (text.includes('yoga') || text.includes('méditation') || text.includes('stretching'))
+      return 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80&fit=crop';
+    if (text.includes('nutrition') || text.includes('diète') || text.includes('séminaire') || text.includes('conference') || text.includes('conférence'))
+      return 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80&fit=crop';
+    if (text.includes('crossfit') || text.includes('wod') || text.includes('circuit'))
+      return 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=600&q=80&fit=crop';
+    if (text.includes('boxe') || text.includes('combat') || text.includes('arts martiaux') || text.includes('mma'))
+      return 'https://images.unsplash.com/photo-1555597673-b21d5c935865?w=600&q=80&fit=crop';
+    if (text.includes('natation') || text.includes('piscine') || text.includes('aqua'))
+      return 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=600&q=80&fit=crop';
+    if (text.includes('cyclisme') || text.includes('vélo') || text.includes('spinning'))
+      return 'https://images.unsplash.com/photo-1534787238916-9ba6764efd4f?w=600&q=80&fit=crop';
+    if (text.includes('course') || text.includes('marathon') || text.includes('running'))
+      return 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop';
+    if (text.includes('tournoi') || text.includes('compétition') || text.includes('championnat'))
+      return 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80&fit=crop';
+    if (text.includes('musculation') || text.includes('powerlifting') || text.includes('haltère'))
+      return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80&fit=crop';
+    // Default sport gym image
+    return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop';
+  }
+
   getEventStatus(event: EventDTO): 'upcoming' | 'past' | 'full' {
     const now = new Date();
     if ((event.registrationCount || 0) >= event.maxParticipants) return 'full';

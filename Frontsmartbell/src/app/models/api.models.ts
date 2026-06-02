@@ -48,6 +48,9 @@ export interface MemberDTO {
   joinDate?: string;
   profileImageUrl?: string;
   loyaltyPoints?: number;
+  assignedCoachId?: number;
+  messagingEnabled?: boolean;
+  enabled?: boolean;
   // Active subscription
   subscriptionId?: number;
   planName?: string;
@@ -59,6 +62,8 @@ export interface MemberDTO {
   lastPaymentStatus?: string;
   lastPaymentMethod?: string;
   lastPaymentAmount?: number;
+  totalPaid?: number;
+  monthlySessions?: number;
 }
 
 // ── Coach ────────────────────────────────────────
@@ -181,6 +186,19 @@ export interface PaymentDTO {
   transactionRef?: string;
 }
 
+// ── Check-In ──────────────────────────────────────
+export interface CheckInDTO {
+  id: number;
+  memberId: number;
+  memberFirstName: string;
+  memberLastName: string;
+  memberEmail: string;
+  profileImageUrl?: string;
+  checkInTime: string;
+  checkOutTime?: string;
+  notes?: string;
+}
+
 // ── Statistics ───────────────────────────────────
 export interface StatisticsDTO {
   totalMembers: number;
@@ -202,6 +220,14 @@ export interface StatisticsDTO {
   maleCount?: number;
   femaleCount?: number;
   expiringSoonCount?: number;
+  revenuePrevMonth?: number;
+  newMembersThisMonth?: number;
+
+  // Check-in stats
+  checkInsToday?: number;
+  checkInsThisWeek?: number;
+  checkInsThisMonth?: number;
+  recentCheckIns?: CheckInDTO[];
 }
 
 // ── Complaints ───────────────────────────────────

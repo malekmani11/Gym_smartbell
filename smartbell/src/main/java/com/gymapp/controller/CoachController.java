@@ -1,6 +1,7 @@
 package com.gymapp.controller;
 
 import com.gymapp.dto.CoachDTO;
+import com.gymapp.dto.CoachStatsDto;
 import com.gymapp.entity.enums.AvailabilityStatus;
 import com.gymapp.service.CoachService;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +31,19 @@ public class CoachController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','MEMBER')")
     public ResponseEntity<CoachDTO> getCoachById(@PathVariable Long id) {
         return ResponseEntity.ok(coachService.getCoachById(id));
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
     public ResponseEntity<CoachDTO> getCoachByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(coachService.getCoachByUserId(userId));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','MEMBER')")
     public ResponseEntity<Page<CoachDTO>> getAllCoaches(
             @RequestParam(required = false) AvailabilityStatus status,
             Pageable pageable) {
@@ -58,5 +62,11 @@ public class CoachController {
     public ResponseEntity<Void> deleteCoach(@PathVariable Long id) {
         coachService.deleteCoach(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
+    public ResponseEntity<CoachStatsDto> getCoachStats(@PathVariable Long id) {
+        return ResponseEntity.ok(coachService.getCoachStats(id));
     }
 }

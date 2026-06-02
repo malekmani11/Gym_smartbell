@@ -22,4 +22,6 @@ public interface SubscriptionService {
     Page<SubscriptionDTO> getAll(Pageable pageable);
 
     void checkAndExpireSubscriptions();
+
+    void syncAllMembershipStatuses();
 }

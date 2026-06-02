@@ -119,6 +119,14 @@ export const routes: Routes = [
         title: 'Plaintes — GymPro',
         data: { roles: ['ADMIN'] },
       },
+      {
+        path: 'ai-programs',
+        loadComponent: () =>
+          import('./components/ai-programs/ai-programs.component')
+            .then(m => m.AiProgramsComponent),
+        title: 'Programmes IA — GymPro',
+        data: { roles: ['ADMIN', 'COACH'] },
+      },
       { path: '**', redirectTo: 'dashboard' },
     ],
   },

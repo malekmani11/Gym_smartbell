@@ -1,57 +1,26 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
+/// Session-only storage — data lives in memory only.
+/// Cleared automatically when the app process is killed (app closed).
+/// No persistence to disk: user must log in every new session.
 class SecureStorage {
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-  );
+  SecureStorage._();
 
-  static const _keyToken = 'gym_jwt_token';
-  static const _keyUser  = 'gym_user_data';
+  static String? _token;
+  static String? _userData;
 
   static Future<void> saveToken(String token) async {
-    if (kIsWeb) {
-      final p = await SharedPreferences.getInstance();
-      await p.setString(_keyToken, token);
-    } else {
-      await _storage.write(key: _keyToken, value: token);
-    }
+    _token = token;
   }
 
-  static Future<String?> getToken() async {
-    if (kIsWeb) {
-      final p = await SharedPreferences.getInstance();
-      return p.getString(_keyToken);
-    }
-    return _storage.read(key: _keyToken);
-  }
+  static Future<String?> getToken() async => _token;
 
   static Future<void> saveUser(String userJson) async {
-    if (kIsWeb) {
-      final p = await SharedPreferences.getInstance();
-      await p.setString(_keyUser, userJson);
-    } else {
-      await _storage.write(key: _keyUser, value: userJson);
-    }
+    _userData = userJson;
   }
 
-  static Future<String?> getUser() async {
-    if (kIsWeb) {
-      final p = await SharedPreferences.getInstance();
-      return p.getString(_keyUser);
-    }
-    return _storage.read(key: _keyUser);
-  }
+  static Future<String?> getUser() async => _userData;
 
   static Future<void> clear() async {
-    if (kIsWeb) {
-      final p = await SharedPreferences.getInstance();
-      await p.remove(_keyToken);
-      await p.remove(_keyUser);
-    } else {
-      await _storage.deleteAll();
-    }
+    _token    = null;
+    _userData = null;
   }
 }

@@ -41,6 +41,13 @@ public class Member extends User {
     @Builder.Default
     private Integer loyaltyPoints = 0;
 
+    @Column(name = "assigned_coach_id")
+    private Long assignedCoachId;
+
+    @Column(name = "messaging_enabled", nullable = false)
+    @Builder.Default
+    private Boolean messagingEnabled = true;
+
     // ── Relationships ──────────────────────────────────────
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -1,11 +1,15 @@
 package com.gymapp.service.impl;
 
 import com.gymapp.dto.CoachDTO;
+import com.gymapp.dto.CoachStatsDto;
 import com.gymapp.entity.Coach;
 import com.gymapp.entity.Role;
 import com.gymapp.entity.enums.AvailabilityStatus;
+import com.gymapp.entity.enums.ReservationStatus;
 import com.gymapp.mapper.EntityMapper;
 import com.gymapp.repository.CoachRepository;
+import com.gymapp.repository.CourseRepository;
+import com.gymapp.repository.CourseReservationRepository;
 import com.gymapp.repository.UserRepository;
 import com.gymapp.service.CoachService;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,9 +32,12 @@ public class CoachServiceImpl implements CoachService {
 
     private final CoachRepository coachRepository;
     private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
+    private final CourseReservationRepository reservationRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntityMapper mapper;
     private final com.gymapp.repository.RefreshTokenRepository refreshTokenRepository;
+    private final com.gymapp.service.EmailService emailService;
 
     @Override
     public CoachDTO createCoach(Long coachId, CoachDTO dto) {
@@ -69,7 +77,9 @@ public class CoachServiceImpl implements CoachService {
                 .availabilityStatus(AvailabilityStatus.AVAILABLE)
                 .build();
 
-        return mapper.toCoachDTO(coachRepository.save(coach));
+        Coach saved = coachRepository.save(coach);
+        emailService.sendWelcomeEmail(saved.getEmail(), saved.getFirstName());
+        return mapper.toCoachDTO(saved);
     }
 
     @Override
@@ -119,6 +129,40 @@ public class CoachServiceImpl implements CoachService {
         if (dto.getHireDate() != null)          coach.setHireDate(dto.getHireDate());
 
         return mapper.toCoachDTO(coachRepository.save(coach));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CoachStatsDto getCoachStats(Long coachId) {
+        coachRepository.findById(coachId)
+                .orElseThrow(() -> new EntityNotFoundException("Coach not found: " + coachId));
+
+        List<com.gymapp.entity.Course> courses = courseRepository.findByCoachId(coachId);
+        int totalCourses = courses.size();
+
+        int totalEnrollments = 0;
+        int totalCapacity = 0;
+        java.util.Set<Long> memberIds = new java.util.HashSet<>();
+
+        for (com.gymapp.entity.Course course : courses) {
+            long confirmed = reservationRepository.countByCourseIdAndStatus(course.getId(), ReservationStatus.CONFIRMED);
+            totalEnrollments += (int) confirmed;
+            totalCapacity += course.getMaxParticipants();
+            course.getReservations().stream()
+                    .filter(r -> r.getStatus() == ReservationStatus.CONFIRMED)
+                    .forEach(r -> memberIds.add(r.getMember().getId()));
+        }
+
+        double avgOccupancyRate = totalCapacity > 0
+                ? Math.round((totalEnrollments * 100.0 / totalCapacity) * 10.0) / 10.0
+                : 0.0;
+
+        return CoachStatsDto.builder()
+                .totalCourses(totalCourses)
+                .totalEnrollments(totalEnrollments)
+                .activeMembers(memberIds.size())
+                .avgOccupancyRate(avgOccupancyRate)
+                .build();
     }
 
     @Override

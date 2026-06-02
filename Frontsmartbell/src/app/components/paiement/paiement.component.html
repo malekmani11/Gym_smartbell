@@ -23,19 +23,27 @@
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-money-bill-wave" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">CA CE MOIS</p>
       <p class="kpi-value">{{ stats().revenueThisMonth | number:'1.0-0' }}<span style="font-size:1rem;color:var(--text-secondary)"> DT</span></p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#10B981,#34D399)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(16,185,129,.15)"><i class="fas fa-check-circle" style="color:#10B981;font-size:16px"></i></div>
       <p class="kpi-label">COMPLÉTÉS</p>
       <p class="kpi-value">{{ stats().completedCount }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#F59E0B,#FCD34D)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(245,158,11,.15)"><i class="fas fa-hourglass-half" style="color:#F59E0B;font-size:16px"></i></div>
       <p class="kpi-label">EN ATTENTE</p>
       <p class="kpi-value">{{ stats().pendingCount }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#EF4444,#F87171)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(239,68,68,.15)"><i class="fas fa-times-circle" style="color:#EF4444;font-size:16px"></i></div>
       <p class="kpi-label">ÉCHOUÉS</p>
       <p class="kpi-value">{{ stats().failedCount }}</p>
     </div>
@@ -371,34 +379,32 @@
             </label>
             <select [ngModel]="newPayment().subscriptionId" (ngModelChange)="onSubscriptionChange($event)"
                     class="pay-input appearance-none cursor-pointer">
-              <option [ngValue]="null" disabled selected>Sélectionner l'abonnement</option>
+              <option [ngValue]="null" disabled selected>Sélectionner l'abonnement existant</option>
               @for (s of memberSubscriptions(); track s.id) {
                 <option [value]="s.id">{{ s.planName }} ({{ s.status }}) — {{ s.startDate | date:'dd/MM/yy' }} → {{ s.endDate | date:'dd/MM/yy' }}</option>
               }
-              @if (!isLoadingSubscriptions() && memberSubscriptions().length === 0 && selectedMemberId()) {
-                <option disabled>Aucun abonnement — choisissez un plan ci-dessous</option>
-              }
             </select>
-            @if (!isLoadingSubscriptions() && memberSubscriptions().length === 0 && selectedMemberId()) {
-              <div class="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p class="text-[10px] text-amber-400 font-bold mb-2 uppercase tracking-wider">Choisir un plan :</p>
-                @if (isCreatingSubscription()) {
-                  <p class="text-xs text-gray-400 text-center py-2"><i class="fas fa-spinner animate-spin mr-2"></i>Création en cours...</p>
-                } @else {
-                  <div class="space-y-1">
-                    @for (plan of availablePlans(); track plan.id) {
-                      <button type="button" (click)="createAndSelectSubscription(plan)"
-                              class="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-[#D4A017]/15 border border-white/8 hover:border-[#D4A017]/30 text-xs text-white transition-all">
-                        <span class="font-bold">{{ plan.name }}</span> — {{ plan.price }}DT/mois
-                      </button>
-                    }
-                    @if (availablePlans().length === 0) {
-                      <p class="text-[10px] text-gray-500 text-center py-1">Aucun plan disponible</p>
-                    }
-                  </div>
+
+            <!-- Toujours proposer de créer un nouvel abonnement si besoin -->
+            <div class="mt-4 p-3 bg-white/[0.03] border border-white/10 rounded-xl">
+              <p class="text-[10px] text-[#D4A017] font-bold mb-2 uppercase tracking-wider">Ou créer un nouvel abonnement :</p>
+              @if (isCreatingSubscription()) {
+                <p class="text-xs text-gray-400 text-center py-2"><i class="fas fa-spinner animate-spin mr-2"></i>Création en cours...</p>
+              } @else {
+                <div class="grid grid-cols-2 gap-2">
+                  @for (plan of availablePlans(); track plan.id) {
+                    <button type="button" (click)="createAndSelectSubscription(plan)"
+                            class="text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-[#D4A017]/15 border border-white/8 hover:border-[#D4A017]/30 text-[10px] text-white transition-all">
+                      <span class="font-bold block">{{ plan.name }}</span>
+                      <span class="text-gray-500">{{ plan.price }} DT</span>
+                    </button>
+                  }
+                </div>
+                @if (availablePlans().length === 0) {
+                  <p class="text-[10px] text-gray-500 text-center py-1">Aucun plan disponible</p>
                 }
-              </div>
-            }
+              }
+            </div>
           </div>
         }
 

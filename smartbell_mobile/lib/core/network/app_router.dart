@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 // Auth
 import '../../features/auth/providers/auth_provider.dart';
@@ -33,6 +31,9 @@ import '../../screens/admin/admin_members_page.dart';
 import '../../screens/admin/admin_coaches_page.dart';
 import '../../screens/admin/admin_payments_page.dart';
 import '../../screens/admin/admin_messages_screen.dart';
+import '../../screens/admin/admin_reports_screen.dart';
+import '../../screens/admin/admin_complaints_page.dart';
+import '../../screens/admin/admin_absences_page.dart';
 
 // Coach messaging
 import '../../features/coach/messaging/screens/coach_messages_screen.dart';
@@ -40,8 +41,28 @@ import '../../features/coach/messaging/screens/coach_messages_screen.dart';
 // Subscription
 import '../../features/adherent/subscription/screens/member_subscription_screen.dart';
 
+// Payments
+import '../../features/adherent/payments/member_payments_screen.dart';
+
+// Check-in
+import '../../features/adherent/checkin/screens/checkin_history_screen.dart';
+import '../../features/admin/qr_display_screen.dart';
+
 // Machines / QR scanner
 import '../../features/adherent/machines/qr_scanner_screen.dart';
+
+// Events
+import '../../features/adherent/events/screens/events_screen.dart';
+
+// Notifications partagées
+import '../../features/shared/notifications/notifications_screen.dart';
+
+// Plaintes
+import '../../features/adherent/complaints/screens/complaints_screen.dart';
+
+// Coach ratings
+import '../../features/coach/ratings/coach_ratings_screen.dart';
+
 
 // Progress
 import '../../features/adherent/progress/progress_screen.dart';
@@ -104,8 +125,12 @@ GoRouter createAppRouter(AuthProvider auth, bool showOnboarding) => GoRouter(
         // Keep subscription & payments routes (from old shell)
         GoRoute(path: '/member/coaches',      builder: (_, __) => const AdherentCoachesScreen()),
         GoRoute(path: '/member/progress',     builder: (_, __) => const ProgressScreen()),
-        GoRoute(path: '/member/subscription', builder: (_, __) => const MemberSubscriptionScreen()),
-        GoRoute(path: '/member/payments',     builder: (_, __) => const _PlaceholderPage(title: 'Paiements')),
+        GoRoute(path: '/member/subscription',    builder: (_, __) => const MemberSubscriptionScreen()),
+        GoRoute(path: '/member/payments',         builder: (_, __) => const MemberPaymentsScreen()),
+        GoRoute(path: '/member/checkin-history',  builder: (_, __) => const CheckinHistoryScreen()),
+        GoRoute(path: '/member/events',           builder: (_, __) => const MemberEventsScreen()),
+        GoRoute(path: '/member/notifications',    builder: (context, __) => NotificationsScreen(userId: auth.user?.id)),
+        GoRoute(path: '/member/complaints',       builder: (_, __) => const ComplaintsScreen()),
       ],
     ),
 
@@ -122,6 +147,10 @@ GoRouter createAppRouter(AuthProvider auth, bool showOnboarding) => GoRouter(
         GoRoute(path: '/coach/planning',      builder: (_, __) => const PlanningScreen()),
         GoRoute(path: '/coach/absences',      builder: (_, __) => const AbsenceScreen()),
         GoRoute(path: '/coach/messages',      builder: (_, __) => const CoachMessagesScreen()),
+        GoRoute(path: '/coach/events',         builder: (_, __) => const MemberEventsScreen()),
+        GoRoute(path: '/coach/notifications', builder: (context, __) => NotificationsScreen(userId: auth.user?.id)),
+        GoRoute(path: '/coach/complaints',    builder: (context, __) => ComplaintsScreen(userId: auth.user?.id)),
+        GoRoute(path: '/coach/ratings',       builder: (context, __) => CoachRatingsScreen(userId: auth.user?.id ?? 0)),
         GoRoute(path: '/coach/profile',       builder: (_, __) => const CoachProfileScreen()),
       ],
     ),
@@ -135,21 +164,13 @@ GoRouter createAppRouter(AuthProvider auth, bool showOnboarding) => GoRouter(
         GoRoute(path: '/admin/coaches',   builder: (_, __) => const AdminCoachesPage()),
         GoRoute(path: '/admin/payments',  builder: (_, __) => const AdminPaymentsPage()),
         GoRoute(path: '/admin/messages',  builder: (_, __) => const AdminMessagesScreen()),
-        GoRoute(path: '/admin/courses',   builder: (_, __) => const AdminCoursesPage()),
-        GoRoute(path: '/admin/profile',   builder: (_, __) => const AdminProfilePage()),
+        GoRoute(path: '/admin/courses',     builder: (_, __) => const AdminCoursesPage()),
+        GoRoute(path: '/admin/reports',     builder: (_, __) => const AdminReportsScreen()),
+        GoRoute(path: '/admin/profile',     builder: (_, __) => const AdminProfilePage()),
+        GoRoute(path: '/admin/complaints',  builder: (_, __) => const AdminComplaintsPage()),
+        GoRoute(path: '/admin/absences',    builder: (_, __) => const AdminAbsencesPage()),
+        GoRoute(path: '/admin/qr-display',  builder: (_, __) => const QrDisplayScreen()),
       ],
     ),
   ],
 );
-
-class _PlaceholderPage extends StatelessWidget {
-  final String title;
-  const _PlaceholderPage({required this.title});
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF111111),
-    appBar: AppBar(title: Text(title)),
-    body: Center(child: Text('$title — en construction', style: const TextStyle(color: Color(0xFF888888)))),
-  );
-}

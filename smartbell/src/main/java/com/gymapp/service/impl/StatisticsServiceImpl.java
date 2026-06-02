@@ -1,5 +1,6 @@
 package com.gymapp.service.impl;
 
+import com.gymapp.dto.CheckInDTO;
 import com.gymapp.dto.StatisticsDTO;
 import com.gymapp.entity.enums.ComplaintStatus;
 import com.gymapp.entity.enums.Gender;
@@ -7,6 +8,7 @@ import com.gymapp.entity.enums.MachineStatus;
 import com.gymapp.entity.enums.MembershipStatus;
 import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.repository.*;
+import com.gymapp.service.CheckInService;
 import com.gymapp.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.LongSupplier;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final EventRepository eventRepository;
     private final ComplaintRepository complaintRepository;
     private final MachineRepository machineRepository;
+    private final CheckInService checkInService;
 
     @Override
     public StatisticsDTO getGymStatistics() {
@@ -89,6 +93,19 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .maleCount(memberRepository.countByGender(Gender.MALE))
                 .femaleCount(memberRepository.countByGender(Gender.FEMALE))
                 .expiringSoonCount(subscriptionRepository.countByStatusAndEndDateBetween(SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now().plusDays(7)))
+                .checkInsToday(safeCount(() -> checkInService.countToday()))
+                .checkInsThisWeek(safeCount(() -> checkInService.countThisWeek()))
+                .checkInsThisMonth(safeCount(() -> checkInService.countThisMonth()))
+                .recentCheckIns(safeCheckIns())
                 .build();
+    }
+
+    private long safeCount(LongSupplier supplier) {
+        try { return supplier.getAsLong(); } catch (Exception e) { return 0L; }
+    }
+
+    private List<CheckInDTO> safeCheckIns() {
+        try { return checkInService.getTodayCheckIns().stream().limit(5).toList(); }
+        catch (Exception e) { return List.of(); }
     }
 }

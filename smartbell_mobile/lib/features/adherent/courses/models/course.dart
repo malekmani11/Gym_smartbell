@@ -3,6 +3,7 @@ class Course {
   final String name;
   final String? description;
   final String? coachName;
+  final int? coachId;
   final String? dayOfWeek;
   final String? startTime;
   final String? endTime;
@@ -16,6 +17,7 @@ class Course {
     required this.name,
     this.description,
     this.coachName,
+    this.coachId,
     this.dayOfWeek,
     this.startTime,
     this.endTime,
@@ -46,9 +48,10 @@ class Course {
     name:                j['name'] ?? j['courseName'] ?? 'Cours',
     description:         j['description'],
     coachName:           j['coachName'] ?? j['coach']?['firstName'],
+    coachId:             j['coachId'] != null ? (j['coachId'] as num).toInt() : null,
     dayOfWeek:           j['dayOfWeek'],
-    startTime:           j['startTime'],
-    endTime:             j['endTime'],
+    startTime:           j['startTime'] is String ? (j['startTime'] as String).substring(0, 5) : null,
+    endTime:             j['endTime']   is String ? (j['endTime']   as String).substring(0, 5) : null,
     maxParticipants:     (j['maxParticipants'] ?? 20).toInt(),
     currentParticipants: j['currentParticipants'] != null ? (j['currentParticipants'] as num).toInt() : null,
     location:            j['location'] ?? j['room'],

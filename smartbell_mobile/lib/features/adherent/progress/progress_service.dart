@@ -7,32 +7,9 @@ class ProgressService {
   static const _prefsKey = 'smartbell_measurements_';
 
   Future<List<Measurement>> getMeasurements(int memberId) async {
-    try {
-      final res = await DioClient.instance.dio
-          .get('/members/$memberId/measurements');
-      final raw = res.data;
-      final list = raw is List
-          ? raw
-          : (raw is Map ? (raw['content'] ?? raw['data'] ?? []) : []);
-      final fromApi = (list as List)
-          .map((j) => Measurement.fromJson(j as Map<String, dynamic>))
-          .toList();
-
-      // Keep local-only entries (no server id) so nothing is lost
-      final local = await _loadLocal(memberId);
-      final serverIds = fromApi.map((m) => m.id).whereType<int>().toSet();
-      final localOnly =
-          local.where((m) => m.id == null || !serverIds.contains(m.id)).toList();
-
-      final merged = [...fromApi, ...localOnly];
-      merged.sort((a, b) => a.date.compareTo(b.date));
-
-      // Persist merged state locally for offline use
-      await _saveLocal(memberId, merged);
-      return merged;
-    } catch (_) {
-      return _loadLocal(memberId);
-    }
+    // Measurements are stored locally only (no backend endpoint).
+    // Using SharedPreferences avoids any API call that could trigger logout.
+    return _loadLocal(memberId);
   }
 
   Future<Measurement> addMeasurement(int memberId, Measurement m) async {
@@ -64,12 +41,15 @@ class ProgressService {
 
   Future<void> deleteMeasurement(int memberId, Measurement m) async {
     final local = await _loadLocal(memberId);
-    final updated = local
-        .where((x) =>
-            !(x.date == m.date &&
-              x.weight == m.weight &&
-              x.height == m.height))
-        .toList();
+    // Prefer matching by server id; fallback to date+weight+height for local-only entries
+    bool found = false;
+    final updated = local.where((x) {
+      if (!found && m.id != null && x.id == m.id) { found = true; return false; }
+      if (!found && m.id == null && x.date == m.date && x.weight == m.weight && x.height == m.height) {
+        found = true; return false;
+      }
+      return true;
+    }).toList();
     await _saveLocal(memberId, updated);
 
     if (m.id != null) {

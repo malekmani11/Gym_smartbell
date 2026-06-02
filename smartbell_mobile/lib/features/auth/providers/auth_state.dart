@@ -1,10 +1,8 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_response.dart';
 import '../services/auth_service.dart';
 import '../../../core/storage/secure_storage.dart';
-import 'dart:convert';
-
-part 'auth_state.g.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -14,7 +12,7 @@ class AuthState {
   final bool isLoading;
   final String? error;
 
-  AuthState({
+  const AuthState({
     this.status = AuthStatus.unknown,
     this.user,
     this.isLoading = false,
@@ -26,30 +24,25 @@ class AuthState {
     AuthResponse? user,
     bool? isLoading,
     String? error,
-  }) {
-    return AuthState(
-      status: status ?? this.status,
-      user: user ?? this.user,
-      isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-    );
-  }
+  }) => AuthState(
+    status:    status    ?? this.status,
+    user:      user      ?? this.user,
+    isLoading: isLoading ?? this.isLoading,
+    error:     error     ?? this.error,
+  );
 }
 
-@riverpod
-class Auth extends _$Auth {
+class AuthNotifier extends StateNotifier<AuthState> {
   final _service = AuthService();
 
-  @override
-  AuthState build() => AuthState();
+  AuthNotifier() : super(const AuthState());
 
   Future<void> tryAutoLogin() async {
-    final token = await SecureStorage.getToken();
+    final token   = await SecureStorage.getToken();
     final userStr = await SecureStorage.getUser();
-    
     if (token != null && userStr != null) {
       try {
-        final user = AuthResponse.fromJson(jsonDecode(userStr));
+        final user = AuthResponse.fromJson(jsonDecode(userStr) as Map<String, dynamic>);
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
       } catch (_) {
         state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -74,7 +67,7 @@ class Auth extends _$Auth {
 
   Future<void> logout() async {
     await SecureStorage.clear();
-    state = AuthState(status: AuthStatus.unauthenticated);
+    state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<void> _persist(AuthResponse user) async {
@@ -82,3 +75,7 @@ class Auth extends _$Auth {
     await SecureStorage.saveUser(jsonEncode(user.toJson()));
   }
 }
+
+final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>(
+  (_) => AuthNotifier(),
+);

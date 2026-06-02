@@ -5,15 +5,15 @@ import { MemberApiService } from '../../services/member-api.service';
 import { CourseApiService } from '../../services/course-api.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SafePipe } from '../../shared/safe-pipe';
 import { AttendanceHeatmapComponent } from './attendance-heatmap.component';
-import { MemberProfileModalComponent, MemberProfile } from './member-profile-modal.component';
 import { MemberLeaderboardComponent } from './member-leaderboard.component';
 import { SubscriptionChartComponent } from './subscription-chart.component';
 import { RevenueForecastComponent } from './revenue-forecast.component';
 import { PendingPaymentsComponent } from './pending-payments.component';
 import { MonthlyRevenueChartComponent } from './monthly-revenue-chart.component';
 import { ExpiringSubscriptionsAlertComponent } from './expiring-subscriptions-alert.component';
-import { CrmComponent } from '../crm/crm.component';
+import { CheckinDashboardComponent } from './checkin-dashboard.component';
 
 interface KpiMetric {
   title: string;
@@ -54,7 +54,7 @@ interface ClassAttendance {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttendanceHeatmapComponent, MemberProfileModalComponent, MemberLeaderboardComponent, SubscriptionChartComponent, RevenueForecastComponent, PendingPaymentsComponent, MonthlyRevenueChartComponent, ExpiringSubscriptionsAlertComponent, CrmComponent],
+  imports: [CommonModule, FormsModule, SafePipe, AttendanceHeatmapComponent, MemberLeaderboardComponent, SubscriptionChartComponent, RevenueForecastComponent, PendingPaymentsComponent, MonthlyRevenueChartComponent, ExpiringSubscriptionsAlertComponent, CheckinDashboardComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -62,12 +62,13 @@ export class Dashboard implements OnInit, AfterViewInit {
   private toast     = inject(ToastService);
   private statsApi  = inject(StatisticsApiService);
   private memberApi = inject(MemberApiService);
+
+  powerBiUrl = 'https://app.powerbi.com/view?r=eyJrIjoiZDQyYTRhNGQtZWZjMS00MTRiLWEyNjctYTliM2FjZmM2NTU2IiwidCI6ImI3YmQ0NzE1LTQyMTctNDhjNy05MTllLTJlYTk3ZjU5MmZhNyJ9';
   private courseApi = inject(CourseApiService);
 
   // 🧪 State Management
   showNewMemberModal = signal(false);
   isProcessing = signal(false);
-  selectedMember = signal<MemberProfile | null>(null);
 
   // 📊 KPIs principaux
   totalMembersCount   = signal(0);
@@ -141,6 +142,61 @@ export class Dashboard implements OnInit, AfterViewInit {
     { label: 'Rapports AI', icon: 'fas fa-magic', color: 'bg-purple-500', description: 'Analyse prédictive Gemini' },
   ]);
 
+  // ── Animated design additions ──────────────────────────────
+  courseCount     = signal(0);
+  activeBarTab    = signal('Revenus');
+  readonly barMonths  = ['Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai'];
+  readonly barHeights = [40, 58, 45, 70, 54, 100];
+
+  courseTypeData = signal([
+    { label: 'CrossFit', pct: 40, color: '#4F8EF7' },
+    { label: 'Yoga',     pct: 24, color: '#A855F7' },
+    { label: 'Cardio',   pct: 16, color: '#10B981' },
+    { label: 'Autres',   pct: 20, color: '#F59E0B' },
+  ]);
+
+  activityFeed = signal([
+    { color: '#10B981', text: 'Ahmed Karim a souscrit à un abonnement Mensuel', time: 'il y a 5 min' },
+    { color: '#EF4444', text: 'Cours CrossFit WOD complet — 20/20 places', time: 'il y a 22 min' },
+    { color: '#F59E0B', text: 'Paiement de 49 DT en attente — Standard', time: 'il y a 1h' },
+    { color: '#10B981', text: 'Sara Ben Ali inscrite au cours Yoga Flow', time: 'il y a 2h' },
+  ]);
+
+  coachCount = computed(() => this.kpis().find(k => k.title === 'Coachs actifs')?.value ?? '0');
+
+  donutSegments = computed(() => {
+    const circ = 251.3;
+    let acc = 0;
+    return this.courseTypeData().map(d => {
+      const dash   = +(circ * d.pct / 100).toFixed(1);
+      const offset = +(-acc).toFixed(1);
+      acc += dash;
+      return { ...d, dash, offset, circ };
+    });
+  });
+
+  getKpiImage(icon: string): string {
+    if (icon.includes('users'))    return 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80&fit=crop';
+    if (icon.includes('money'))    return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80&fit=crop';
+    if (icon.includes('id-card'))  return 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop';
+    if (icon.includes('user-tie')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80&fit=crop';
+    if (icon.includes('calendar')) return 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80&fit=crop';
+    return 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=600&q=80&fit=crop';
+  }
+
+  getKpiColors(icon: string): { gradient: string; bg: string; stroke: string } {
+    if (icon.includes('users'))    return { gradient: 'linear-gradient(90deg,#4F8EF7,#A855F7)', bg: 'rgba(79,142,247,.15)',   stroke: '#4F8EF7' };
+    if (icon.includes('money'))    return { gradient: 'linear-gradient(90deg,#D4A017,#F0C040)', bg: 'rgba(212,160,23,.15)',   stroke: '#D4A017' };
+    if (icon.includes('id-card'))  return { gradient: 'linear-gradient(90deg,#10B981,#34D399)', bg: 'rgba(16,185,129,.15)',   stroke: '#10B981' };
+    if (icon.includes('user-tie')) return { gradient: 'linear-gradient(90deg,#A855F7,#C084FC)', bg: 'rgba(168,85,247,.15)',   stroke: '#A855F7' };
+    if (icon.includes('calendar')) return { gradient: 'linear-gradient(90deg,#F59E0B,#FCD34D)', bg: 'rgba(245,158,11,.15)',   stroke: '#F59E0B' };
+    if (icon.includes('tools'))    return { gradient: 'linear-gradient(90deg,#EF4444,#F87171)', bg: 'rgba(239,68,68,.15)',    stroke: '#EF4444' };
+    return                                { gradient: 'linear-gradient(90deg,#D4A017,#F0C040)', bg: 'rgba(212,160,23,.15)',   stroke: '#D4A017' };
+  }
+
+  setBarChartTab(tab: string) { this.activeBarTab.set(tab); }
+  // ─────────────────────────────────────────────────────────────
+
   // 📅 Prochains Cours
   upcomingClasses = signal<ClassAttendance[]>([
     { name: 'CrossFit WOD', time: '18:00', filled: 18, capacity: 20, coach: 'Marc L.' },
@@ -171,6 +227,8 @@ export class Dashboard implements OnInit, AfterViewInit {
         this.monthlyRevenue.set(revenue);
         this.revenueCurrentMonth.set(revenue);
         this.totalMembersCount.set(total);
+        this.previousMonthlyRevenue.set(Number(stats.revenuePrevMonth ?? 0));
+        this.newMembersCount.set(stats.newMembersThisMonth ?? 0);
 
         this.kpis.set([
           { title: 'Total Membres',      value: total.toLocaleString(),           trend: '', trendUp: true, icon: 'fas fa-users',          description: 'Membres enregistrés',        sparklineData: stats.memberTrend || [] },
@@ -256,6 +314,7 @@ export class Dashboard implements OnInit, AfterViewInit {
           }));
 
         if (todayCourses.length > 0) this.upcomingClasses.set(todayCourses);
+        this.courseCount.set(response.content?.length ?? 0);
       },
       error: () => {}
     });
@@ -419,31 +478,6 @@ export class Dashboard implements OnInit, AfterViewInit {
   onSmartAlertAction(type: string) {
     this.toast.success('Email envoyé', `Gemini AI a envoyé un email de ${type.toLowerCase()} au client.`);
   }
-
-  onMemberClick(member: Member) {
-    const profile: MemberProfile = {
-      ...member,
-      assignedCoach: 'Marc Leroux',
-      goal: 'Prise de masse',
-      currentWeight: 82,
-      targetWeight: 88,
-      progressPercent: 65,
-      sessionsThisMonth: 14,
-      currentStreak: 7,
-      lastVisit: new Date(),
-      favoriteCourses: ['CrossFit WOD', 'Powerlifting', 'HIIT Cardio'],
-      courseHistory: [
-        { name: 'CrossFit WOD', date: new Date(Date.now() - 1 * 86400000), coach: 'Marc L.', duration: '1h00' },
-        { name: 'Powerlifting', date: new Date(Date.now() - 3 * 86400000), coach: 'Thomas D.', duration: '1h15' },
-        { name: 'HIIT Cardio',  date: new Date(Date.now() - 5 * 86400000), coach: 'Sarah G.', duration: '45m' },
-        { name: 'CrossFit WOD', date: new Date(Date.now() - 7 * 86400000), coach: 'Marc L.', duration: '1h00' },
-        { name: 'Yoga Flow',    date: new Date(Date.now() - 10 * 86400000), coach: 'Julie V.', duration: '1h30' },
-      ],
-    };
-    this.selectedMember.set(profile);
-  }
-
-  closeMemberProfile() { this.selectedMember.set(null); }
 
   genderData = signal({ male: 62, female: 38 });
 

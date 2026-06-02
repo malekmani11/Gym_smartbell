@@ -184,51 +184,35 @@ def _construire_prompt(
     desc_obj   = DESC_OBJECTIF.get(objectif,     objectif)
     desc_niv   = DESC_NIVEAU.get(niveau,         niveau)
     desc_sexe  = DESC_SEXE.get(sexe,             sexe)
-    etoiles    = "★" * intensite + "☆" * (5 - intensite)
 
-    prompt = f"""Tu es un coach sportif expert en nutrition et en planification d'entraînement.
-Génère un programme sportif hebdomadaire complet, personnalisé et motivant pour le profil suivant.
+    prompt = f"""Tu es un coach sportif expert. Génère un programme d'entraînement personnalisé.
 
-═══════════════════════════════════════════
-  PROFIL DU MEMBRE
-═══════════════════════════════════════════
-• Sexe              : {desc_sexe}
-• Âge               : {age} ans
-• Poids             : {poids} kg
-• Taille            : {taille} cm
-• IMC               : {imc} ({imc_categorie})
-• Objectif          : {desc_obj}
-• Niveau            : {desc_niv}
-• Disponibilité     : {seances} séances / semaine
+PROFIL: {desc_sexe}, {age} ans, {poids} kg, {taille} cm, IMC {imc} ({imc_categorie})
+OBJECTIF: {desc_obj} | NIVEAU: {desc_niv} | SÉANCES: {seances}/semaine
+PROGRAMME: {desc_type} | SPLIT: {desc_split} | INTENSITÉ: {intensite}/5
 
-═══════════════════════════════════════════
-  RECOMMANDATIONS ML (SmartBell)
-═══════════════════════════════════════════
-• Type de programme : {desc_type}
-• Split musculaire  : {desc_split}
-• Niveau d'intensité: {etoiles}  ({intensite}/5)
+IMPORTANT: Retourne UNIQUEMENT un objet JSON valide, sans texte avant ni après, sans balises markdown.
 
-═══════════════════════════════════════════
-  CE QUE TU DOIS GÉNÉRER
-═══════════════════════════════════════════
-1. Programme hebdomadaire complet ({seances} jours)
-   - Pour chaque séance : liste des exercices, séries × répétitions,
-     temps de repos, muscles ciblés.
-   - Respecte le split "{split_musculaire}" recommandé par l'IA.
+Format EXACT à respecter:
+{{
+  "seances": [
+    {{
+      "nom": "Séance 1 — [nom]",
+      "exercices": [
+        {{"id": 1, "name": "Nom exercice", "sets": 4, "reps": 10, "weight": 60.0, "restSeconds": 90, "muscles": "muscles ciblés"}}
+      ]
+    }}
+  ],
+  "note_coach": "Conseils de progression, nutrition et récupération adaptés au profil (4-5 phrases)."
+}}
 
-2. Conseils d'intensité et de progression
-   - Adapte la difficulté au niveau {desc_niv} (intensité {intensite}/5).
-   - Indique comment progresser sur 4 semaines (surcharge progressive).
-
-3. Conseils nutritionnels ciblés
-   - Adapte les recommandations à l'objectif "{desc_obj}" et à l'IMC de {imc}.
-   - Donne des repères en g/kg pour protéines, glucides, lipides.
-
-4. Conseils de récupération
-   - Sommeil, hydratation, étirements post-séance.
-
-Rédige en français, avec un ton encourageant et professionnel.
-Structure ta réponse avec des titres clairs pour chaque section.
+Règles:
+- Génère exactement {seances} séances respectant le split {split_musculaire}
+- 5 à 7 exercices par séance
+- Poids réalistes adaptés au niveau {desc_niv} et à l'objectif {desc_obj}
+- Repos: 60-90s cardio/tonification, 90-120s musculation
+- note_coach: conseils nutrition (protéines/glucides/lipides en g/kg), progression sur 4 semaines, récupération
+- Rédige en français
 """
     return prompt.strip()
 

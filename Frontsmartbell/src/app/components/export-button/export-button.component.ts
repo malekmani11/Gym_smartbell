@@ -1,6 +1,7 @@
 import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExportService } from '../../services/export.service';
+import { ToastService } from '../../services/toast.service';
 
 export type ExportType = 'payments' | 'members';
 
@@ -12,30 +13,33 @@ export type ExportType = 'payments' | 'members';
   styleUrl: './export-button.component.css',
 })
 export class ExportButtonComponent {
-  // ── Inputs (signal-based) ─────────────────────────────────────────────────
   data  = input<any[]>([]);
   type  = input<ExportType>('payments');
   label = input<string>('');
 
-  // ── State ─────────────────────────────────────────────────────────────────
   isPdfLoading   = signal(false);
   isExcelLoading = signal(false);
 
   private exportSvc = inject(ExportService);
-
-  // ── Actions ───────────────────────────────────────────────────────────────
+  private toast     = inject(ToastService);
 
   exportPdf(): void {
     if (this.isPdfLoading()) return;
+    const rows = this.data();
+    if (!rows.length) {
+      this.toast.error('Aucune donnée', 'Aucun enregistrement à exporter.');
+      return;
+    }
     this.isPdfLoading.set(true);
-    // Defer to next tick so the spinner renders before blocking work
     setTimeout(() => {
       try {
         if (this.type() === 'payments') {
-          this.exportSvc.exportPaymentsPDF(this.data());
+          this.exportSvc.exportPaymentsPDF(rows);
         } else {
-          this.exportSvc.exportMembersPDF(this.data());
+          this.exportSvc.exportMembersPDF(rows);
         }
+      } catch (err: any) {
+        this.toast.error('Erreur export PDF', err?.message ?? 'Impossible de générer le PDF.');
       } finally {
         this.isPdfLoading.set(false);
       }
@@ -44,14 +48,21 @@ export class ExportButtonComponent {
 
   exportExcel(): void {
     if (this.isExcelLoading()) return;
+    const rows = this.data();
+    if (!rows.length) {
+      this.toast.error('Aucune donnée', 'Aucun enregistrement à exporter.');
+      return;
+    }
     this.isExcelLoading.set(true);
     setTimeout(() => {
       try {
         if (this.type() === 'payments') {
-          this.exportSvc.exportPaymentsExcel(this.data());
+          this.exportSvc.exportPaymentsExcel(rows);
         } else {
-          this.exportSvc.exportMembersExcel(this.data());
+          this.exportSvc.exportMembersExcel(rows);
         }
+      } catch (err: any) {
+        this.toast.error('Erreur export Excel', err?.message ?? 'Impossible de générer le fichier Excel.');
       } finally {
         this.isExcelLoading.set(false);
       }

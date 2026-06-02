@@ -22,14 +22,21 @@
 }
 
 .notif-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
+  background: linear-gradient(145deg, #1a1814 0%, #111008 60%, #0d0b05 100%);
+  border: 1px solid rgba(212,160,23,.18);
+  border-radius: 0.875rem;
   padding: 1.25rem;
   display: flex;
   gap: 1rem;
-  transition: transform 0.2s;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), border-color .25s, box-shadow .25s;
   position: relative;
+  overflow: hidden;
+  animation: fadeInUp .4s ease both;
+}
+.notif-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  border-color: rgba(212,160,23,.45);
+  box-shadow: 0 12px 36px rgba(0,0,0,.7), 0 0 24px rgba(212,160,23,.15);
 }
 
 .notif-card.unread {

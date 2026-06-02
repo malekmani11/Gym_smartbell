@@ -20,15 +20,21 @@
 
   <!-- KPI Cards -->
   <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr)">
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-bell" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">TOTAL</p>
       <p class="kpi-value">{{ stats().total }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-bell-slash" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">NON LUES</p>
       <p class="kpi-value">{{ stats().unread }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-calendar-day" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">AUJOURD'HUI</p>
       <p class="kpi-value">{{ stats().today }}</p>
     </div>

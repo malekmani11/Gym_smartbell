@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
-import '../../../../shared/widgets/gym_badge.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
 
@@ -25,7 +23,13 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
   final Set<int> _reserving = {};
 
   static const _dayLabels = ['Tous', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  static const _dayKeys   = ['ALL','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+  static const _dayKeys   = ['ALL', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+
+  static const _dayColors = [
+    Color(0xFFE5A01A),
+    Color(0xFFE57373), Color(0xFF81C784), Color(0xFF64B5F6),
+    Color(0xFFFFB74D), Color(0xFFBA68C8), Color(0xFF4DB6AC), Color(0xFFF06292),
+  ];
 
   List<Course> get _filtered {
     var list = _courses;
@@ -70,14 +74,14 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Réservation confirmée pour "${course.name}"'),
-          backgroundColor: AppTheme.success,
+          backgroundColor: const Color(0xFF3B6D11),
         ));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(DioClient.errorMessage(e)),
-          backgroundColor: AppTheme.error,
+          backgroundColor: const Color(0xFFA32D2D),
         ));
       }
     } finally {
@@ -85,40 +89,44 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
     }
   }
 
-  static const _dayColors = [
-    AppTheme.primary,
-    Color(0xFFE57373), Color(0xFF81C784), Color(0xFF64B5F6),
-    Color(0xFFFFB74D), Color(0xFFBA68C8), Color(0xFF4DB6AC), Color(0xFFF06292),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
-        title: const Text('Cours'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Cours disponibles',
+          style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600),
+        ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96),
+          preferredSize: const Size.fromHeight(100),
           child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            // Search field
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (v) => setState(() => _search = v),
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                decoration: InputDecoration(
+                style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13),
+                decoration: const InputDecoration(
                   hintText: 'Rechercher un cours, coach...',
-                  hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.textMuted, size: 18),
-                  suffixIcon: _search.isNotEmpty
-                      ? IconButton(icon: const Icon(Icons.clear, size: 16, color: AppTheme.textMuted), onPressed: () { _searchCtrl.clear(); setState(() => _search = ''); })
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 13),
+                  prefixIcon: Icon(Icons.search, color: Color(0xFFBBBBBB), size: 18),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),
               ),
             ),
+            // Day chips
             SizedBox(
-              height: 36,
+              height: 40,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -132,15 +140,21 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: sel ? _dayColors[i] : AppTheme.surface,
+                        color: sel ? const Color(0xFF1A1A1A) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: sel ? _dayColors[i] : AppTheme.border, width: 0.5),
+                        border: Border.all(
+                          color: sel ? const Color(0xFF1A1A1A) : const Color(0xFFE8E8E8),
+                          width: 0.5,
+                        ),
                       ),
-                      child: Text(_dayLabels[i], style: TextStyle(
-                        color: sel ? Colors.black : AppTheme.textSecondary,
-                        fontSize: 12,
-                        fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                      )),
+                      child: Text(
+                        _dayLabels[i],
+                        style: TextStyle(
+                          color: sel ? const Color(0xFFE5A01A) : const Color(0xFF888888),
+                          fontSize: 12,
+                          fontWeight: sel ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -151,14 +165,14 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
           : _error != null
-              ? _ErrRetry(message: _error!, onRetry: _load)
+              ? _buildError()
               : RefreshIndicator(
-                  color: AppTheme.primary,
+                  color: const Color(0xFFE5A01A),
                   onRefresh: _load,
                   child: _filtered.isEmpty
-                      ? const _Empty()
+                      ? _buildEmpty()
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: _filtered.length,
@@ -179,6 +193,40 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                 ),
     );
   }
+
+  Widget _buildEmpty() {
+    return const Center(
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.search_off, color: Color(0xFFBBBBBB), size: 48),
+        SizedBox(height: 12),
+        Text('Aucun cours trouvé', style: TextStyle(color: Color(0xFF888888), fontSize: 15)),
+      ]),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.wifi_off_outlined, color: Color(0xFFA32D2D), size: 48),
+          const SizedBox(height: 12),
+          Text(_error!, style: const TextStyle(color: Color(0xFF888888), fontSize: 13), textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _load,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Réessayer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A1A1A),
+              foregroundColor: const Color(0xFFE5A01A),
+              elevation: 0,
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
 }
 
 class _CourseCard extends StatelessWidget {
@@ -186,117 +234,125 @@ class _CourseCard extends StatelessWidget {
   final Color accent;
   final bool isReserving;
   final VoidCallback onReserve;
-
   const _CourseCard({required this.course, required this.accent, required this.isReserving, required this.onReserve});
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: AppTheme.surface,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppTheme.border, width: 0.5),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 5, height: 120,
-          decoration: BoxDecoration(
-            color: accent,
-            borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), bottomLeft: Radius.circular(14)),
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: Text(course.name, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 15))),
-                    if (course.dayOfWeek != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-                        child: Text(course.dayLabel, style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                  ],
+  Widget build(BuildContext context) {
+    final fillPct = course.maxParticipants > 0
+        ? ((course.currentParticipants ?? 0) / course.maxParticipants).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header sombre
+          Container(
+            color: const Color(0xFF1A1A1A),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(children: [
+              Expanded(child: Text(
+                course.dayLabel.isEmpty ? '' : course.dayLabel.toUpperCase(),
+                style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
+              )),
+              if (course.dayOfWeek != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    course.dayLabel,
+                    style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
                 ),
-                const SizedBox(height: 6),
-                if (course.coachName != null)
-                  Row(children: [
-                    const Icon(Icons.person_outline, size: 13, color: AppTheme.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(course.coachName!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                  ]),
-                const SizedBox(height: 3),
-                Row(children: [
-                  const Icon(Icons.schedule, size: 13, color: AppTheme.textMuted),
-                  const SizedBox(width: 4),
-                  Text(course.timeRange, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                  if (course.location != null) ...[
-                    const SizedBox(width: 10),
-                    const Icon(Icons.location_on_outlined, size: 13, color: AppTheme.textMuted),
-                    const SizedBox(width: 2),
-                    Text(course.location!, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                  ],
-                ]),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    course.isFull
-                        ? GymBadge(text: 'Complet', type: BadgeType.red)
-                        : GymBadge(text: '${course.spotsLeft} place${course.spotsLeft > 1 ? 's' : ''}', type: BadgeType.green),
-                    SizedBox(
-                      height: 32,
-                      child: ElevatedButton(
-                        onPressed: course.isFull || isReserving ? null : onReserve,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: Size.zero,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                        child: isReserving
-                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                            : const Text('Réserver'),
+            ]),
+          ),
+          // Body
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.fitness_center, color: accent, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(course.name, style: const TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w500, fontSize: 14)),
+                  if (course.coachName != null)
+                    Text(course.coachName!, style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
+                  if (course.startTime != null)
+                    Text(course.timeRange, style: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
+                ])),
+              ]),
+              const SizedBox(height: 10),
+              // Fill bar
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    course.isFull ? 'Complet' : '${course.spotsLeft} places',
+                    style: TextStyle(
+                      color: course.isFull ? const Color(0xFFA32D2D) : const Color(0xFF888888),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: fillPct,
+                      minHeight: 3,
+                      backgroundColor: const Color(0xFFE8E8E8),
+                      valueColor: AlwaysStoppedAnimation(
+                        fillPct >= 1.0 ? const Color(0xFFA32D2D) : const Color(0xFFE5A01A),
                       ),
                     ),
-                  ],
+                  ),
+                ])),
+                const SizedBox(width: 12),
+                SizedBox(
+                  height: 32,
+                  child: ElevatedButton(
+                    onPressed: course.isFull || isReserving ? null : onReserve,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: course.isFull ? const Color(0xFFF0F0F0) : const Color(0xFFE5A01A),
+                      foregroundColor: course.isFull ? const Color(0xFFAAAAAA) : const Color(0xFF1A1A1A),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    child: isReserving
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A1A1A)))
+                        : Text(course.isFull ? 'Complet' : 'Réserver'),
+                  ),
                 ),
-              ],
+              ]),
+            ]),
+          ),
+          // Bottom colored bar
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Empty extends StatelessWidget {
-  const _Empty();
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.event_busy, color: AppTheme.textMuted, size: 48),
-      SizedBox(height: 12),
-      Text('Aucun cours trouvé', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
-    ]),
-  );
-}
-
-class _ErrRetry extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrRetry({required this.message, required this.onRetry});
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Icon(Icons.wifi_off_outlined, color: AppTheme.error, size: 48),
-      const SizedBox(height: 12),
-      Text(message, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13), textAlign: TextAlign.center),
-      const SizedBox(height: 20),
-      ElevatedButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh, size: 16), label: const Text('Réessayer')),
-    ])),
-  );
+        ],
+      ),
+    );
+  }
 }

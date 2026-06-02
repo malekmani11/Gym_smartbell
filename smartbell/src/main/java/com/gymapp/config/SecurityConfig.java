@@ -43,16 +43,23 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html")
                         .permitAll()
-                        // Member self-service endpoints
+                     // Member self-service endpoints
                         .requestMatchers("/api/members/user/**").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers("/api/subscriptions/user/**").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers("/api/checkins/member/**").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers("/api/training/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers("/api/nutrition-plans/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.POST, "/api/courses/reservations").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET, "/api/courses/reservations/member/**").hasAnyRole("ADMIN", "MEMBER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/courses/reservations/*/cancel").hasAnyRole("ADMIN", "MEMBER")
                         .requestMatchers(HttpMethod.GET, "/api/coaches/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers(HttpMethod.POST, "/api/coaches/*/ratings").hasAnyRole("ADMIN", "MEMBER")
-                        .requestMatchers("/api/notifications/user/**").hasAnyRole("ADMIN", "MEMBER")
+                        .requestMatchers("/api/notifications/user/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/unread/count").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers("/api/notifications/mark-all-read").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/notifications/*/read").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers("/api/messages/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers("/api/devices/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         // Admin-only endpoints
@@ -62,9 +69,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/payments/**").hasRole("ADMIN")
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
                         .requestMatchers("/api/rooms/**").hasRole("ADMIN")
+                        // Events : lecture + inscription ouverts à tous les rôles
+                        .requestMatchers(HttpMethod.GET, "/api/events/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/register").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/*/register").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        // CRUD événements réservé admin
                         .requestMatchers("/api/events/**").hasRole("ADMIN")
                         .requestMatchers("/api/machines/**").hasRole("ADMIN")
                         .requestMatchers("/api/notifications/**").hasRole("ADMIN")
+                        // Complaints : membres peuvent poster et consulter le fil
+                        .requestMatchers(HttpMethod.POST, "/api/complaints/user/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET,  "/api/complaints").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET,  "/api/complaints/user/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
+                        .requestMatchers(HttpMethod.GET,  "/api/complaints/**").hasAnyRole("ADMIN", "COACH", "MEMBER")
                         .requestMatchers("/api/complaints/**").hasRole("ADMIN")
                         .requestMatchers("/api/reports/**").hasRole("ADMIN")
                         .requestMatchers("/api/ai/**").hasAnyRole("ADMIN", "COACH", "MEMBER")

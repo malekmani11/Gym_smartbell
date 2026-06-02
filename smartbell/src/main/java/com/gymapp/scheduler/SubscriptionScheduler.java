@@ -7,6 +7,7 @@ import com.gymapp.entity.enums.SubscriptionStatus;
 import com.gymapp.repository.SubscriptionRepository;
 import com.gymapp.service.NotificationService;
 import com.gymapp.service.SubscriptionService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +24,12 @@ public class SubscriptionScheduler {
     private final SubscriptionService    subscriptionService;
     private final SubscriptionRepository subscriptionRepository;
     private final NotificationService    notificationService;
+
+    // ── Sync au démarrage — corrige les statuts existants ────────────────────
+    @PostConstruct
+    public void syncOnStartup() {
+        subscriptionService.syncAllMembershipStatuses();
+    }
 
     // ── Expire les abonnements terminés — tous les jours à minuit ─────────────
     @Scheduled(cron = "0 0 0 * * *")

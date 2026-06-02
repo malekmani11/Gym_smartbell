@@ -1,55 +1,237 @@
-<div class="dash-root space-y-10 animate-fade-in relative pb-16">
+<div class="dash-root animate-fade-in relative pb-16">
 
   <!-- ═══════════════════════════════════════════════════════════
-       HEADER — slideDown
+       ROW 1 — BANNER + 3 MINI STATS
   ═══════════════════════════════════════════════════════════════ -->
-  <header class="dash-header flex flex-col sm:flex-row sm:items-end justify-between gap-5 pt-1">
-    <div>
-      <p class="text-[11px] text-[#D4A017] uppercase tracking-[0.22em] font-black mb-1.5 opacity-80">SmartBell · Tableau de Bord</p>
-      <h1 class="text-3xl lg:text-4xl font-playfair font-bold text-white tracking-tight leading-tight">
-        Vue d'ensemble <span class="text-gold-gradient">Générale</span>
-      </h1>
-      <p class="text-gray-500 text-[13px] mt-1.5 font-medium">Indicateurs clés · Mis à jour en temps réel</p>
-    </div>
-    <div class="flex items-center gap-3 shrink-0">
-      <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/4 border border-white/8 shadow-inner-top">
-        <!-- live-pulse remplace animate-pulse -->
-        <span class="w-2 h-2 rounded-full bg-green-500 live-pulse"></span>
-        <span class="text-[11px] text-gray-300 font-bold uppercase tracking-wider">{{ activeMembers() }} actifs</span>
+  <div class="welcome-grid mb-8">
+
+    <!-- Welcome Banner -->
+    <div class="dash-banner-card">
+      <div class="dash-banner-title">Bienvenue, Admin 👋</div>
+      <div class="dash-banner-sub">Voici l'état de votre salle aujourd'hui.</div>
+      <div class="dash-banner-chip">
+        <span class="chip-dot live-pulse"></span>
+        Système opérationnel · Toutes les salles actives
       </div>
     </div>
-  </header>
+
+    <!-- Mini stat — Coachs actifs -->
+    <div class="mini-stat panel-card">
+      <div class="ms-ico" style="background:rgba(79,142,247,.15)">
+        <i class="fas fa-user-tie" style="color:#4F8EF7;font-size:18px"></i>
+      </div>
+      <p class="ms-lbl">Coachs actifs</p>
+      <p class="ms-val">{{ coachCount() }}</p>
+      <span class="ms-badge">↑ Tous disponibles</span>
+      <div class="ms-bar-bottom" style="background:linear-gradient(90deg,#4F8EF7,transparent)"></div>
+    </div>
+
+    <!-- Mini stat — Cours actifs -->
+    <div class="mini-stat panel-card">
+      <div class="ms-ico" style="background:rgba(168,85,247,.15)">
+        <i class="fas fa-calendar-alt" style="color:#A855F7;font-size:18px"></i>
+      </div>
+      <p class="ms-lbl">Cours actifs</p>
+      <p class="ms-val">{{ courseCount() }}</p>
+      <span class="ms-badge">↑ +2 ce mois</span>
+      <div class="ms-bar-bottom" style="background:linear-gradient(90deg,#A855F7,transparent)"></div>
+    </div>
+
+    <!-- Mini stat — Recouvrement -->
+    <div class="mini-stat panel-card">
+      <div class="ms-ico" style="background:rgba(16,185,129,.15)">
+        <i class="fas fa-chart-line" style="color:#10B981;font-size:18px"></i>
+      </div>
+      <p class="ms-lbl">Recouvrement</p>
+      <p class="ms-val">{{ retentionRate() }}%</p>
+      <span class="ms-badge">↑ Excellent</span>
+      <div class="ms-bar-bottom" style="background:linear-gradient(90deg,#10B981,transparent)"></div>
+    </div>
+
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════
-       KPI CARDS
+       ROW 2 — KPI CARDS (4 colonnes, full design)
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr)">
-    @for (kpi of kpis(); track kpi.title) {
-      <div class="kpi-card">
-        <p class="kpi-label">{{ kpi.title }}</p>
-        <p class="kpi-value">{{ kpi.value }}</p>
+  <div class="kpi-4-grid mb-8">
+    @for (kpi of kpis().slice(0, 4); track kpi.title; let i = $index) {
+      <div class="kpi-card kc-full"
+           [style.background-image]="'linear-gradient(rgba(10,10,10,0.82),rgba(10,10,10,0.88)), url(' + getKpiImage(kpi.icon) + ')'"
+           style="background-size:cover;background-position:center;">
+
+        <!-- Accent bar at top -->
+        <div class="kpi-accent-line" [style.background]="getKpiColors(kpi.icon).gradient"></div>
+
+        <!-- Icon -->
+        <div class="kc-ico-wrap" [style.background]="getKpiColors(kpi.icon).bg">
+          <i [class]="kpi.icon" [style.color]="getKpiColors(kpi.icon).stroke" style="font-size:16px"></i>
+        </div>
+
+        <!-- Label -->
+        <p class="kc-lbl">{{ kpi.title }}</p>
+
+        <!-- Value -->
+        <p class="kc-val"><span class="kpi-value-text">{{ kpi.value }}</span></p>
+
+        <!-- Trend -->
+        <p class="kc-trend-text">↑ Ce mois</p>
+
+        <!-- Sparkline -->
+        @if (kpi.sparklineData.length > 1) {
+          <div class="kc-spark sparkline-animate-wrap">
+            <svg width="100%" height="26" viewBox="0 0 100 26" preserveAspectRatio="none">
+              <polyline [attr.points]="getSparklinePoints(kpi.sparklineData)"
+                        fill="none"
+                        [attr.stroke]="getKpiColors(kpi.icon).stroke"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        }
+
       </div>
     }
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
-       EXPIRING SUBSCRIPTIONS ALERT
+       ROW 3 — BAR CHART + DONUT + MEMBERS TABLE
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="mt-12 mb-6">
+  <div class="charts-row mb-8">
+
+    <!-- Bar Chart with tabs -->
+    <div class="panel-card">
+      <div class="chart-tabs mb-4">
+        @for (tab of ['Revenus', 'Membres', 'Cours']; track tab) {
+          <div class="chart-tab" [class.active]="activeBarTab() === tab" (click)="setBarChartTab(tab)">{{ tab }}</div>
+        }
+      </div>
+      <div class="chart-title-row mb-3">
+        <span class="ct-name">6 derniers mois</span>
+        <span class="ct-total">{{ kpis()[1]?.value ?? '0 DT' }}</span>
+      </div>
+      <div class="bar-area-row">
+        @for (h of barHeights; track $index; let last = $last; let i = $index) {
+          <div class="rc-bar"
+               [class.rc-bar-dim]="!last"
+               [class.rc-bar-act]="last"
+               [style.height.%]="h"
+               [style.animation-delay]="(0.5 + i * 0.08) + 's'"></div>
+        }
+      </div>
+      <div class="bar-labels-row">
+        @for (m of barMonths; track m; let last = $last) {
+          <span class="bar-label" [class.bar-label-act]="last">{{ m }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Course Type Donut -->
+    <div class="panel-card donut-card">
+      <p class="slbl mb-4">Répartition cours</p>
+      <div class="donut-wrap">
+        <div style="position:relative;width:90px;height:90px;flex-shrink:0">
+          <svg width="90" height="90" viewBox="0 0 90 90" style="position:absolute;top:0;left:0">
+            <circle cx="45" cy="45" r="40" fill="none" stroke="#1E2535" stroke-width="10"/>
+            @for (seg of donutSegments(); track seg.label) {
+              <circle cx="45" cy="45" r="40" fill="none"
+                      [attr.stroke]="seg.color" stroke-width="10"
+                      [attr.stroke-dasharray]="seg.dash + ' ' + seg.circ"
+                      [attr.stroke-dashoffset]="seg.offset"
+                      transform="rotate(-90 45 45)"
+                      style="stroke-linecap:butt;transition:stroke-dasharray .8s ease"/>
+            }
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+            <div style="font-size:18px;font-weight:800;color:#F0EEF8">{{ courseCount() }}</div>
+            <div style="font-size:9px;color:#8A8FA8;font-weight:600">cours</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          @for (seg of donutSegments(); track seg.label) {
+            <div class="dl">
+              <div class="dl-dot" [style.background]="seg.color"></div>
+              <span class="dl-name">{{ seg.label }}</span>
+              <span class="dl-pct">{{ seg.pct }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Members Table -->
+    <div class="panel-card">
+      <p class="slbl mb-3">Membres récents</p>
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="tbl-th">Membre</th>
+            <th class="tbl-th">Formule</th>
+            <th class="tbl-th">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of recentMembers().slice(0, 4); track member.id) {
+            <tr class="tbl-row">
+              <td class="tbl-td">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <img [src]="member.avatar" class="t-av-img" alt="">
+                  <div>
+                    <p class="t-name">{{ member.name }}</p>
+                    <p class="t-email">{{ member.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="tbl-td" style="color:#8A8FA8">{{ member.plan }}</td>
+              <td class="tbl-td">
+                <span [class]="getStatusBadgeClass(member.status)">{{ member.status }}</span>
+              </td>
+            </tr>
+          }
+          @if (recentMembers().length === 0) {
+            <tr><td colspan="3" class="tbl-td" style="text-align:center;color:#555C74">Chargement…</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ROW 4 — ACTIVITY FEED
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="panel-card mb-8">
+    <p class="slbl mb-4">Activité récente</p>
+    <div class="activity-grid">
+      @for (item of activityFeed(); track item.time) {
+        <div class="act-item">
+          <div class="act-dot" [style.background]="item.color" [style.box-shadow]="'0 0 6px ' + item.color"></div>
+          <div>
+            <p class="act-txt">{{ item.text }}</p>
+            <p class="act-time">{{ item.time }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ROW 5 — CHECK-INS + EXPIRING SUBSCRIPTIONS
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <app-checkin-dashboard></app-checkin-dashboard>
     <app-expiring-subscriptions-alert></app-expiring-subscriptions-alert>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
        ROW: HEATMAP (2/3) + GENDER SPLIT (1/3)
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
     <!-- Heatmap -->
     <div class="lg:col-span-2">
       <app-attendance-heatmap></app-attendance-heatmap>
     </div>
 
-    <!-- Gender Split Donut — panel-card scroll-triggered (#5) -->
+    <!-- Gender Split Donut -->
     <div class="panel-card flex flex-col">
       <div class="flex items-center gap-3 mb-6">
         <div class="section-accent"></div>
@@ -118,9 +300,9 @@
   <!-- ═══════════════════════════════════════════════════════════
        ROW: FINANCIAL CHART + BUSINESS INTELLIGENCE
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
-    <!-- Business Health Score — panel-card scroll-triggered (#5) -->
+    <!-- Business Health Score -->
     <div class="panel-card border-[#D4A017]/12">
       <h3 class="text-[11px] font-black text-white uppercase tracking-[0.18em] mb-5 text-center opacity-90">Santé du Business</h3>
       <div class="flex justify-center mb-6">
@@ -169,7 +351,7 @@
     <app-monthly-revenue-chart></app-monthly-revenue-chart>
     <app-revenue-forecast></app-revenue-forecast>
 
-    <!-- Cours Imminents — barres avec tooltip (#10) + scaleY (#2) -->
+    <!-- Cours Imminents -->
     <div class="panel-card">
       <div class="flex justify-between items-center mb-5">
         <h3 class="text-[10px] font-black text-white uppercase tracking-[0.2em]">Cours Imminents</h3>
@@ -184,7 +366,6 @@
               <span class="text-white font-bold group-hover:text-[#D4A017] transition-colors text-[11px]">{{ item.name }}</span>
               <span class="text-gray-500 font-mono text-[10px]">{{ item.time }}</span>
             </div>
-            <!-- Barre avec tooltip (#10) et scaleX animé (#2) -->
             <div class="flex items-center gap-2">
               <div class="flex-1 h-1 bg-white/5 rounded-full overflow-hidden relative">
                 <div class="bar-tooltip-wrap relative group/bar h-full">
@@ -192,7 +373,6 @@
                        [class.bg-[#D4A017]]="(item.filled/item.capacity) < 0.8"
                        [class.bg-red-500]="(item.filled/item.capacity) >= 0.8"
                        [style.width.%]="(item.filled/item.capacity)*100"></div>
-                  <!-- Tooltip -->
                   <div class="bar-tooltip">{{ item.filled }}/{{ item.capacity }} places</div>
                 </div>
               </div>
@@ -216,10 +396,10 @@
   <!-- ═══════════════════════════════════════════════════════════
        ROW: SUBSCRIPTION CHART + ARPU METRICS
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <app-subscription-chart></app-subscription-chart>
 
-    <!-- ARPU — panel-card scroll-triggered (#5) -->
+    <!-- ARPU -->
     <div class="panel-card">
       <div class="flex items-center gap-3 mb-6">
         <div class="section-accent"></div>
@@ -269,8 +449,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        ROW: RECENT MEMBERS + PENDING PAYMENTS
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Recent Members — panel-card scroll-triggered (#5) -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <div class="panel-card">
       <div class="flex items-center gap-3 mb-5">
         <div class="section-accent"></div>
@@ -288,7 +467,7 @@
           </thead>
           <tbody class="divide-y divide-white/[0.04]">
             @for (member of recentMembers(); track member.id) {
-              <tr (click)="onMemberClick(member)" class="group hover:bg-white/[0.02] transition-colors cursor-pointer">
+              <tr class="group hover:bg-white/[0.02] transition-colors cursor-pointer">
                 <td class="py-3.5">
                   <div class="flex items-center gap-3">
                     <img [src]="member.avatar" class="w-8 h-8 rounded-lg object-cover ring-1 ring-white/5 group-hover:ring-[#D4A017]/30 transition-all">
@@ -328,67 +507,22 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
-       CRM PIPELINE
+       POWER BI ANALYTICS
   ═══════════════════════════════════════════════════════════════ -->
   <div class="mt-10">
-    <app-crm></app-crm>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       MODALS
-  ═══════════════════════════════════════════════════════════════ -->
-  @if (selectedMember()) {
-    <app-member-profile-modal [member]="selectedMember()!" (closed)="closeMemberProfile()">
-    </app-member-profile-modal>
-  }
-
-  @if (showNewMemberModal()) {
-    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
-      <div class="absolute inset-0 bg-black/85 backdrop-blur-md" (click)="showNewMemberModal.set(false)"></div>
-      <div class="panel-card w-full max-w-md p-8 relative z-10 border-[#D4A017]/25 shadow-[0_0_60px_rgba(212,160,23,0.12)]">
-        <div class="text-center mb-8">
-          <div class="w-16 h-16 rounded-2xl bg-[#D4A017]/10 border border-[#D4A017]/20 flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-user-plus text-2xl text-[#D4A017]"></i>
-          </div>
-          <h2 class="text-2xl font-playfair font-bold text-white">Nouveau Membre</h2>
-          <p class="text-gray-500 text-xs mt-1">Enregistrer rapidement un nouveau client</p>
-        </div>
-        <div class="space-y-4 mb-8">
-          <div class="space-y-1.5">
-            <label class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Nom Complet</label>
-            <input type="text" [(ngModel)]="newMemberForm.name" placeholder="ex: Jean Valjean"
-                   class="w-full bg-[#0D0D0D] border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:border-[#D4A017]/50 focus:outline-none transition-colors placeholder:text-gray-700">
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Email</label>
-            <input type="email" [(ngModel)]="newMemberForm.email" placeholder="email@gym.com"
-                   class="w-full bg-[#0D0D0D] border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:border-[#D4A017]/50 focus:outline-none transition-colors placeholder:text-gray-700">
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Formule</label>
-            <select [(ngModel)]="newMemberForm.plan" class="w-full bg-[#0D0D0D] border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:border-[#D4A017]/50 focus:outline-none transition-colors">
-              <option value="Standard">Standard Premium — 49DT/m</option>
-              <option value="Elite">CrossFit Elite — 89DT/m</option>
-              <option value="Yoga">Yoga Flow — 59DT/m</option>
-            </select>
-          </div>
-        </div>
-        <div class="flex gap-3">
-          <button (click)="showNewMemberModal.set(false)"
-                  class="flex-1 py-3 rounded-xl border border-white/8 text-gray-400 text-sm font-bold hover:bg-white/5 transition-colors">
-            Annuler
-          </button>
-          <button (click)="confirmNewMember()" [disabled]="isProcessing()"
-                  class="flex-1 py-3 rounded-xl bg-[#D4A017] text-black text-sm font-black flex items-center justify-center gap-2 hover:bg-[#e8b41e] transition-colors shadow-[0_4px_14px_rgba(212,160,23,0.3)] disabled:opacity-50">
-            @if (isProcessing()) {
-              <i class="fas fa-spinner animate-spin text-xs"></i> Création…
-            } @else {
-              Confirmer
-            }
-          </button>
-        </div>
-      </div>
+    <div class="powerbi-section">
+      <h3 class="section-title" style="color:#EF9F27;font-size:16px;font-weight:700;margin-bottom:16px;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:0.1em;">
+        📊 Rapport Analytics
+      </h3>
+      <iframe
+        [src]="powerBiUrl | safe"
+        width="100%"
+        height="700px"
+        frameborder="0"
+        allowFullScreen="true"
+        style="border-radius:12px;border:1px solid #EF9F27;display:block;">
+      </iframe>
     </div>
-  }
+  </div>
 
 </div>

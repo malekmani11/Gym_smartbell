@@ -75,7 +75,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final disableAnimations = MediaQuery.of(context).disableAnimations;
-    if (disableAnimations) _blobCtrl.stop();
+    if (disableAnimations) {
+      if (_blobCtrl.isAnimating) _blobCtrl.stop();
+    } else {
+      if (!_blobCtrl.isAnimating) _blobCtrl.repeat(reverse: true);
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -299,7 +303,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     ),
                                     validator: (v) =>
                                         (v == null || v.length < 6)
-                                            ? 'Minimum 6 caractères'
+                                            ? 'mot de passe faible '
                                             : null,
                                   ),
                                   const SizedBox(height: 14),

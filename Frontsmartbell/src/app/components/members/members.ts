@@ -1,11 +1,13 @@
 import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { ToastService } from '../../services/toast.service';
 import { MemberApiService } from '../../services/member-api.service';
 import { SubscriptionApiService } from '../../services/subscription-api.service';
 import { PaymentApiService } from '../../services/payment-api.service';
 import { NotificationApiService } from '../../services/notification-api.service';
-import { MemberDTO } from '../../models/api.models';
+import { CoachApiService } from '../../services/coach-api.service';
+import { MemberDTO, CoachDTO } from '../../models/api.models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExportButtonComponent } from '../export-button/export-button.component';
@@ -37,6 +39,8 @@ interface MemberSubscription {
   paymentStatus: 'Payé' | 'En attente' | 'Échoué';
   paymentMethod: 'Carte' | 'Cash' | 'Virement';
   lastPaymentAmount?: number;
+  totalPaid?: number;
+  monthlySessions?: number;
   gender?: 'MALE' | 'FEMALE';
   birthDate?: string;
   address?: string;
@@ -45,6 +49,7 @@ interface MemberSubscription {
   medicalNotes?: string;
   profileImageUrl?: string;
   loyaltyPoints?: number;
+  enabled?: boolean;
 }
 
 @Component({
@@ -62,6 +67,7 @@ export class Members implements OnInit, OnDestroy {
   private subApi       = inject(SubscriptionApiService);
   private paymentApi   = inject(PaymentApiService);
   private notifApi     = inject(NotificationApiService);
+  private coachApi     = inject(CoachApiService);
   isApiLoading  = signal(false);
   loadError     = signal(false);
 
@@ -100,6 +106,13 @@ export class Members implements OnInit, OnDestroy {
   showEditModal = signal(false);
   editEmailError = signal('');
   showNewMemberModal = signal(false);
+
+  // ── Coach assignment modal ──────────────────────────────
+  showCoachModal   = signal(false);
+  coachModalMember = signal<MemberSubscription | null>(null);
+  availableCoaches = signal<CoachDTO[]>([]);
+  selectedCoachId  = signal<number | null>(null);
+  messagingEnabled = signal(true);
 
   newMemberName = '';
   newMemberEmail = '';
@@ -219,6 +232,9 @@ export class Members implements OnInit, OnDestroy {
           medicalNotes:     m.medicalNotes || undefined,
           profileImageUrl:  m.profileImageUrl || undefined,
           loyaltyPoints:    m.loyaltyPoints ?? 0,
+          totalPaid:        m.totalPaid ?? 0,
+          monthlySessions:  m.monthlySessions ?? 0,
+          enabled:          m.enabled !== false,
         }));
         this.memberSubscriptions.set(mapped);
         this.totalElements.set(response.totalElements);
@@ -276,7 +292,7 @@ export class Members implements OnInit, OnDestroy {
 
   private mapMethodToApi(method: string): string {
     if (method === 'Cash') return 'CASH';
-    if (method === 'Virement') return 'VIREMENT';
+    if (method === 'Virement') return 'BANK_TRANSFER';
     return 'CARD';
   }
 
@@ -332,15 +348,20 @@ export class Members implements OnInit, OnDestroy {
               this.paymentApi.create({
                 subscriptionId: subscription.id,
                 amount:         selectedPlan.price,
-                paymentDate:    today,
                 paymentMethod:  this.mapMethodToApi(this.newMemberMethod),
                 status:         'COMPLETED',
               }).subscribe({
                 next:  () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit avec plan ${selectedPlan.name}.`); },
-                error: () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit (paiement non enregistré).`); }
+                error: (err: any) => {
+                  finish();
+                  this.toast.warning('Membre créé', `${firstName} inscrit mais paiement non enregistré (${err?.error?.message || 'erreur'}).`);
+                }
               });
             },
-            error: () => { finish(); this.toast.success('Membre ajouté ✓', `${firstName} inscrit (erreur lors de l'abonnement).`); }
+            error: (err: any) => {
+              finish();
+              this.toast.warning('Membre créé', `${firstName} inscrit mais abonnement non créé (${err?.error?.message || 'erreur'}).`);
+            }
           });
         } else {
           finish();
@@ -414,7 +435,7 @@ export class Members implements OnInit, OnDestroy {
         if (selectedPlan) {
           const today = new Date().toISOString().slice(0, 10);
           this.subApi.create({
-            userId: Number(edited.id),
+            userId: edited.userId ?? Number(edited.id),
             planId: Number(selectedPlan.id),
             startDate: today as any,
           } as any).subscribe({
@@ -580,6 +601,62 @@ export class Members implements OnInit, OnDestroy {
     });
   }
 
+  toggleAccountStatus(member: MemberSubscription) {
+    if (!member.userId || this.isProcessing()) return;
+    const newEnabled = !member.enabled;
+    const action = newEnabled ? 'activé' : 'désactivé';
+    this.isProcessing.set(true);
+    this.memberApi.toggleStatus(member.userId, newEnabled).subscribe({
+      next: () => {
+        this.memberSubscriptions.update(list =>
+          list.map(m => m.userId === member.userId ? { ...m, enabled: newEnabled } : m)
+        );
+        this.editingMember.update(m => m ? { ...m, enabled: newEnabled } : m);
+        this.toast.success(`Compte ${action}`, `${member.memberName} — accès ${newEnabled ? 'rétabli' : 'bloqué'}`);
+        this.isProcessing.set(false);
+      },
+      error: () => {
+        this.toast.error('Erreur', 'Impossible de modifier le statut du compte.');
+        this.isProcessing.set(false);
+      }
+    });
+  }
+
+  openCoachModal(sub: MemberSubscription) {
+    this.coachModalMember.set(sub);
+    this.selectedCoachId.set((sub as any).assignedCoachId ?? null);
+    this.messagingEnabled.set((sub as any).messagingEnabled !== false);
+    this.showCoachModal.set(true);
+    if (this.availableCoaches().length === 0) {
+      this.coachApi.getAll().subscribe({
+        next: (res) => this.availableCoaches.set(res.content || []),
+        error: () => this.toast.error('Erreur', 'Impossible de charger les coachs.')
+      });
+    }
+  }
+
+  saveCoachAssignment() {
+    const member = this.coachModalMember();
+    if (!member) return;
+    this.isProcessing.set(true);
+
+    forkJoin([
+      this.memberApi.assignCoach(Number(member.id), this.selectedCoachId()),
+      this.memberApi.setMessagingAccess(Number(member.id), this.messagingEnabled()),
+    ]).subscribe({
+      next: () => {
+        this.isProcessing.set(false);
+        this.showCoachModal.set(false);
+        this.loadMembers();
+        this.toast.success('Affectation sauvegardée', 'Coach et accès messagerie mis à jour.');
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.toast.error('Erreur', err.error?.message || 'Impossible de sauvegarder les modifications.');
+      }
+    });
+  }
+
   viewPlanMembers(planName: string) {
     this.viewMode.set('members');
     this.searchTerm.set(planName);
@@ -593,18 +670,13 @@ export class Members implements OnInit, OnDestroy {
 
   renewSubscription() {
     const sub = this.selectedSubscription();
-    if (!sub) return;
-
-    if (sub.paymentStatus !== 'Payé') {
-      this.toast.error(
-        'Paiement requis',
-        'L\'abonnement ne peut pas être renouvelé tant que le paiement n\'est pas confirmé.'
-      );
+    if (!sub || !sub.subscriptionId) {
+      this.toast.error('Erreur', 'ID d\'abonnement introuvable.');
       return;
     }
 
     this.isProcessing.set(true);
-    this.subApi.renew(Number(sub.id)).subscribe({
+    this.subApi.renew(Number(sub.subscriptionId)).subscribe({
       next: () => {
         this.isProcessing.set(false);
         this.loadMembers();

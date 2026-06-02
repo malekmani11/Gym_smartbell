@@ -32,4 +32,23 @@ class AuthService {
     });
     return AuthResponse.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<Map<String, String>> updateProfile(int userId, {required String firstName, required String lastName}) async {
+    final res = await _dio.put(
+      ApiConstants.userById(userId),
+      data: {'firstName': firstName, 'lastName': lastName},
+    );
+    final data = res.data as Map<String, dynamic>;
+    return {
+      'firstName': (data['firstName'] ?? firstName) as String,
+      'lastName':  (data['lastName']  ?? lastName)  as String,
+    };
+  }
+
+  Future<void> changePassword(int userId, String currentPassword, String newPassword) async {
+    await _dio.patch(
+      ApiConstants.userPasswordUrl(userId),
+      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+    );
+  }
 }

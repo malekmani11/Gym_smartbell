@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -27,9 +28,15 @@ public class StatisticsDTO {
     // Advanced KPIs
     private Double attendanceRate;
     private Long brokenMachinesCount;
-    private java.util.List<BigDecimal> revenueTrend;
-    private java.util.List<Long> memberTrend;
+    private List<BigDecimal> revenueTrend;
+    private List<Long> memberTrend;
     private Long maleCount;
     private Long femaleCount;
     private Long expiringSoonCount;
+
+    // Check-in stats
+    private Long checkInsToday;
+    private Long checkInsThisWeek;
+    private Long checkInsThisMonth;
+    private List<CheckInDTO> recentCheckIns;
 }

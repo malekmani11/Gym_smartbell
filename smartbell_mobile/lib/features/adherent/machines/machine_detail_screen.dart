@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
@@ -473,9 +474,6 @@ class _QrSection extends StatelessWidget {
   final Machine machine;
   const _QrSection({required this.machine});
 
-  String get _qrUrl =>
-      'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(machine.qrData!)}';
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -501,15 +499,11 @@ class _QrSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(8),
-                child: Image.network(
-                  _qrUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (_, child, progress) => progress == null
-                      ? child
-                      : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Icon(Icons.qr_code, size: 80, color: Colors.black54),
-                  ),
+                child: QrImageView(
+                  data: machine.qrData!,
+                  version: QrVersions.auto,
+                  size: 184,
+                  backgroundColor: Colors.white,
                 ),
               ),
               const SizedBox(height: 12),

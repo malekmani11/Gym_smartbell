@@ -1,6 +1,7 @@
 package com.gymapp.service;
 
 import com.gymapp.dto.CoachDTO;
+import com.gymapp.dto.CoachStatsDto;
 import com.gymapp.entity.enums.AvailabilityStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +23,6 @@ public interface CoachService {
     CoachDTO updateCoach(Long id, CoachDTO dto);
 
     void deleteCoach(Long id);
+
+    CoachStatsDto getCoachStats(Long coachId);
 }

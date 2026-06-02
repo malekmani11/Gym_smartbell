@@ -62,7 +62,11 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final disableAnimations = MediaQuery.of(context).disableAnimations;
-    if (disableAnimations) _blobCtrl.stop() ;
+    if (disableAnimations) {
+      if (_blobCtrl.isAnimating) _blobCtrl.stop();
+    } else {
+      if (!_blobCtrl.isAnimating) _blobCtrl.repeat(reverse: true);
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.background,

@@ -152,6 +152,22 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public void assignCoach(Long memberId, Long coachId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+        member.setAssignedCoachId(coachId);
+        memberRepository.save(member);
+    }
+
+    @Override
+    public void setMessagingEnabled(Long memberId, boolean enabled) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+        member.setMessagingEnabled(enabled);
+        memberRepository.save(member);
+    }
+
+    @Override
     public void deleteMember(Long id) {
         log.warn("Deleting member: {}", id);
         Member member = memberRepository.findById(id)

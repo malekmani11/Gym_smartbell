@@ -34,6 +34,10 @@ public class MemberDTO {
     private LocalDate joinDate;
     private String profileImageUrl;
     private Integer loyaltyPoints;
+    private Long assignedCoachId;
+    private String assignedCoachName;
+    private Boolean messagingEnabled;
+    private Boolean enabled;
 
     // ── Active subscription ────────────────────────────────
     private Long   subscriptionId;
@@ -47,4 +51,8 @@ public class MemberDTO {
     private String lastPaymentStatus;   // COMPLETED / PENDING / FAILED
     private String lastPaymentMethod;   // CARTE / CASH / VIREMENT
     private BigDecimal lastPaymentAmount;
+
+    // ── Dynamic Stats ───────────────────────────────────────
+    private BigDecimal totalPaid;
+    private Integer monthlySessions;
 }

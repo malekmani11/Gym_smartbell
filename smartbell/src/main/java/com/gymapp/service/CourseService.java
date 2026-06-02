@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface CourseService {
 
@@ -14,6 +15,8 @@ public interface CourseService {
     CourseDTO getCourseById(Long id);
 
     Page<CourseDTO> getActiveCourses(Pageable pageable);
+
+    Page<CourseDTO> getAllCourses(Pageable pageable);
 
     Page<CourseDTO> getCoursesByCoach(Long coachId, Pageable pageable);
 
@@ -27,4 +30,6 @@ public interface CourseService {
     Page<CourseReservationDTO> getReservationsByMember(Long memberId, Pageable pageable);
 
     CourseReservationDTO cancelReservation(Long reservationId);
+
+    List<CourseReservationDTO> getReservationsByCourse(Long courseId);
 }

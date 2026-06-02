@@ -1,7 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/network/api_client.dart';
 import '../../models/payment_model.dart';
 
@@ -19,18 +19,16 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
   String? _error;
 
   // Add form
-  final _memberNameCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   String _selectedMethod = 'CASH';
   bool _addLoading = false;
 
-  // Member search state
+  // Member selection state
   List<Map<String, dynamic>> _members = [];
-  List<Map<String, dynamic>> _filteredMembers = [];
   Map<String, dynamic>? _selectedMemberData;
+  int? _selectedMemberId;
   int? _resolvedSubscriptionId;
   bool _loadingSubscription = false;
-  bool _showSuggestions = false;
 
   static const _methods = ['CASH', 'CARD', 'BANK_TRANSFER', 'ONLINE'];
 
@@ -43,7 +41,6 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
 
   @override
   void dispose() {
-    _memberNameCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
   }
@@ -59,8 +56,7 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
           'size': 50,
           'sort': 'paymentDate,desc',
         }),
-        ApiClient().dio.get('/payments/stats').catchError((_) =>
-            Response(
+        ApiClient().dio.get('/payments/stats').catchError((_) => Response(
               requestOptions: RequestOptions(path: '/payments/stats'),
               data: <String, dynamic>{},
               statusCode: 200,
@@ -113,12 +109,18 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     try {
       final res = await ApiClient().dio.get('/subscriptions/user/$userId');
       final data = res.data;
-      final items = data is Map ? (data['content'] ?? []) as List : (data ?? []) as List;
-      final active = items.where(
-          (s) => s['status']?.toString().toUpperCase() == 'ACTIVE').toList();
-      final sub = active.isNotEmpty ? active.first : (items.isNotEmpty ? items.first : null);
+      final items = data is Map
+          ? (data['content'] ?? []) as List
+          : (data ?? []) as List;
+      final active = items
+          .where((s) => s['status']?.toString().toUpperCase() == 'ACTIVE')
+          .toList();
+      final sub = active.isNotEmpty
+          ? active.first
+          : (items.isNotEmpty ? items.first : null);
       setModalState(() {
-        _resolvedSubscriptionId = sub != null ? (sub['id'] as num).toInt() : null;
+        _resolvedSubscriptionId =
+            sub != null ? (sub['id'] as num).toInt() : null;
         _loadingSubscription = false;
       });
     } catch (_) {
@@ -133,8 +135,9 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     if (_selectedMemberData == null || _resolvedSubscriptionId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Veuillez sélectionner un membre avec un abonnement actif'),
-            backgroundColor: AppColors.error),
+            content: Text(
+                'Veuillez sélectionner un membre avec un abonnement actif'),
+            backgroundColor: Color(0xFFA32D2D)),
       );
       return;
     }
@@ -142,7 +145,7 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Veuillez saisir le montant'),
-            backgroundColor: AppColors.error),
+            backgroundColor: Color(0xFFA32D2D)),
       );
       return;
     }
@@ -151,7 +154,7 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Montant invalide'),
-            backgroundColor: AppColors.error),
+            backgroundColor: Color(0xFFA32D2D)),
       );
       return;
     }
@@ -164,29 +167,27 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
         'paymentMethod': _selectedMethod,
       });
       if (mounted) Navigator.of(context).pop();
-      _memberNameCtrl.clear();
       _amountCtrl.clear();
       setState(() {
         _selectedMemberData = null;
+        _selectedMemberId = null;
         _resolvedSubscriptionId = null;
-        _filteredMembers = [];
-        _showSuggestions = false;
       });
       await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Paiement ajouté avec succès'),
-              backgroundColor: AppColors.success),
+              backgroundColor: Color(0xFF3B6D11)),
         );
       }
     } on DioException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  e.response?.data?['message'] ?? 'Erreur lors de l\'ajout'),
-              backgroundColor: AppColors.error),
+              content: Text(e.response?.data?['message'] ??
+                  'Erreur lors de l\'ajout'),
+              backgroundColor: const Color(0xFFA32D2D)),
         );
       }
     } finally {
@@ -194,170 +195,143 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     }
   }
 
-  void _showAddPaymentSheet() {
-    _memberNameCtrl.clear();
+  Future<void> _exportPayments() async {
+    if (_payments.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucun paiement à exporter'), backgroundColor: Color(0xFF888888)),
+      );
+      return;
+    }
+    final lines = <String>['Référence,Membre,Date,Montant (DT),Méthode,Statut'];
+    for (final p in _payments) {
+      lines.add([
+        p.transactionRef ?? (p.id?.toString() ?? ''),
+        '"${p.memberName ?? 'Membre #${p.subscriptionId}'}"',
+        _formatDate(p.paymentDate),
+        p.amount.toStringAsFixed(2),
+        _methodLabel(p.paymentMethod ?? ''),
+        _statusLabel(p.status),
+      ].join(','));
+    }
+    final csv = lines.join('\n');
+    try {
+      final file = File('${Directory.systemTemp.path}/paiements_smartbell.csv');
+      await file.writeAsString(csv);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/csv')],
+        subject: 'Paiements SmartBell',
+      );
+    } catch (_) {
+      await Share.share(csv, subject: 'Paiements SmartBell');
+    }
+  }
+
+  void _onPaymentCardTap(PaymentModel payment) {
+    Map<String, dynamic>? found;
+    if (payment.memberName != null) {
+      for (final m in _members) {
+        final full = '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'.trim();
+        if (full == payment.memberName) { found = m; break; }
+      }
+    }
+    _showAddPaymentSheet(prefilledMember: found);
+  }
+
+  void _showAddPaymentSheet({Map<String, dynamic>? prefilledMember}) {
     _amountCtrl.clear();
     _selectedMethod = 'CASH';
-    _selectedMemberData = null;
+    _selectedMemberData = prefilledMember;
+    _selectedMemberId = prefilledMember != null
+        ? (prefilledMember['id'] as num).toInt()
+        : null;
     _resolvedSubscriptionId = null;
-    _filteredMembers = [];
-    _showSuggestions = false;
+    _loadingSubscription = false;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setModalState) => SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+        builder: (ctx, setModalState) {
+          // Auto-fetch subscription if member was pre-filled
+          if (_selectedMemberData != null && _resolvedSubscriptionId == null && !_loadingSubscription) {
+            Future.microtask(() {
+              final userId = (_selectedMemberData!['id'] as num).toInt();
+              _fetchSubscription(userId, setModalState);
+            });
+          }
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20, right: 20, top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Center(child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(2)),
+              )),
               const SizedBox(height: 16),
-              const Text(
-                'Enregistrer un paiement',
-                style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
+              const Text('Enregistrer un paiement',
+                  style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              // ── Member name search ──
-              TextField(
-                controller: _memberNameCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+
+              // ── Member dropdown ──────────────────────────────────
+              DropdownButtonFormField<int>(
+                value: _selectedMemberId,
+                isExpanded: true,
+                hint: const Text('Sélectionner un membre',
+                    style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
+                dropdownColor: Colors.white,
+                style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13),
                 decoration: InputDecoration(
-                  labelText: 'Nom du membre',
-                  labelStyle: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13),
-                  prefixIcon: const Icon(Icons.person_search,
-                      color: AppColors.textSecondary, size: 18),
-                  suffixIcon: _memberNameCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear,
-                              color: AppColors.textSecondary, size: 16),
-                          onPressed: () {
-                            _memberNameCtrl.clear();
-                            setModalState(() {
-                              _selectedMemberData = null;
-                              _resolvedSubscriptionId = null;
-                              _filteredMembers = [];
-                              _showSuggestions = false;
-                            });
-                          },
-                        )
-                      : null,
+                  labelText: 'Membre',
+                  labelStyle: const TextStyle(color: Color(0xFF888888), fontSize: 13),
+                  prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF888888), size: 18),
                   filled: true,
-                  fillColor: AppColors.surface2,
+                  fillColor: const Color(0xFFF5F5F0),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.primary),
+                    borderSide: const BorderSide(color: Color(0xFFE5A01A)),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
-                onChanged: (val) {
+                items: _members.map((m) {
+                  final id   = (m['id'] as num).toInt();
+                  final name = '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'.trim();
+                  final email = m['email'] as String? ?? '';
+                  return DropdownMenuItem<int>(
+                    value: id,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(name, style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500)),
+                        Text(email, style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (id) async {
+                  if (id == null) return;
+                  final member = _members.firstWhere((m) => (m['id'] as num).toInt() == id);
                   setModalState(() {
-                    _selectedMemberData = null;
+                    _selectedMemberId   = id;
+                    _selectedMemberData = member;
                     _resolvedSubscriptionId = null;
-                    if (val.trim().isEmpty) {
-                      _filteredMembers = [];
-                      _showSuggestions = false;
-                    } else {
-                      final q = val.toLowerCase();
-                      _filteredMembers = _members.where((m) {
-                        final full =
-                            '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'
-                                .toLowerCase();
-                        final email =
-                            (m['email'] ?? '').toString().toLowerCase();
-                        return full.contains(q) || email.contains(q);
-                      }).take(5).toList();
-                      _showSuggestions = _filteredMembers.isNotEmpty;
-                    }
                   });
+                  await _fetchSubscription(id, setModalState);
                 },
               ),
-              // Suggestions dropdown
-              if (_showSuggestions) ...[
-                const SizedBox(height: 4),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface2,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: _filteredMembers.map((m) {
-                      final fullName =
-                          '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'
-                              .trim();
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () async {
-                          _memberNameCtrl.text = fullName;
-                          setModalState(() {
-                            _selectedMemberData = m;
-                            _showSuggestions = false;
-                            _filteredMembers = [];
-                          });
-                          final userId = (m['id'] as num).toInt();
-                          await _fetchSubscription(userId, setModalState);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person,
-                                  color: AppColors.textSecondary, size: 16),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(fullName,
-                                        style: const TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(m['email'] ?? '',
-                                        style: const TextStyle(
-                                            color: AppColors.textSecondary,
-                                            fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
               // Subscription status feedback
               if (_selectedMemberData != null) ...[
                 const SizedBox(height: 8),
@@ -368,11 +342,12 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.primary)),
+                              strokeWidth: 2,
+                              color: Color(0xFFE5A01A))),
                       SizedBox(width: 8),
                       Text('Recherche de l\'abonnement…',
                           style: TextStyle(
-                              color: AppColors.textSecondary, fontSize: 12)),
+                              color: Color(0xFF888888), fontSize: 12)),
                     ],
                   )
                 else if (_resolvedSubscriptionId != null)
@@ -380,20 +355,19 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
+                      color: const Color(0xFFEAF3DE),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppColors.success.withValues(alpha: 0.3)),
+                      border: Border.all(color: const Color(0xFF3B6D11)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.check_circle,
-                            color: AppColors.success, size: 14),
+                            color: Color(0xFF3B6D11), size: 14),
                         const SizedBox(width: 6),
                         Text(
                             'Abonnement #$_resolvedSubscriptionId trouvé',
                             style: const TextStyle(
-                                color: AppColors.success, fontSize: 12)),
+                                color: Color(0xFF3B6D11), fontSize: 12)),
                       ],
                     ),
                   )
@@ -402,18 +376,18 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
+                      color: const Color(0xFFFCEBEB),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppColors.error.withValues(alpha: 0.3)),
+                      border: Border.all(color: const Color(0xFFA32D2D)),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.warning, color: AppColors.error, size: 14),
+                        Icon(Icons.warning,
+                            color: Color(0xFFA32D2D), size: 14),
                         SizedBox(width: 6),
                         Text('Aucun abonnement trouvé',
                             style: TextStyle(
-                                color: AppColors.error, fontSize: 12)),
+                                color: Color(0xFFA32D2D), fontSize: 12)),
                       ],
                     ),
                   ),
@@ -423,33 +397,33 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                   controller: _amountCtrl,
                   label: 'Montant (DT)',
                   icon: Icons.attach_money,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true)),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true)),
               const SizedBox(height: 12),
               // Method dropdown
               DropdownButtonFormField<String>(
                 value: _selectedMethod,
-                dropdownColor: AppColors.surface2,
+                dropdownColor: const Color(0xFFF5F5F0),
                 style: const TextStyle(
-                    color: AppColors.textPrimary, fontSize: 14),
+                    color: Color(0xFF1A1A1A), fontSize: 14),
                 decoration: InputDecoration(
                   labelText: 'Méthode de paiement',
                   labelStyle: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13),
+                      color: Color(0xFF888888), fontSize: 13),
                   prefixIcon: const Icon(Icons.payment,
-                      color: AppColors.textSecondary, size: 18),
+                      color: Color(0xFF888888), size: 18),
                   filled: true,
-                  fillColor: AppColors.surface2,
+                  fillColor: const Color(0xFFF5F5F0),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.primary),
+                    borderSide: const BorderSide(color: Color(0xFFE5A01A)),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 12),
                 ),
                 items: _methods
                     .map((m) => DropdownMenuItem<String>(
@@ -467,8 +441,8 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                 child: ElevatedButton(
                   onPressed: _addLoading ? null : _addPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
+                    backgroundColor: const Color(0xFF1A1A1A),
+                    foregroundColor: const Color(0xFFE5A01A),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
@@ -477,7 +451,8 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.black),
+                              strokeWidth: 2,
+                              color: Color(0xFFE5A01A)),
                         )
                       : const Text('Enregistrer',
                           style: TextStyle(fontWeight: FontWeight.bold)),
@@ -485,7 +460,8 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
               ),
             ],
           ),
-        ),
+        );
+        },
       ),
     );
   }
@@ -499,21 +475,22 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: const TextStyle(color: Color(0xFF1A1A1A)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-            color: AppColors.textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
+        labelStyle:
+            const TextStyle(color: Color(0xFF888888), fontSize: 13),
+        prefixIcon:
+            Icon(icon, color: const Color(0xFF888888), size: 18),
         filled: true,
-        fillColor: AppColors.surface2,
+        fillColor: const Color(0xFFF5F5F0),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(color: Color(0xFFE5A01A)),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -521,18 +498,33 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     );
   }
 
-  Color _statusColor(String? status) {
+  Color _statusFg(String? status) {
     switch (status?.toUpperCase()) {
       case 'COMPLETED':
-        return AppColors.success;
+        return const Color(0xFF3B6D11);
       case 'PENDING':
-        return AppColors.warning;
+        return const Color(0xFF854F0B);
       case 'FAILED':
-        return AppColors.error;
+        return const Color(0xFFA32D2D);
       case 'REFUNDED':
-        return AppColors.textSecondary;
+        return const Color(0xFF888888);
       default:
-        return AppColors.textMuted;
+        return const Color(0xFFBBBBBB);
+    }
+  }
+
+  Color _statusBg(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'COMPLETED':
+        return const Color(0xFFEAF3DE);
+      case 'PENDING':
+        return const Color(0xFFFAEEDA);
+      case 'FAILED':
+        return const Color(0xFFFCEBEB);
+      case 'REFUNDED':
+        return const Color(0xFFF5F5F0);
+      default:
+        return const Color(0xFFF5F5F0);
     }
   }
 
@@ -591,110 +583,202 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: const Text('Paiements',
-            style: TextStyle(
-                color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddPaymentSheet,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.black,
-        child: const Icon(Icons.add),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
-          : _error != null
-              ? _buildError()
-              : RefreshIndicator(
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.surface,
-                  onRefresh: _loadData,
-                  child: CustomScrollView(
-                    slivers: [
-                      // Stats header
-                      SliverToBoxAdapter(
-                        child: _buildStatsHeader(),
-                      ),
-                      // Payments list
-                      _payments.isEmpty
-                          ? SliverFillRemaining(child: _buildEmpty())
-                          : SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                              sliver: SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (_, i) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: _PaymentCard(
-                                      payment: _payments[i],
-                                      statusColor: _statusColor(
-                                          _payments[i].status),
-                                      statusLabel: _statusLabel(
-                                          _payments[i].status),
-                                      methodIcon:
-                                          _methodIcon(_payments[i].paymentMethod),
-                                      formattedDate:
-                                          _formatDate(_payments[i].paymentDate),
-                                    ),
-                                  ),
-                                  childCount: _payments.length,
-                                ),
-                              ),
-                            ),
-                    ],
-                  ),
-                ),
-    );
+  /// Regroupe les paiements par membre (clé = nom du membre)
+  Map<String, List<PaymentModel>> get _groupedPayments {
+    final map = <String, List<PaymentModel>>{};
+    for (final p in _payments) {
+      final key = p.memberName ?? 'Membre #${p.subscriptionId}';
+      map.putIfAbsent(key, () => []).add(p);
+    }
+    return map;
   }
 
   Widget _buildStatsHeader() {
     final revenueMonth = _stats?['revenueThisMonth'] ?? 0.0;
     final revenueTotal = _stats?['totalRevenue'] ?? 0.0;
+    final grouped = _groupedPayments;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: _StatsCard(
-                  title: 'Revenus du mois',
-                  value: '${(revenueMonth as num).toStringAsFixed(2)} DT',
-                  icon: Icons.calendar_month,
-                  color: AppColors.success,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Ce mois',
+                          style: TextStyle(
+                              color: Color(0xFF666666), fontSize: 11)),
+                      const SizedBox(height: 4),
+                      Text(
+                          '${(revenueMonth as num).toStringAsFixed(2)} DT',
+                          style: const TextStyle(
+                              color: Color(0xFFE5A01A),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600)),
+                      const Text('↑ +12%',
+                          style: TextStyle(
+                              color: Color(0xFF4CBA7D), fontSize: 11)),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: _StatsCard(
-                  title: 'Revenus totaux',
-                  value: '${(revenueTotal as num).toStringAsFixed(2)} DT',
-                  icon: Icons.account_balance_wallet,
-                  color: AppColors.primary,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(
+                        color: const Color(0xFFE8E8E8), width: 0.5),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total général',
+                          style: TextStyle(
+                              color: Color(0xFF888888), fontSize: 11)),
+                      const SizedBox(height: 4),
+                      Text(
+                          '${(revenueTotal as num).toStringAsFixed(2)} DT',
+                          style: const TextStyle(
+                              color: Color(0xFF1A1A1A),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Historique des paiements (${_payments.length})',
-            style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              '${grouped.length} membre${grouped.length > 1 ? 's' : ''} · ${_payments.length} paiement${_payments.length > 1 ? 's' : ''}',
+              style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600),
+            ),
           ),
-          const SizedBox(height: 4),
         ],
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F0),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Paiements',
+            style: TextStyle(
+                color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton(
+              onPressed: () {},
+              child: const Text('Exporter',
+                  style: TextStyle(
+                      color: Color(0xFFE5A01A), fontSize: 12)),
+            ),
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
+          : _error != null
+              ? _buildError()
+              : Column(
+                  children: [
+                    Expanded(
+                      child: RefreshIndicator(
+                        color: const Color(0xFFE5A01A),
+                        onRefresh: _loadData,
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverToBoxAdapter(child: _buildStatsHeader()),
+                            _payments.isEmpty
+                                ? SliverFillRemaining(child: _buildEmpty())
+                                : SliverPadding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 12, 16, 8),
+                                    sliver: SliverList(
+                                      delegate: SliverChildBuilderDelegate(
+                                        (_, i) {
+                                          final entries = _groupedPayments.entries.toList();
+                                          final entry = entries[i];
+                                          return _MemberPaymentGroup(
+                                            memberName: entry.key,
+                                            payments: entry.value,
+                                            statusBg: _statusBg,
+                                            statusFg: _statusFg,
+                                            statusLabel: _statusLabel,
+                                            methodIcon: _methodIcon,
+                                            formatDate: _formatDate,
+                                            onAddPayment: () {
+                                              Map<String, dynamic>? found;
+                                              for (final m in _members) {
+                                                final full = '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'.trim();
+                                                if (full == entry.key) { found = m; break; }
+                                              }
+                                              _showAddPaymentSheet(prefilledMember: found);
+                                            },
+                                          );
+                                        },
+                                        childCount: _groupedPayments.length,
+                                      ),
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Bottom button
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: GestureDetector(
+                        onTap: _showAddPaymentSheet,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1A1A),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add,
+                                  color: Color(0xFFE5A01A), size: 18),
+                              SizedBox(width: 8),
+                              Text('Ajouter un paiement',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 
@@ -703,16 +787,17 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+          const Icon(Icons.error_outline,
+              color: Color(0xFFA32D2D), size: 48),
           const SizedBox(height: 12),
           Text(_error!,
-              style: const TextStyle(color: AppColors.textSecondary)),
+              style: const TextStyle(color: Color(0xFF888888))),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadData,
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black),
+                backgroundColor: const Color(0xFF1A1A1A),
+                foregroundColor: const Color(0xFFE5A01A)),
             child: const Text('Réessayer'),
           ),
         ],
@@ -725,165 +810,217 @@ class _AdminPaymentsPageState extends State<AdminPaymentsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.payment_outlined, color: AppColors.textMuted, size: 64),
+          Icon(Icons.payment_outlined,
+              color: Color(0xFFBBBBBB), size: 64),
           SizedBox(height: 16),
           Text('Aucun paiement trouvé',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              style:
+                  TextStyle(color: Color(0xFF888888), fontSize: 16)),
           SizedBox(height: 8),
-          Text('Ajoutez un paiement via le bouton +',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text('Ajoutez un paiement via le bouton ci-dessous',
+              style:
+                  TextStyle(color: Color(0xFFBBBBBB), fontSize: 13)),
         ],
       ),
     );
   }
 }
 
-class _StatsCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
+class _MemberPaymentGroup extends StatefulWidget {
+  final String memberName;
+  final List<PaymentModel> payments;
+  final Color Function(String?) statusBg;
+  final Color Function(String?) statusFg;
+  final String Function(String?) statusLabel;
+  final IconData Function(String?) methodIcon;
+  final String Function(String?) formatDate;
+  final VoidCallback onAddPayment;
 
-  const _StatsCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
+  const _MemberPaymentGroup({
+    required this.memberName,
+    required this.payments,
+    required this.statusBg,
+    required this.statusFg,
+    required this.statusLabel,
+    required this.methodIcon,
+    required this.formatDate,
+    required this.onAddPayment,
   });
 
   @override
+  State<_MemberPaymentGroup> createState() => _MemberPaymentGroupState();
+}
+
+class _MemberPaymentGroupState extends State<_MemberPaymentGroup> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final total = widget.payments.fold(0.0, (s, p) => s + p.amount);
+    final count = widget.payments.length;
+    final initial = widget.memberName.isNotEmpty
+        ? widget.memberName[0].toUpperCase()
+        : '?';
+    final lastDate = widget.formatDate(widget.payments.first.paymentDate);
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        children: [
+          // ── En-tête membre ──────────────────────────────────────────
+          InkWell(
+            borderRadius: _expanded
+                ? const BorderRadius.vertical(top: Radius.circular(14))
+                : BorderRadius.circular(14),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Avatar initial
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAEEDA),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(initial,
+                          style: const TextStyle(
+                              color: Color(0xFFBA7517),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Nom + nb paiements
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.memberName,
+                            style: const TextStyle(
+                                color: Color(0xFF1A1A1A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                        Text(
+                          '$count paiement${count > 1 ? 's' : ''} · dernier: $lastDate',
+                          style: const TextStyle(
+                              color: Color(0xFF888888), fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Total + flèche
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('${total.toStringAsFixed(2)} DT',
+                          style: const TextStyle(
+                              color: Color(0xFF1A1A1A),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: const Color(0xFF888888),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Historique expandable ────────────────────────────────────
+          if (_expanded) ...[
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+            ...widget.payments.map((p) => _buildPaymentRow(p)),
+            // Bouton ajouter un paiement pour ce membre
+            InkWell(
+              onTap: widget.onAddPayment,
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(14)),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAFAF8),
+                  borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(14)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, color: Color(0xFFE5A01A), size: 14),
+                    SizedBox(width: 4),
+                    Text('Ajouter un paiement',
+                        style: TextStyle(
+                            color: Color(0xFFE5A01A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentRow(PaymentModel p) {
+    final bg = widget.statusBg(p.status);
+    final fg = widget.statusFg(p.status);
+    final label = widget.statusLabel(p.status);
+    final icon = widget.methodIcon(p.paymentMethod);
+    final date = widget.formatDate(p.paymentDate);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0), width: 0.5)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: const Color(0xFFF5F5F0),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: const Color(0xFFBA7517), size: 14),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold)),
-                Text(title,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 11),
-                    overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PaymentCard extends StatelessWidget {
-  final PaymentModel payment;
-  final Color statusColor;
-  final String statusLabel;
-  final IconData methodIcon;
-  final String formattedDate;
-
-  const _PaymentCard({
-    required this.payment,
-    required this.statusColor,
-    required this.statusLabel,
-    required this.methodIcon,
-    required this.formattedDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        children: [
-          // Method icon
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(methodIcon, color: AppColors.primary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  payment.memberName ?? 'Membre #${payment.subscriptionId}',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  formattedDate,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          // Amount + status
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${payment.amount.toStringAsFixed(2)} DT',
+            child: Text(date,
                 style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: statusColor.withValues(alpha: 0.4)),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+                    color: Color(0xFF555555), fontSize: 12)),
           ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+                color: bg, borderRadius: BorderRadius.circular(20)),
+            child: Text(label,
+                style: TextStyle(
+                    color: fg, fontSize: 10, fontWeight: FontWeight.w500)),
+          ),
+          const SizedBox(width: 8),
+          Text('${p.amount.toStringAsFixed(2)} DT',
+              style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );

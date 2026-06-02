@@ -73,6 +73,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 10)
     private Set<Subscription> subscriptions = new HashSet<>();
 
     @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY)

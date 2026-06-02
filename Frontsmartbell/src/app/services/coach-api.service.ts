@@ -60,4 +60,16 @@ export class CoachApiService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE}/${id}`);
   }
+
+  // GET /coaches/{id}/stats
+  getStats(id: number): Observable<{ totalCourses: number; totalEnrollments: number; activeMembers: number; avgOccupancyRate: number }> {
+    return this.http.get<any>(`${this.BASE}/${id}/stats`);
+  }
+
+  // PATCH /users/{userId}/status?enabled=
+  toggleStatus(userId: number, enabled: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.USERS_BASE}/${userId}/status`, null, {
+      params: { enabled: enabled.toString() }
+    });
+  }
 }

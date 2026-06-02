@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
 import '../models/message.dart';
@@ -10,104 +9,252 @@ import '../services/message_service.dart';
 
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
-
   @override
   State<ConversationsScreen> createState() => _ConversationsScreenState();
 }
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
+  final _searchCtrl = TextEditingController();
+
   List<Map<String, dynamic>> _coaches = [];
-  bool _loading = true;
+  bool _loadingCoaches = true;
+
+  // Contrôle d'accès messagerie
+  bool? _messagingEnabled;
+  bool _checkingAccess = true;
 
   @override
-  void initState() { super.initState(); _loadCoaches(); }
+  void initState() {
+    super.initState();
+    _checkAccess();
+  }
+
+  @override
+  void dispose() { _searchCtrl.dispose(); super.dispose(); }
+
+  Future<void> _checkAccess() async {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null) {
+      setState(() { _messagingEnabled = false; _checkingAccess = false; });
+      return;
+    }
+    try {
+      final res  = await DioClient.instance.dio.get('/members/user/$userId');
+      final data = res.data as Map<String, dynamic>;
+      setState(() {
+        _messagingEnabled = data['messagingEnabled'] ?? false;
+        _checkingAccess   = false;
+      });
+      if (_messagingEnabled == true) _loadCoaches();
+    } catch (_) {
+      setState(() { _messagingEnabled = false; _checkingAccess = false; });
+    }
+  }
 
   Future<void> _loadCoaches() async {
-    setState(() => _loading = true);
+    setState(() => _loadingCoaches = true);
     try {
-      final res = await DioClient.instance.dio.get('/coaches', queryParameters: {'size': 50});
+      final res  = await DioClient.instance.dio.get('/coaches', queryParameters: {'size': 100});
       final data = res.data;
       final list = data is Map ? (data['content'] ?? []) : (data ?? []);
-      setState(() { _coaches = List<Map<String, dynamic>>.from(list); _loading = false; });
-    } catch (_) {
-      setState(() => _loading = false);
-    }
+      setState(() { _coaches = List<Map<String, dynamic>>.from(list); _loadingCoaches = false; });
+    } catch (_) { setState(() => _loadingCoaches = false); }
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    if (q.isEmpty) return _coaches;
+    return _coaches.where((u) {
+      final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.toLowerCase();
+      return name.contains(q);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
+    final myId = context.watch<AuthProvider>().user?.id ?? 0;
+
+    if (_checkingAccess) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F5F0),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFE5A01A))),
+      );
+    }
+
+    if (_messagingEnabled != true) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F0),
+        body: SafeArea(child: Center(child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFA32D2D).withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_outline, color: Color(0xFFA32D2D), size: 38),
+            ),
+            const SizedBox(height: 20),
+            const Text('Accès restreint',
+                style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+              'La messagerie n\'est pas encore activée pour votre compte.\nContactez votre administrateur pour obtenir l\'accès.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF888888), fontSize: 13, height: 1.5),
+            ),
+          ]),
+        ))),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(title: const Text('Messages')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-          : _coaches.isEmpty
-              ? const Center(child: Text('Aucun coach disponible', style: TextStyle(color: AppTheme.textSecondary)))
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _coaches.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    final coach = _coaches[i];
-                    final coachUserId = (coach['userId'] ?? coach['user']?['id'] ?? 0).toInt();
-                    final name = '${coach['firstName'] ?? ''} ${coach['lastName'] ?? ''}'.trim();
-                    final initials = name.isNotEmpty ? name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase() : 'C';
-                    return _CoachTile(
-                      name: name.isNotEmpty ? name : 'Coach',
-                      initials: initials,
-                      specialization: coach['specialization'],
-                      onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          myUserId: user?.id ?? 0,
-                          otherUserId: coachUserId,
-                          otherName: name.isNotEmpty ? name : 'Coach',
-                          otherInitials: initials,
-                        ),
-                      )),
-                    );
-                  },
+      backgroundColor: const Color(0xFFF5F5F0),
+      body: Column(children: [
+        // Header
+        Container(
+          color: const Color(0xFF1A1A1A),
+          child: SafeArea(
+            bottom: false,
+            child: Column(children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                child: Row(children: [
+                  const Icon(Icons.chat_bubble_outline, color: Color(0xFFE5A01A), size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text('Messagerie', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5A01A).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('${_coaches.length} coachs',
+                        style: const TextStyle(color: Color(0xFFE5A01A), fontSize: 11, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+              ),
+              // Barre de recherche
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(10)),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un coach...',
+                      hintStyle: const TextStyle(color: Color(0xFF666666), fontSize: 12),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF666666), size: 18),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16, color: Color(0xFF666666)),
+                              onPressed: () { _searchCtrl.clear(); setState(() {}); })
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      border: InputBorder.none,
+                    ),
+                  ),
                 ),
+              ),
+            ]),
+          ),
+        ),
+
+        // Liste coachs
+        Expanded(
+          child: _loadingCoaches
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
+              : _filtered.isEmpty
+                  ? const Center(child: Text('Aucun coach disponible', style: TextStyle(color: Color(0xFF888888))))
+                  : RefreshIndicator(
+                      color: const Color(0xFFE5A01A),
+                      onRefresh: _loadCoaches,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (_, i) {
+                          final u    = _filtered[i];
+                          final uid  = (u['userId'] ?? u['user']?['id'] ?? u['id'] ?? 0).toInt();
+                          final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim();
+                          final ini  = name.isNotEmpty
+                              ? name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()
+                              : 'C';
+                          final spec = u['specialization'] as String? ?? u['email'] as String? ?? '';
+                          return _MsgTile(
+                            name: name.isNotEmpty ? name : 'Coach #${u['id']}',
+                            initials: ini, sub: spec, role: 'Coach',
+                            accentColor: const Color(0xFFE5A01A),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => ChatScreen(myUserId: myId, otherUserId: uid, otherName: name, otherInitials: ini),
+                            )),
+                          );
+                        },
+                      ),
+                    ),
+        ),
+      ]),
     );
   }
 }
 
-class _CoachTile extends StatelessWidget {
-  final String name;
-  final String initials;
-  final String? specialization;
+class _MsgTile extends StatelessWidget {
+  final String name, initials, sub, role;
+  final Color accentColor;
   final VoidCallback onTap;
-
-  const _CoachTile({required this.name, required this.initials, this.specialization, required this.onTap});
+  const _MsgTile({required this.name, required this.initials, required this.sub,
+      required this.role, required this.accentColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(13),
     child: Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border, width: 0.5),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+        borderRadius: BorderRadius.circular(13),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-            child: Text(initials, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 15)),
+      child: Row(children: [
+        Container(
+          width: 44, height: 44,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: accentColor.withValues(alpha: 0.3)),
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-            if (specialization != null)
-              Text(specialization!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          ])),
-          const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 18),
-        ],
-      ),
+          alignment: Alignment.center,
+          child: Text(initials, style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 15)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(name, style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500))),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(4)),
+              child: Text(role, style: TextStyle(color: accentColor, fontSize: 9, fontWeight: FontWeight.bold)),
+            ),
+          ]),
+          if (sub.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(sub, style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
+          ],
+        ])),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(border: Border.all(color: accentColor.withValues(alpha: 0.4)), borderRadius: BorderRadius.circular(20)),
+          child: Text('Écrire', style: TextStyle(color: accentColor, fontSize: 11, fontWeight: FontWeight.w500)),
+        ),
+      ]),
     ),
   );
 }
@@ -148,7 +295,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
-  void dispose() { _pollTimer?.cancel(); _textCtrl.dispose(); _scrollCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _pollTimer?.cancel();
+    _textCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadMessages() async {
     try {
@@ -187,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(DioClient.errorMessage(e)),
-          backgroundColor: AppTheme.error,
+          backgroundColor: const Color(0xFFA32D2D),
         ));
         _textCtrl.text = text;
       }
@@ -199,23 +351,50 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
         title: Row(children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-            child: Text(widget.otherInitials, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5A01A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              widget.otherInitials,
+              style: const TextStyle(
+                color: Color(0xFF1A1A1A),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-          const SizedBox(width: 10),
-          Text(widget.otherName),
+          const SizedBox(width: 8),
+          Text(
+            widget.otherName,
+            style: const TextStyle(
+              color: Color(0xFF1A1A1A),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ]),
       ),
       body: Column(
         children: [
           Expanded(
             child: _messages.isEmpty
-                ? const Center(child: Text('Commencez la conversation', style: TextStyle(color: AppTheme.textMuted)))
+                ? const Center(
+                    child: Text(
+                      'Commencez la conversation',
+                      style: TextStyle(color: Color(0xFFBBBBBB)),
+                    ),
+                  )
                 : ListView.builder(
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.all(16),
@@ -228,49 +407,58 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           // ── Input bar ──
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             decoration: const BoxDecoration(
-              color: AppTheme.surfaceAlt,
-              border: Border(top: BorderSide(color: AppTheme.border, width: 0.5)),
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 0.5)),
             ),
             child: SafeArea(
               top: false,
-              child: Row(
-                children: [
-                  Expanded(
+              child: Row(children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F0),
+                      border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     child: TextField(
                       controller: _textCtrl,
-                      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                      onSubmitted: (_) => _send(),
+                      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 14),
                       maxLines: null,
                       textInputAction: TextInputAction.newline,
-                      decoration: InputDecoration(
-                        hintText: 'Écrire un message...',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        filled: true,
-                        fillColor: AppTheme.surface,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppTheme.border, width: 0.5)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppTheme.border, width: 0.5)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppTheme.primary, width: 1)),
+                      decoration: const InputDecoration(
+                        hintText: 'Message...',
+                        hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _send,
-                    child: Container(
-                      width: 44, height: 44,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: _sending
-                          ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                          : const Icon(Icons.send, color: Colors.black, size: 20),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _send,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1A1A1A),
+                      shape: BoxShape.circle,
                     ),
+                    child: _sending
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFE5A01A),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.send, color: Color(0xFFE5A01A), size: 20),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
         ],
@@ -288,7 +476,9 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     DateTime? time;
-    try { if (message.sentAt != null) time = DateTime.parse(message.sentAt!); } catch (_) {}
+    try {
+      if (message.sentAt != null) time = DateTime.parse(message.sentAt!);
+    } catch (_) {}
     final timeFmt = time != null ? DateFormat('HH:mm').format(time) : '';
 
     return Padding(
@@ -297,31 +487,49 @@ class _Bubble extends StatelessWidget {
         mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMine) ...[
-            const CircleAvatar(radius: 14, backgroundColor: AppTheme.surface, child: Icon(Icons.person, color: AppTheme.textSecondary, size: 14)),
-            const SizedBox(width: 6),
-          ],
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
               decoration: BoxDecoration(
-                color: isMine ? AppTheme.primary : AppTheme.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isMine ? 16 : 4),
-                  bottomRight: Radius.circular(isMine ? 4 : 16),
-                ),
-                border: isMine ? null : Border.all(color: AppTheme.border, width: 0.5),
+                color: isMine ? const Color(0xFFE5A01A) : Colors.white,
+                borderRadius: isMine
+                    ? const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(4),
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      )
+                    : const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                border: isMine ? null : Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(message.content, style: TextStyle(color: isMine ? Colors.black : AppTheme.textPrimary, fontSize: 14, height: 1.4)),
+                  Text(
+                    message.content,
+                    style: TextStyle(
+                      color: isMine ? Colors.white : const Color(0xFF1A1A1A),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
                   if (timeFmt.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(timeFmt, style: TextStyle(color: isMine ? Colors.black54 : AppTheme.textMuted, fontSize: 10)),
+                    Text(
+                      timeFmt,
+                      style: TextStyle(
+                        color: isMine
+                            ? Colors.white.withValues(alpha: 0.65)
+                            : const Color(0xFFBBBBBB),
+                        fontSize: 10,
+                      ),
+                    ),
                   ],
                 ],
               ),

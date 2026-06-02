@@ -4,9 +4,6 @@ import com.gymapp.dto.PaymentDTO;
 import com.gymapp.entity.Payment;
 import com.gymapp.entity.Subscription;
 import com.gymapp.entity.enums.PaymentStatus;
-import com.gymapp.entity.enums.SubscriptionStatus;
-import com.gymapp.exception.ActiveSubscriptionException;
-import com.gymapp.exception.BadRequestException;
 import com.gymapp.mapper.EntityMapper;
 import com.gymapp.repository.PaymentRepository;
 import com.gymapp.repository.SubscriptionRepository;
@@ -20,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -44,8 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
         long existing = paymentRepository.countCompletedPaymentsForUserInMonth(
                 userId, now.getYear(), now.getMonthValue());
         if (existing > 0) {
-            throw new BadRequestException("Ce membre a déjà un paiement complété ce mois-ci");
-        }
+throw new RuntimeException("Ce membre a déjà un paiement complété ce mois-ci");        }
 
         Payment payment = Payment.builder()
                 .subscription(subscription)

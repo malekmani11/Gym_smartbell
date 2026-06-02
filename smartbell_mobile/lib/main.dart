@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart' as legacy_provider;
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/network/dio_client.dart';
 import 'core/network/api_client.dart';
@@ -76,8 +75,7 @@ class _SmartBellAppState extends State<SmartBellApp> {
   }
 
   Future<void> _initApp() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool showOnboarding = !(prefs.getBool('onboarding_done') ?? false);
+    const bool showOnboarding = false;
     
     await _auth.tryAutoLogin();
 

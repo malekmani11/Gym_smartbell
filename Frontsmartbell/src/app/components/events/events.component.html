@@ -14,19 +14,27 @@
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-calendar-check" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">ÉVÉNEMENTS ACTIFS</p>
       <p class="kpi-value">{{ stats().active }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-calendar-plus" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">À VENIR</p>
       <p class="kpi-value">{{ stats().upcoming }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-users" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">TOTAL INSCRITS</p>
-      <p class="kpi-value" style="color: var(--accent)">{{ stats().totalRegistrations }}</p>
+      <p class="kpi-value">{{ stats().totalRegistrations }}</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kc-full">
+      <div class="kpi-accent-line" style="background:linear-gradient(90deg,#D4A017,#F0C040)"></div>
+      <div class="kc-ico-wrap" style="background:rgba(212,160,23,.15)"><i class="fas fa-percent" style="color:#D4A017;font-size:16px"></i></div>
       <p class="kpi-label">TAUX REMPLISSAGE</p>
       <p class="kpi-value">{{ stats().avgFillRate }}%</p>
     </div>
@@ -44,11 +52,10 @@
   <div class="events-grid">
     @for (event of filteredEvents(); track event.id) {
       <div class="event-card">
-        @if (event.imageUrl) {
-          <img [src]="event.imageUrl" class="event-image" alt="Event image">
-        } @else {
-          <div class="event-image"></div>
-        }
+        <img [src]="event.imageUrl || getEventImage(event)"
+             class="event-image"
+             alt="{{ event.title }}"
+             (error)="$any($event.target).src=getEventImage(event)">
         
         <div class="event-content">
           <div class="flex justify-between items-start mb-2">

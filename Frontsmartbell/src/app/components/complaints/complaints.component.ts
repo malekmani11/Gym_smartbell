@@ -108,10 +108,6 @@ export class ComplaintsComponent implements OnInit {
     });
   }
 
-  openNewComplaint() {
-    this.toast.info('Info', 'Les plaintes sont soumises par les membres via l\'application mobile');
-  }
-
   getStatusColor(status: ComplaintStatus): string {
     return ({ OPEN: '#E24B4A', IN_PROGRESS: '#534AB7', RESOLVED: '#1D9E75', CLOSED: '#888888' })[status] ?? '#888888';
   }

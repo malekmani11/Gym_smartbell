@@ -17,9 +17,12 @@ class CourseService {
   }
 
   Future<void> reserve({required int courseId, required int memberId}) async {
+    final today = DateTime.now();
+    final date  = '${today.year}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}';
     await _dio.post(ApiConstants.courseReservations, data: {
-      'courseId': courseId,
-      'memberId': memberId,
+      'courseId':        courseId,
+      'memberId':        memberId,
+      'reservationDate': date,
     });
   }
 }

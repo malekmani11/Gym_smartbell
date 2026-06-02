@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/validation_store.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
@@ -70,6 +69,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
     final user = context.read<AuthProvider>().user;
     if (user == null) return;
 
+    // Pick a coach first
+    final picked = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFFFFFF),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => const _CoachPickerSheet(),
+    );
+    if (picked == null || !mounted) return;
+
     setState(() => _submitting = true);
     try {
       int memberId = user.id;
@@ -82,13 +92,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
         memberId:   memberId,
         memberName: user.fullName,
         plan:       _plan!.toJson(),
+        coachId:    picked['id'] as int?,
       );
 
       if (mounted) {
         setState(() { _submissionStatus = 'PENDING'; _submitting = false; });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Plan envoyé au coach pour validation !'),
-          backgroundColor: AppTheme.success,
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Plan envoyé à ${picked['name']} pour validation !'),
+          backgroundColor: const Color(0xFF3B6D11),
         ));
       }
     } catch (e) {
@@ -96,7 +107,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         setState(() => _submitting = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(DioClient.errorMessage(e)),
-          backgroundColor: AppTheme.error,
+          backgroundColor: const Color(0xFFA32D2D),
         ));
       }
     }
@@ -233,12 +244,18 @@ class _NutritionScreenState extends State<NutritionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
-        title: const Text('Nutrition'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Mon Plan Nutrition',
+          style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.tune, color: AppTheme.primary),
+            icon: const Icon(Icons.tune, color: Color(0xFFE5A01A)),
             tooltip: 'Personnaliser',
             onPressed: () => setState(() => _showForm = !_showForm),
           ),
@@ -249,13 +266,13 @@ class _NutritionScreenState extends State<NutritionScreen> {
           const OfflineBanner(),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
                 : RefreshIndicator(
-              color: AppTheme.primary,
+              color: const Color(0xFFE5A01A),
               onRefresh: _loadFromBackendOrGenerate,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -276,53 +293,64 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         onActivityChanged: (v) => setState(() => _activity = v),
                         onGenerate: _onGenerate,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                     ],
 
                     if (_plan != null) ...[
                       // ── Validation status banner ──
                       if (_submissionStatus != null) ...[
-                        _NutritionValidationBanner(status: _submissionStatus!),
-                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: _NutritionValidationBanner(status: _submissionStatus!),
+                        ),
                       ],
 
                       // ── Calories summary ──
                       _CaloriesSummaryCard(plan: _plan!),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       // ── Macros ring ──
                       _MacrosSummaryCard(plan: _plan!),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // ── Meals ──
-                      const Text('Repas du jour', style: AppTheme.headingMedium),
-                      const SizedBox(height: 12),
-                      ..._plan!.meals.map((m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _MealCard(meal: m),
-                      )),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                        child: Text(
+                          'Repas du jour',
+                          style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: _plan!.meals.map((m) => _MealCard(meal: m)).toList(),
+                        ),
+                      ),
                       const SizedBox(height: 12),
 
                       // ── Submit to coach ──
                       if (_submissionStatus == null || _submissionStatus == 'REJECTED')
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _submitting ? null : _submitToCoach,
-                            icon: _submitting
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
-                                : const Icon(Icons.send_outlined, size: 18),
-                            label: Text(_submissionStatus == 'REJECTED'
-                                ? 'Renvoyer au coach'
-                                : 'Envoyer au coach pour validation'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(46),
-                              foregroundColor: AppTheme.primary,
-                              side: const BorderSide(color: AppTheme.primary),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _submitting ? null : _submitToCoach,
+                              icon: _submitting
+                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFE5A01A)))
+                                  : const Icon(Icons.send_outlined, size: 18),
+                              label: Text(_submissionStatus == 'REJECTED'
+                                  ? 'Renvoyer au coach'
+                                  : 'Envoyer au coach pour validation'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(46),
+                                foregroundColor: const Color(0xFFE5A01A),
+                                side: const BorderSide(color: Color(0xFFE5A01A)),
+                              ),
                             ),
                           ),
                         ),
-                      const SizedBox(height: 16),
 
                       // ── Tips ──
                       _TipsCard(goal: _goal),
@@ -363,83 +391,98 @@ class _ProfileForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(children: [
-            Icon(Icons.tune, color: AppTheme.primary, size: 18),
-            SizedBox(width: 8),
-            Text('Personnaliser mon plan', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
-          ]),
-          const SizedBox(height: 16),
+          const Text(
+            'Personnaliser mon plan',
+            style: TextStyle(color: Color(0xFFE5A01A), fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 14),
 
           // Sliders
           _SliderRow(label: 'Taille', value: height, unit: 'cm', min: 140, max: 220, onChanged: onHeightChanged),
           _SliderRow(label: 'Poids',  value: weight, unit: 'kg', min: 40,  max: 200, onChanged: onWeightChanged),
           _SliderRow(label: 'Âge',    value: age.toDouble(), unit: 'ans', min: 10, max: 80, isInt: true, onChanged: (v) => onAgeChanged(v.toInt())),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Goal
-          const Text('Objectif', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          // Goal chips
+          const Text('Objectif', style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: goals.entries.map((e) {
-            final sel = goal == e.key;
+          Wrap(spacing: 8, runSpacing: 6, children: goals.entries.map((e) {
+            final active = goal == e.key;
             return GestureDetector(
               onTap: () => onGoalChanged(e.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: sel ? AppTheme.primary.withValues(alpha: 0.15) : AppTheme.background,
+                  color: active ? const Color(0xFFE5A01A) : const Color(0xFFF5F5F0),
+                  border: Border.all(color: active ? const Color(0xFFE5A01A) : const Color(0xFFE8E8E8)),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: sel ? AppTheme.primary : AppTheme.border, width: sel ? 1.5 : 0.5),
                 ),
-                child: Text('${e.value.$1} ${e.value.$2}', style: TextStyle(
-                  color: sel ? AppTheme.primary : AppTheme.textSecondary,
-                  fontSize: 12, fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                )),
+                child: Text(
+                  '${e.value.$1} ${e.value.$2}',
+                  style: TextStyle(
+                    color: active ? const Color(0xFF1A1A1A) : const Color(0xFF888888),
+                    fontSize: 12,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
               ),
             );
           }).toList()),
-          const SizedBox(height: 12),
 
-          // Activity
-          const Text('Niveau d\'activité', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 14),
+
+          // Activity chips
+          const Text('Activité', style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: activities.entries.map((e) {
-            final sel = activity == e.key;
+          Wrap(spacing: 8, runSpacing: 6, children: activities.entries.map((e) {
+            final active = activity == e.key;
             return GestureDetector(
               onTap: () => onActivityChanged(e.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: sel ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.background,
+                  color: active ? const Color(0xFF3B6D11) : const Color(0xFFF5F5F0),
+                  border: Border.all(color: active ? const Color(0xFF3B6D11) : const Color(0xFFE8E8E8)),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: sel ? AppTheme.success : AppTheme.border, width: sel ? 1.5 : 0.5),
                 ),
-                child: Text('${e.value.$1} ${e.value.$2}', style: TextStyle(
-                  color: sel ? AppTheme.success : AppTheme.textSecondary,
-                  fontSize: 11, fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                )),
+                child: Text(
+                  '${e.value.$1} ${e.value.$2}',
+                  style: TextStyle(
+                    color: active ? Colors.white : const Color(0xFF888888),
+                    fontSize: 12,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
               ),
             );
           }).toList()),
+
           const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onGenerate,
-              icon: const Icon(Icons.restaurant_menu, size: 18),
-              label: const Text('Calculer mon plan'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
+          // Calculate button
+          GestureDetector(
+            onTap: onGenerate,
+            child: Container(
+              height: 46,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'Calculer mon plan',
+                style: TextStyle(color: Color(0xFFE5A01A), fontSize: 14, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -464,13 +507,16 @@ class _SliderRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Row(children: [
-      SizedBox(width: 45, child: Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11))),
+      SizedBox(width: 45, child: Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 11))),
       Expanded(
         child: SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: AppTheme.primary, inactiveTrackColor: AppTheme.border,
-            thumbColor: AppTheme.primary, overlayColor: AppTheme.primary.withValues(alpha: 0.1),
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7), trackHeight: 3,
+            activeTrackColor: const Color(0xFFE5A01A),
+            inactiveTrackColor: const Color(0xFFE8E8E8),
+            thumbColor: const Color(0xFFE5A01A),
+            overlayColor: const Color(0xFFE5A01A).withValues(alpha: 0.1),
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+            trackHeight: 3,
           ),
           child: Slider(value: value, min: min, max: max, divisions: (max - min).toInt(), onChanged: onChanged),
         ),
@@ -479,7 +525,7 @@ class _SliderRow extends StatelessWidget {
         width: 55,
         child: Text(
           isInt ? '${value.toInt()} $unit' : '${value.toStringAsFixed(0)} $unit',
-          style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 12),
+          style: const TextStyle(color: Color(0xFFE5A01A), fontWeight: FontWeight.w600, fontSize: 12),
           textAlign: TextAlign.right,
         ),
       ),
@@ -500,50 +546,45 @@ class _CaloriesSummaryCard extends StatelessWidget {
         : 0.0;
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.primary.withValues(alpha: 0.18), AppTheme.primary.withValues(alpha: 0.04)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(plan.name, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(
-                '${plan.totalCalories.toInt()}',
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 36, fontWeight: FontWeight.bold),
-              ),
-              const Text(' / ', style: TextStyle(color: AppTheme.textMuted, fontSize: 20)),
-              Text(
-                '${plan.targetCalories.toInt()} kcal',
-                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 18),
-              ),
-            ],
+          Text(
+            plan.name,
+            style: const TextStyle(color: Color(0xFF666666), fontSize: 11),
           ),
-          const SizedBox(height: 12),
-          Stack(children: [
-            Container(height: 8, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(10))),
-            FractionallySizedBox(
-              widthFactor: pct,
-              child: Container(
-                height: 8,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.7)]),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+          const SizedBox(height: 8),
+          Text(
+            '${plan.totalCalories}',
+            style: const TextStyle(
+              color: Color(0xFFE5A01A),
+              fontSize: 36,
+              fontWeight: FontWeight.w600,
+              height: 1.0,
             ),
-          ]),
+          ),
+          const Text('kcal / jour', style: TextStyle(color: Color(0xFF666666), fontSize: 12)),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 8,
+              backgroundColor: const Color(0xFF2A2A2A),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFFE5A01A)),
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('${(pct * 100).toInt()}% de l\'objectif journalier',
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+          Text(
+            '${(pct * 100).toInt()}% de l\'objectif',
+            style: const TextStyle(color: Color(0xFF555555), fontSize: 11),
+          ),
         ],
       ),
     );
@@ -563,27 +604,33 @@ class _MacrosSummaryCard extends StatelessWidget {
     final totalF = plan.meals.fold(0.0, (s, m) => s + m.macro.fats);
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border, width: 0.5),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          const Row(children: [
-            Icon(Icons.pie_chart_outline, color: AppTheme.primary, size: 16),
-            SizedBox(width: 6),
-            Text('Répartition des macros', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          ]),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _MacroCircle(label: 'Protéines', value: totalP, unit: 'g', color: AppTheme.error,   pct: totalP / (totalP + totalC + totalF)),
-              _MacroCircle(label: 'Glucides',  value: totalC, unit: 'g', color: AppTheme.warning,  pct: totalC / (totalP + totalC + totalF)),
-              _MacroCircle(label: 'Lipides',   value: totalF, unit: 'g', color: AppTheme.success,  pct: totalF / (totalP + totalC + totalF)),
-            ],
+          _MacroCircle(
+            label: 'Protéines',
+            grams: totalP.toInt(),
+            color: const Color(0xFFE24B4A),
+            total: plan.totalCalories ~/ 4,
+          ),
+          _MacroCircle(
+            label: 'Glucides',
+            grams: totalC.toInt(),
+            color: const Color(0xFFFFB74D),
+            total: plan.totalCalories ~/ 4,
+          ),
+          _MacroCircle(
+            label: 'Lipides',
+            grams: totalF.toInt(),
+            color: const Color(0xFF4CBA7D),
+            total: plan.totalCalories ~/ 9,
           ),
         ],
       ),
@@ -592,27 +639,41 @@ class _MacrosSummaryCard extends StatelessWidget {
 }
 
 class _MacroCircle extends StatelessWidget {
-  final String label, unit;
-  final double value, pct;
+  final String label;
+  final int grams, total;
   final Color color;
-  const _MacroCircle({required this.label, required this.value, required this.unit, required this.pct, required this.color});
+
+  const _MacroCircle({
+    required this.label,
+    required this.grams,
+    required this.total,
+    required this.color,
+  });
 
   @override
-  Widget build(BuildContext context) => Column(children: [
-    SizedBox(
-      width: 70, height: 70,
-      child: Stack(alignment: Alignment.center, children: [
-        CircularProgressIndicator(value: pct.clamp(0, 1), backgroundColor: AppTheme.border, color: color, strokeWidth: 6),
-        Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('${value.toInt()}', style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.bold)),
-          Text(unit, style: const TextStyle(color: AppTheme.textMuted, fontSize: 9)),
+  Widget build(BuildContext context) {
+    final pct = total > 0 ? (grams / total).clamp(0.0, 1.0) : 0.0;
+    return Column(children: [
+      SizedBox(
+        width: 60,
+        height: 60,
+        child: Stack(alignment: Alignment.center, children: [
+          CircularProgressIndicator(
+            value: pct,
+            strokeWidth: 5,
+            backgroundColor: const Color(0xFFE8E8E8),
+            valueColor: AlwaysStoppedAnimation(color),
+          ),
+          Text(
+            '${grams}g',
+            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
         ]),
-      ]),
-    ),
-    const SizedBox(height: 6),
-    Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-    Text('${(pct * 100).toInt()}%', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
-  ]);
+      ),
+      const SizedBox(height: 4),
+      Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 10)),
+    ]);
+  }
 }
 
 // ─── Meal Card ────────────────────────────────────────────────────────────────
@@ -640,102 +701,123 @@ class _MealCardState extends State<_MealCard> {
   Color get _color {
     switch (widget.meal.type.toUpperCase()) {
       case 'BREAKFAST': return const Color(0xFFFFB74D);
-      case 'LUNCH':     return AppTheme.success;
-      case 'DINNER':    return AppTheme.info;
-      default:          return AppTheme.primary;
+      case 'LUNCH':     return const Color(0xFF4CBA7D);
+      case 'DINNER':    return const Color(0xFF5B8CDB);
+      default:          return const Color(0xFFE5A01A);
     }
   }
 
-  String get _time {
+  String? get _time {
     switch (widget.meal.type.toUpperCase()) {
       case 'BREAKFAST': return '07:00 – 08:30';
       case 'LUNCH':     return '12:00 – 13:30';
       case 'DINNER':    return '19:00 – 20:30';
-      default:          return '16:00 – 16:30';
+      case 'SNACK':     return '16:00 – 16:30';
+      default:          return null;
     }
   }
+
+  String get _type => widget.meal.type.toUpperCase();
 
   @override
   Widget build(BuildContext context) {
     final m = widget.meal;
     return GestureDetector(
       onTap: () => setState(() => _expanded = !_expanded),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _expanded ? _color.withValues(alpha: 0.5) : AppTheme.border, width: 0.5),
         ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: _color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(_icon, color: _color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(m.typeLabel, style: TextStyle(color: _color, fontSize: 11, fontWeight: FontWeight.w600)),
-                      Text(m.name, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(_time, style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
-                    ],
-                  )),
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('${m.calories.toInt()} kcal', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
-                    Icon(_expanded ? Icons.expand_less : Icons.expand_more, color: AppTheme.textMuted, size: 18),
-                  ]),
-                ],
-              ),
-            ),
-            if (_expanded) ...[
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Full meal text
-                    Text(m.name, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, height: 1.4)),
-                    const SizedBox(height: 12),
-                    // Macros bar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _MacroChip(label: 'Protéines', value: '${m.macro.proteins.toInt()}g', color: AppTheme.error),
-                        _MacroChip(label: 'Glucides',  value: '${m.macro.carbs.toInt()}g',    color: AppTheme.warning),
-                        _MacroChip(label: 'Lipides',   value: '${m.macro.fats.toInt()}g',     color: AppTheme.success),
-                      ],
-                    ),
-                  ],
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: Icon(_icon, color: _color, size: 20),
               ),
-            ],
-          ],
-        ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _type,
+                        style: TextStyle(color: _color, fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (_time != null) ...[
+                      const SizedBox(width: 6),
+                      Text(_time!, style: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 10)),
+                    ],
+                  ]),
+                  const SizedBox(height: 2),
+                  Text(
+                    m.name,
+                    style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ]),
+              ),
+              Text(
+                '${m.calories.toInt()} kcal',
+                style: const TextStyle(color: Color(0xFFE5A01A), fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                color: const Color(0xFFBBBBBB),
+                size: 18,
+              ),
+            ]),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Row(children: [
+                _MacroChip(label: '${m.macro.proteins.toInt()}g', sub: 'Prot.', color: const Color(0xFFE24B4A)),
+                const SizedBox(width: 6),
+                _MacroChip(label: '${m.macro.carbs.toInt()}g', sub: 'Gluc.', color: const Color(0xFFFFB74D)),
+                const SizedBox(width: 6),
+                _MacroChip(label: '${m.macro.fats.toInt()}g', sub: 'Lip.', color: const Color(0xFF4CBA7D)),
+              ]),
+            ),
+        ]),
       ),
     );
   }
 }
 
 class _MacroChip extends StatelessWidget {
-  final String label, value;
+  final String label, sub;
   final Color color;
-  const _MacroChip({required this.label, required this.value, required this.color});
+
+  const _MacroChip({required this.label, required this.sub, required this.color});
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(8),
+    ),
     child: Column(children: [
-      Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.bold)),
-      Text(label,  style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+      Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      Text(sub, style: const TextStyle(color: Color(0xFF888888), fontSize: 9)),
     ]),
   );
 }
@@ -748,39 +830,51 @@ class _NutritionValidationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color;
+    final Color bgColor;
+    final Color fgColor;
+    final Color borderColor;
     final IconData icon;
     final String label;
 
     switch (status) {
       case 'VALIDATED':
-        color = AppTheme.success;
-        icon  = Icons.check_circle;
-        label = 'Plan nutritionnel validé par votre coach !';
+        bgColor     = const Color(0xFFEAF3DE);
+        fgColor     = const Color(0xFF3B6D11);
+        borderColor = const Color(0xFF3B6D11);
+        icon        = Icons.check_circle;
+        label       = 'Plan nutritionnel validé par votre coach !';
         break;
       case 'REJECTED':
-        color = AppTheme.error;
-        icon  = Icons.cancel;
-        label = 'Plan rejeté — modifiez-le et renvoyez-le.';
+        bgColor     = const Color(0xFFFCEBEB);
+        fgColor     = const Color(0xFFA32D2D);
+        borderColor = const Color(0xFFA32D2D);
+        icon        = Icons.cancel;
+        label       = 'Plan rejeté — modifiez-le et renvoyez-le.';
         break;
       default:
-        color = AppTheme.warning;
-        icon  = Icons.hourglass_empty;
-        label = 'En attente de validation par votre coach...';
+        bgColor     = const Color(0xFFFAEEDA);
+        fgColor     = const Color(0xFF854F0B);
+        borderColor = const Color(0xFF854F0B);
+        icon        = Icons.hourglass_empty;
+        label       = 'En attente de validation par votre coach...';
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: borderColor.withValues(alpha: 0.4)),
       ),
       child: Row(children: [
-        Icon(icon, color: color, size: 18),
+        Icon(icon, color: fgColor, size: 18),
         const SizedBox(width: 10),
-        Expanded(child: Text(label,
-            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500))),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ),
       ]),
     );
   }
@@ -823,25 +917,132 @@ class _TipsCard extends StatelessWidget {
     ];
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(children: [
-            Icon(Icons.tips_and_updates_outlined, color: AppTheme.primary, size: 18),
-            SizedBox(width: 8),
-            Text('Conseils nutritionnels', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
-          ]),
+          const Text(
+            'Conseils',
+            style: TextStyle(color: Color(0xFFE5A01A), fontSize: 14, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           ...tipsList.map((tip) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text(tip, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.4)),
+            child: Text(tip, style: const TextStyle(color: Color(0xFF888888), fontSize: 13, height: 1.4)),
           )),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Coach Picker Sheet ───────────────────────────────────────────────────────
+
+class _CoachPickerSheet extends StatefulWidget {
+  const _CoachPickerSheet();
+  @override
+  State<_CoachPickerSheet> createState() => _CoachPickerSheetState();
+}
+
+class _CoachPickerSheetState extends State<_CoachPickerSheet> {
+  List<Map<String, dynamic>> _coaches = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await DioClient.instance.dio.get('/coaches', queryParameters: {'size': 50});
+      final data = res.data;
+      final list = data is Map ? (data['content'] ?? []) : (data ?? []);
+      setState(() {
+        _coaches = (list as List).map((c) => {
+          'id':   (c['id'] ?? 0) as int,
+          'name': '${c['firstName'] ?? ''} ${c['lastName'] ?? ''}'.trim(),
+          'spec': c['specialization']?.toString() ?? '',
+        }).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Row(children: [
+              Icon(Icons.person_search, color: Color(0xFFE5A01A), size: 20),
+              SizedBox(width: 10),
+              Text('Choisir un coach', style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
+            ]),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text('Sélectionne le coach qui validera ton plan nutritionnel',
+                style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(color: Color(0xFFE5A01A)),
+            )
+          else if (_coaches.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('Aucun coach disponible', style: TextStyle(color: Color(0xFF888888))),
+            )
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _coaches.length,
+                itemBuilder: (_, i) {
+                  final c = _coaches[i];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFFE5A01A).withValues(alpha: 0.15),
+                      child: Text(
+                        (c['name'] as String).isNotEmpty ? (c['name'] as String)[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Color(0xFFE5A01A), fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    title: Text(c['name'] as String,
+                        style: const TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600)),
+                    subtitle: (c['spec'] as String).isNotEmpty
+                        ? Text(c['spec'] as String, style: const TextStyle(color: Color(0xFF888888), fontSize: 11))
+                        : null,
+                    trailing: const Icon(Icons.chevron_right, color: Color(0xFFBBBBBB)),
+                    onTap: () => Navigator.of(context).pop(c),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 12),
         ],
       ),
     );

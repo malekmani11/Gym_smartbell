@@ -25,5 +25,9 @@ public interface MemberService {
 
     void updateMembershipStatus(Long id, MembershipStatus status);
 
+    void assignCoach(Long memberId, Long coachId);
+
+    void setMessagingEnabled(Long memberId, boolean enabled);
+
     void deleteMember(Long id);
 }

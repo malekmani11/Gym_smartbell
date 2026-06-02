@@ -1,6 +1,6 @@
 import { Component, signal, computed, inject, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { StatisticsApiService } from '../../services/statistics-api.service';
 
@@ -22,7 +22,6 @@ interface NavItem {
   styleUrl: './sidebar.css'
 })
 export class Sidebar implements OnInit {
-  private router  = inject(Router);
   private auth    = inject(AuthService);
   private statsApi = inject(StatisticsApiService);
 
@@ -70,8 +69,8 @@ export class Sidebar implements OnInit {
       next: (stats) => {
         this.navItems.update(items => items.map(item => {
           if (item.route === '/members')       return { ...item, badge: stats.expiringSoonCount   || undefined };
-          if (item.route === '/subscriptions') return { ...item, badge: stats.expiredSubscriptions || undefined };
-          if (item.route === '/schedule')      return { ...item, badge: stats.totalCourses         || undefined };
+          if (item.route === '/subscriptions') return { ...item, badge: undefined };
+          if (item.route === '/schedule')      return { ...item, badge: undefined };
           if (item.route === '/payments')      return { ...item, badge: undefined };
           return item;
         }));
@@ -104,5 +103,6 @@ export class Sidebar implements OnInit {
     { icon: 'fas fa-dumbbell',          label: 'Machines',       route: '/equipment',      roles: ['ADMIN'] },
     { icon: 'fas fa-bell',             label: 'Notifications',   route: '/notifications',  roles: ['ADMIN'] },
     { icon: 'fas fa-exclamation-circle', label: 'Plaintes',      route: '/complaints',     roles: ['ADMIN'], badgeColor: 'red' },
+    { icon: 'fas fa-robot',            label: 'Programmes IA',   route: '/ai-programs',    roles: ['ADMIN', 'COACH'] },
   ]);
 }

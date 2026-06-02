@@ -4,7 +4,6 @@ import com.gymapp.dto.CourseDTO;
 import com.gymapp.dto.CourseReservationDTO;
 import com.gymapp.entity.*;
 import com.gymapp.entity.enums.ReservationStatus;
-import com.gymapp.exception.BadRequestException;
 import com.gymapp.mapper.EntityMapper;
 import com.gymapp.repository.*;
 import com.gymapp.service.CourseService;
@@ -26,20 +25,20 @@ public class CourseServiceImpl implements CourseService {
     private final CourseReservationRepository reservationRepository;
     private final CoachRepository coachRepository;
     private final MemberRepository memberRepository;
-    private final SalleRepository salleRepository;
     private final EntityMapper mapper;
 
     @Override
     public CourseDTO createCourse(CourseDTO dto) {
         log.info("Creating course: {}", dto.getName());
-        if (dto.getStartTime() != null && dto.getEndTime() != null
-                && !dto.getEndTime().isAfter(dto.getStartTime())) {
-            throw new BadRequestException("L'heure de fin doit être après l'heure de début");
+        
+        if (dto.getStartTime() != null && dto.getEndTime() != null && !dto.getEndTime().isAfter(dto.getStartTime())) {
+            throw new IllegalArgumentException("L'heure de fin doit être strictement après l'heure de début.");
         }
+
         Coach coach = coachRepository.findById(dto.getCoachId())
                 .orElseThrow(() -> new EntityNotFoundException("Coach not found"));
 
-        Course.CourseBuilder builder = Course.builder()
+        Course course = Course.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .coach(coach)
@@ -48,16 +47,10 @@ public class CourseServiceImpl implements CourseService {
                 .endTime(dto.getEndTime())
                 .maxParticipants(dto.getMaxParticipants())
                 .location(dto.getLocation())
-                .active(true);
+                .active(true)
+                .build();
 
-        if (dto.getSalleId() != null) {
-            Salle salle = salleRepository.findById(dto.getSalleId())
-                    .orElseThrow(() -> new EntityNotFoundException("Salle not found"));
-            checkSalleOverlap(salle.getId(), dto.getDayOfWeek(), dto.getStartTime(), dto.getEndTime(), null);
-            builder.salle(salle);
-        }
-
-        return mapper.toCourseDTO(courseRepository.save(builder.build()));
+        return mapper.toCourseDTO(courseRepository.save(course));
     }
 
     @Override
@@ -75,6 +68,12 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<CourseDTO> getAllCourses(Pageable pageable) {
+        return courseRepository.findAll(pageable).map(mapper::toCourseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<CourseDTO> getCoursesByCoach(Long coachId, Pageable pageable) {
         return courseRepository.findByCoachIdAndActiveTrue(coachId, pageable).map(mapper::toCourseDTO);
     }
@@ -84,6 +83,14 @@ public class CourseServiceImpl implements CourseService {
         log.info("Updating course: {}", id);
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + id));
+
+        if (dto.getStartTime() != null || dto.getEndTime() != null) {
+            java.time.LocalTime start = dto.getStartTime() != null ? dto.getStartTime() : course.getStartTime();
+            java.time.LocalTime end = dto.getEndTime() != null ? dto.getEndTime() : course.getEndTime();
+            if (start != null && end != null && !end.isAfter(start)) {
+                throw new IllegalArgumentException("L'heure de fin doit être strictement après l'heure de début.");
+            }
+        }
 
         if (dto.getName() != null)
             course.setName(dto.getName());
@@ -102,27 +109,7 @@ public class CourseServiceImpl implements CourseService {
         if (dto.getActive() != null)
             course.setActive(dto.getActive());
 
-        if (dto.getSalleId() != null) {
-            Salle salle = salleRepository.findById(dto.getSalleId())
-                    .orElseThrow(() -> new EntityNotFoundException("Salle not found"));
-            var effectiveStart = dto.getStartTime() != null ? dto.getStartTime() : course.getStartTime();
-            var effectiveEnd   = dto.getEndTime()   != null ? dto.getEndTime()   : course.getEndTime();
-            var effectiveDay   = dto.getDayOfWeek() != null ? dto.getDayOfWeek() : course.getDayOfWeek();
-            checkSalleOverlap(salle.getId(), effectiveDay, effectiveStart, effectiveEnd, id);
-            course.setSalle(salle);
-        }
-
         return mapper.toCourseDTO(courseRepository.save(course));
-    }
-
-    private void checkSalleOverlap(Long salleId, com.gymapp.entity.enums.DayOfWeek day,
-                                    java.time.LocalTime start, java.time.LocalTime end, Long excludeId) {
-        if (salleId == null || day == null || start == null || end == null) return;
-        var conflicts = courseRepository.findOverlappingInSalle(salleId, day, start, end, excludeId);
-        if (!conflicts.isEmpty()) {
-            throw new BadRequestException(
-                "Cette salle est déjà occupée sur ce créneau horaire (" + day + " " + start + "-" + end + ")");
-        }
     }
 
     @Override
@@ -178,5 +165,13 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
         reservation.setStatus(ReservationStatus.CANCELLED);
         return mapper.toCourseReservationDTO(reservationRepository.save(reservation));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<CourseReservationDTO> getReservationsByCourse(Long courseId) {
+        return reservationRepository.findByCourseId(courseId)
+                .stream().map(mapper::toCourseReservationDTO)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

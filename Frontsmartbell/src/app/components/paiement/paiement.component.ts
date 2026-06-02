@@ -172,7 +172,8 @@ export class PaiementComponent implements OnInit {
 
   loadMembers() {
     this.isLoadingMembers.set(true);
-    this.memberApi.getAll().subscribe({
+    // On demande une grande taille (500) pour être sûr de voir tous les membres dans la liste déroulante
+    this.memberApi.getAll(0, 500).subscribe({
       next: (res) => {
         this.members.set(res.content || []);
         this.isLoadingMembers.set(false);
@@ -193,7 +194,8 @@ export class PaiementComponent implements OnInit {
     const member = this.members().find(m => m.id === id);
     const userId = member?.userId ?? member?.id;
     if (userId) {
-      this.subApi.getByUser(userId).subscribe({
+      // On demande aussi une grande taille pour les abonnements
+      this.http.get<any>(`${environment.apiUrl}/subscriptions/user/${userId}?size=100`).subscribe({
         next: (page: any) => {
           this.memberSubscriptions.set(page.content || []);
           this.isLoadingSubscriptions.set(false);

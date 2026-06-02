@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
@@ -89,19 +88,23 @@ class _MemberSubscriptionScreenState extends State<MemberSubscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
-        title: const Text('Mon abonnement'),
-        backgroundColor: AppTheme.surfaceAlt,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Mon Abonnement',
+          style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600),
+        ),
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary))
+              child: CircularProgressIndicator(color: Color(0xFFE5A01A)))
           : _error != null
               ? _buildError()
               : RefreshIndicator(
-                  color: AppTheme.primary,
-                  backgroundColor: AppTheme.surface,
+                  color: const Color(0xFFE5A01A),
+                  backgroundColor: Colors.white,
                   onRefresh: _loadData,
                   child: ListView(
                     padding: const EdgeInsets.all(16),
@@ -120,7 +123,15 @@ class _MemberSubscriptionScreenState extends State<MemberSubscriptionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ABONNEMENT ACTUEL', style: AppTheme.sectionTitle),
+        const Text(
+          'ABONNEMENT ACTUEL',
+          style: TextStyle(
+            color: Color(0xFF888888),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
         const SizedBox(height: 12),
         _currentSub == null
             ? _buildNoSubCard()
@@ -134,26 +145,25 @@ class _MemberSubscriptionScreenState extends State<MemberSubscriptionScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border, width: 0.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
       ),
       child: const Column(
         children: [
-          Icon(Icons.card_membership_outlined,
-              color: AppTheme.textMuted, size: 40),
+          Icon(Icons.card_membership_outlined, color: Color(0xFFBBBBBB), size: 40),
           SizedBox(height: 10),
           Text(
             'Aucun abonnement actif',
             style: TextStyle(
-                color: AppTheme.textPrimary,
+                color: Color(0xFF1A1A1A),
                 fontSize: 14,
                 fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 4),
           Text(
             'Choisissez un plan ci-dessous',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(color: Color(0xFF888888), fontSize: 12),
           ),
         ],
       ),
@@ -164,20 +174,25 @@ class _MemberSubscriptionScreenState extends State<MemberSubscriptionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('PLANS DISPONIBLES', style: AppTheme.sectionTitle),
+        const Text(
+          'PLANS DISPONIBLES',
+          style: TextStyle(
+            color: Color(0xFF888888),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
         const SizedBox(height: 12),
         if (_plans.isEmpty)
           const Center(
             child: Text('Aucun plan disponible',
-                style: TextStyle(color: AppTheme.textSecondary)),
+                style: TextStyle(color: Color(0xFF888888))),
           )
         else
-          ..._plans.map((plan) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _PlanCard(
-                  plan: plan,
-                  isCurrent: _currentSub?.planId == plan.id,
-                ),
+          ..._plans.map((plan) => _PlanCard(
+                plan: plan,
+                isCurrentPlan: _currentSub?.planId == plan.id,
               )),
       ],
     );
@@ -188,16 +203,17 @@ class _MemberSubscriptionScreenState extends State<MemberSubscriptionScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
+          const Icon(Icons.error_outline, color: Color(0xFFA32D2D), size: 48),
           const SizedBox(height: 12),
-          Text(_error!,
-              style: const TextStyle(color: AppTheme.textSecondary)),
+          Text(_error!, style: const TextStyle(color: Color(0xFF888888))),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadData,
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.black),
+              backgroundColor: const Color(0xFF1A1A1A),
+              foregroundColor: const Color(0xFFE5A01A),
+              elevation: 0,
+            ),
             child: const Text('Réessayer'),
           ),
         ],
@@ -212,29 +228,30 @@ class _CurrentSubCard extends StatelessWidget {
   final SubscriptionModel sub;
   const _CurrentSubCard({required this.sub});
 
-  Color get _statusColor {
+  Color get _statusBg {
     switch (sub.status?.toUpperCase()) {
-      case 'ACTIVE':
-        return AppTheme.success;
-      case 'EXPIRED':
-        return AppTheme.error;
-      case 'CANCELLED':
-        return AppTheme.textSecondary;
-      default:
-        return AppTheme.textMuted;
+      case 'ACTIVE': return const Color(0xFFEAF3DE);
+      case 'EXPIRED': return const Color(0xFFFCEBEB);
+      case 'CANCELLED': return const Color(0xFFF5F5F0);
+      default: return const Color(0xFFF5F5F0);
+    }
+  }
+
+  Color get _statusFg {
+    switch (sub.status?.toUpperCase()) {
+      case 'ACTIVE': return const Color(0xFF3B6D11);
+      case 'EXPIRED': return const Color(0xFFA32D2D);
+      case 'CANCELLED': return const Color(0xFF888888);
+      default: return const Color(0xFF888888);
     }
   }
 
   String get _statusLabel {
     switch (sub.status?.toUpperCase()) {
-      case 'ACTIVE':
-        return 'Actif';
-      case 'EXPIRED':
-        return 'Expiré';
-      case 'CANCELLED':
-        return 'Annulé';
-      default:
-        return sub.status ?? '—';
+      case 'ACTIVE': return 'Actif';
+      case 'EXPIRED': return 'Expiré';
+      case 'CANCELLED': return 'Annulé';
+      default: return sub.status ?? '—';
     }
   }
 
@@ -255,273 +272,175 @@ class _CurrentSubCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor;
+    final statusBg = _statusBg;
+    final statusFg = _statusFg;
+    final statusLabel = _statusLabel;
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primary.withValues(alpha: 0.12),
-            AppTheme.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppTheme.primary.withValues(alpha: 0.3), width: 0.8),
-        boxShadow: AppTheme.cardShadow,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.card_membership,
-                    color: AppTheme.primary, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      sub.planName ?? 'Plan inconnu',
-                      style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Abonnement #${sub.id}',
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              // Status badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: statusColor.withValues(alpha: 0.4)),
-                ),
-                child: Text(
-                  _statusLabel,
-                  style: TextStyle(
-                      color: statusColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAEEDA),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Icon(Icons.card_membership, color: Color(0xFFBA7517), size: 20),
           ),
-          const SizedBox(height: 16),
-
-          // Dates row
-          Row(
-            children: [
-              _DateChip(
-                  label: 'Début', date: _formatDate(sub.startDate)),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward,
-                  color: AppTheme.textMuted, size: 14),
-              const SizedBox(width: 8),
-              _DateChip(label: 'Fin', date: _formatDate(sub.endDate)),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Progress bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${sub.daysRemaining} jours restants',
-                style: TextStyle(
-                    color: sub.daysRemaining < 7
-                        ? AppTheme.error
-                        : AppTheme.textSecondary,
-                    fontSize: 12),
-              ),
-              Text(
-                '${sub.totalDays} jours total',
-                style: const TextStyle(
-                    color: AppTheme.textMuted, fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: _progress,
-              backgroundColor: AppTheme.border,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(sub.daysRemaining < 7
-                      ? AppTheme.error
-                      : AppTheme.primary),
-              minHeight: 5,
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              sub.planName ?? 'Abonnement',
+              style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            Text('#${sub.id}', style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
+          ])),
+          // Badge statut
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusBg,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              statusLabel,
+              style: TextStyle(color: statusFg, fontSize: 11, fontWeight: FontWeight.w500),
             ),
           ),
-        ],
-      ),
+        ]),
+        const SizedBox(height: 12),
+        // Dates
+        Row(children: [
+          _DateChip(label: sub.startDate != null ? _formatDate(sub.startDate!) : '-', icon: Icons.play_arrow_outlined),
+          const SizedBox(width: 8),
+          _DateChip(label: sub.endDate != null ? _formatDate(sub.endDate!) : '-', icon: Icons.stop_circle_outlined),
+        ]),
+        const SizedBox(height: 10),
+        // Progress bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: _progress,
+            minHeight: 5,
+            backgroundColor: const Color(0xFFE8E8E8),
+            valueColor: const AlwaysStoppedAnimation(Color(0xFFE5A01A)),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${sub.daysRemaining} jours restants',
+          style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
+        ),
+      ]),
     );
   }
 }
 
 class _DateChip extends StatelessWidget {
   final String label;
-  final String date;
-  const _DateChip({required this.label, required this.date});
+  final IconData icon;
+  const _DateChip({required this.label, required this.icon});
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textMuted, fontSize: 10)),
-          Text(date,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500)),
-        ],
-      );
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF5F5F0),
+      border: Border.all(color: const Color(0xFFE8E8E8), width: 0.5),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 12, color: const Color(0xFF888888)),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
+    ]),
+  );
 }
 
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
 class _PlanCard extends StatelessWidget {
   final SubscriptionPlanModel plan;
-  final bool isCurrent;
-  const _PlanCard({required this.plan, required this.isCurrent});
+  final bool isCurrentPlan;
+  const _PlanCard({required this.plan, required this.isCurrentPlan});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
         border: Border.all(
-          color: isCurrent
-              ? AppTheme.primary.withValues(alpha: 0.5)
-              : AppTheme.border,
-          width: isCurrent ? 1.2 : 0.5,
+          color: isCurrentPlan ? const Color(0xFFE5A01A) : const Color(0xFFE8E8E8),
+          width: isCurrentPlan ? 2 : 0.5,
         ),
-        boxShadow: AppTheme.cardShadow,
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
-        children: [
-          // Duration badge
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${plan.durationMonths}',
-                  style: const TextStyle(
-                      color: AppTheme.primary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'mois',
-                  style:
-                      TextStyle(color: AppTheme.textSecondary, fontSize: 9),
-                ),
-              ],
-            ),
+      child: Row(children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAEEDA),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 14),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      plan.name,
-                      style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    if (isCurrent) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color:
-                                  AppTheme.primary.withValues(alpha: 0.4)),
-                        ),
-                        child: const Text(
-                          'Actuel',
-                          style: TextStyle(
-                              color: AppTheme.primary,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                if (plan.description != null &&
-                    plan.description!.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    plan.description!,
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 11),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 4),
-                Text(
-                  plan.durationLabel,
-                  style: const TextStyle(
-                      color: AppTheme.textMuted, fontSize: 11),
-                ),
-              ],
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(
+              '${plan.durationMonths}',
+              style: const TextStyle(
+                color: Color(0xFFE5A01A),
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                height: 1.0,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Price
-          Text(
-            '${plan.price.toStringAsFixed(2)} DT',
-            style: const TextStyle(
-                color: AppTheme.primary,
-                fontSize: 15,
-                fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
+            const Text('mois', style: TextStyle(color: Color(0xFF888888), fontSize: 9)),
+          ]),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(
+              plan.name,
+              style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            if (isCurrentPlan) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAEEDA),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Actuel',
+                  style: TextStyle(color: Color(0xFFBA7517), fontSize: 10, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ]),
+          if (plan.description != null)
+            Text(
+              plan.description!,
+              style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          Text('${plan.durationMonths} mois', style: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
+        ])),
+        Text(
+          '${plan.price.toStringAsFixed(0)} DT',
+          style: const TextStyle(color: Color(0xFFE5A01A), fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ]),
     );
   }
 }

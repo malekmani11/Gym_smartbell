@@ -64,10 +64,7 @@ public class NutritionServiceImpl implements NutritionService {
             }
         }
 
-        return mapper.toNutritionPlanDTO(
-            planRepository.findById(saved.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Nutrition plan not found after save: " + saved.getId()))
-        );
+        return mapper.toNutritionPlanDTO(planRepository.findById(saved.getId()).get());
     }
 
     @Override

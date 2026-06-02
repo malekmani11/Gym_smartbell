@@ -20,4 +20,6 @@ public interface UserService {
     void deleteUser(Long id);
 
     void toggleUserStatus(Long id, boolean enabled);
+
+    void changePassword(Long id, String currentPassword, String newPassword);
 }

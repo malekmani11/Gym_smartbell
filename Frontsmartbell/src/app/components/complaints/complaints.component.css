@@ -46,6 +46,14 @@
   gap: 8px;
   min-height: 100px;
 }
+.kpi-card.kc-full {
+  position: relative;
+  overflow: hidden;
+  padding-top: 20px;
+  border-top: none;
+  gap: 0;
+  min-height: unset;
+}
 
 .kpi-label {
   font-size: 11px;

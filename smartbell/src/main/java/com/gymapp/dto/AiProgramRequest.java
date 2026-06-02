@@ -49,4 +49,6 @@ public class AiProgramRequest {
     @Max(value = 7, message = "Maximum 7 séances par semaine")
     @Builder.Default
     private int seances = 4;
+
+    private Long coachId;
 }

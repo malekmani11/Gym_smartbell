@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/validation_store.dart';
@@ -384,6 +383,7 @@ class _ActiveWorkoutScreenState extends State<_ActiveWorkoutScreen> {
   bool _submitting = false;
   String? _submissionStatus; // 'PENDING' | 'VALIDATED' | 'REJECTED' | null
   late final DateTime _sessionStartTime;
+  int _currentSet = 1; // which set we're on within the current exercise
 
   TrainingProvider get tp => widget.tp;
 
@@ -411,30 +411,36 @@ class _ActiveWorkoutScreenState extends State<_ActiveWorkoutScreen> {
     final user = context.read<AuthProvider>().user;
     if (user == null || tp.active == null) return;
 
+    // Pick a coach first
+    final picked = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => const _CoachPickerSheet(),
+    );
+    if (picked == null || !mounted) return;
+
     setState(() => _submitting = true);
     try {
-      int memberId = 0;
+      int memberId = user.id;
       try {
         final res = await DioClient.instance.dio.get('/members/user/${user.id}');
-        memberId = (res.data['id'] ?? 0).toInt();
-      } catch (_) {
-        memberId = user.id;
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      final coachId = prefs.getInt('gym_selected_coach_id');
+        memberId = (res.data['id'] ?? user.id).toInt();
+      } catch (_) {}
 
       await ValidationStore.submitTraining(
         memberId:   memberId,
         memberName: user.fullName,
         program:    tp.active!.toJson(),
-        coachId:    coachId,
+        coachId:    picked['id'] as int?,
       );
 
       if (mounted) {
         setState(() => _submissionStatus = 'PENDING');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Programme envoyé au coach pour validation !'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Programme envoyé à ${picked['name']} pour validation !'),
           backgroundColor: AppTheme.success,
         ));
       }
@@ -499,6 +505,7 @@ class _ActiveWorkoutScreenState extends State<_ActiveWorkoutScreen> {
                 exercise: e.value,
                 index: e.key,
                 isCurrent: e.key == tp.currentIndex && !tp.restActive,
+                currentSet: e.key == tp.currentIndex ? _currentSet : null,
               ),
             )),
             const SizedBox(height: 20),
@@ -547,7 +554,13 @@ class _ActiveWorkoutScreenState extends State<_ActiveWorkoutScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _onExerciseDone,
                   icon: const Icon(Icons.check, size: 18),
-                  label: Text(tp.isLastExercise ? 'Terminer la séance 🏆' : 'Série terminée → Repos'),
+                  label: Text(
+                    _currentSet < current.sets
+                      ? 'Série $_currentSet / ${current.sets} terminée  →  Repos'
+                      : tp.isLastExercise
+                          ? 'Dernière série — Terminer la séance 🏆'
+                          : 'Dernière série — Exercice suivant →',
+                  ),
                 ),
               ),
             const SizedBox(height: 30),
@@ -558,42 +571,68 @@ class _ActiveWorkoutScreenState extends State<_ActiveWorkoutScreen> {
   }
 
   void _onExerciseDone() {
-    final isLast    = tp.isLastExercise;
-    final restSecs  = tp.currentExercise?.restSeconds ?? 60;
-    final nextIdx   = tp.currentIndex + 1;
-    final nextName  = (!isLast && nextIdx < (tp.active?.exercises.length ?? 0))
-        ? tp.active!.exercises[nextIdx].name
-        : null;
+    final exercise  = tp.currentExercise!;
+    final totalSets = exercise.sets;
+    final restSecs  = exercise.restSeconds ?? 60;
 
-    tp.markCurrentDone();
+    if (_currentSet < totalSets) {
+      // ── Entre deux séries : repos puis même exercice ──────────────────────
+      final completedSet = _currentSet;
+      setState(() => _currentSet = completedSet + 1);
 
-    if (isLast) {
-      _showCompletionSheet();
-      return;
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: AppTheme.surface,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (sheetCtx) => WorkoutRestTimer(
+          restSeconds: restSecs,
+          nextExerciseName: 'Série $_currentSet / $totalSets · ${exercise.name}',
+          onComplete: () => Navigator.of(sheetCtx).pop(),
+          onSkip:     () => Navigator.of(sheetCtx).pop(),
+        ),
+      );
+    } else {
+      // ── Dernière série : marquer exercice terminé, repos vers suivant ─────
+      setState(() => _currentSet = 1);
+      final isLast   = tp.isLastExercise;
+      final nextIdx  = tp.currentIndex + 1;
+      final nextName = (!isLast && nextIdx < (tp.active?.exercises.length ?? 0))
+          ? tp.active!.exercises[nextIdx].name
+          : null;
+
+      tp.markCurrentDone();
+
+      if (isLast) {
+        _showCompletionSheet();
+        return;
+      }
+
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: AppTheme.surface,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (sheetCtx) => WorkoutRestTimer(
+          restSeconds: restSecs,
+          nextExerciseName: nextName,
+          onComplete: () {
+            tp.onRestFinished();
+            Navigator.of(sheetCtx).pop();
+          },
+          onSkip: () {
+            tp.onRestFinished();
+            Navigator.of(sheetCtx).pop();
+          },
+        ),
+      );
     }
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) => WorkoutRestTimer(
-        restSeconds: restSecs,
-        nextExerciseName: nextName,
-        onComplete: () {
-          tp.onRestFinished();
-          Navigator.of(sheetCtx).pop();
-        },
-        onSkip: () {
-          tp.onRestFinished();
-          Navigator.of(sheetCtx).pop();
-        },
-      ),
-    );
   }
 
   void _showCompletionSheet() {
@@ -897,7 +936,8 @@ class _ExerciseCard extends StatelessWidget {
   final Exercise exercise;
   final int index;
   final bool isCurrent;
-  const _ExerciseCard({required this.exercise, required this.index, required this.isCurrent});
+  final int? currentSet;
+  const _ExerciseCard({required this.exercise, required this.index, required this.isCurrent, this.currentSet});
 
   @override
   Widget build(BuildContext context) {
@@ -954,7 +994,12 @@ class _ExerciseCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: const Text('En cours', style: TextStyle(color: AppTheme.primary, fontSize: 10, fontWeight: FontWeight.bold)),
+            child: Text(
+              currentSet != null
+                  ? 'Série $currentSet/${exercise.sets}'
+                  : 'En cours',
+              style: const TextStyle(color: AppTheme.primary, fontSize: 10, fontWeight: FontWeight.bold),
+            ),
           ),
       ]),
     );
@@ -1052,6 +1097,115 @@ class _CompletionSheet extends StatelessWidget {
     );
   }
 }
+
+// ─── Coach Picker Sheet ───────────────────────────────────────────────────────
+
+class _CoachPickerSheet extends StatefulWidget {
+  const _CoachPickerSheet();
+  @override
+  State<_CoachPickerSheet> createState() => _CoachPickerSheetState();
+}
+
+class _CoachPickerSheetState extends State<_CoachPickerSheet> {
+  List<Map<String, dynamic>> _coaches = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await DioClient.instance.dio.get('/coaches', queryParameters: {'size': 50});
+      final data = res.data;
+      final list = data is Map ? (data['content'] ?? []) : (data ?? []);
+      setState(() {
+        _coaches = (list as List).map((c) => {
+          'id':   (c['id'] ?? 0) as int,
+          'name': '${c['firstName'] ?? ''} ${c['lastName'] ?? ''}'.trim(),
+          'spec': c['specialization']?.toString() ?? '',
+        }).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Row(children: [
+              Icon(Icons.person_search, color: AppTheme.primary, size: 20),
+              SizedBox(width: 10),
+              Text('Choisir un coach', style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+            ]),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text('Sélectionne le coach qui validera ton programme',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            )
+          else if (_coaches.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('Aucun coach disponible', style: TextStyle(color: AppTheme.textMuted)),
+            )
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _coaches.length,
+                itemBuilder: (_, i) {
+                  final c = _coaches[i];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+                      child: Text(
+                        (c['name'] as String).isNotEmpty ? (c['name'] as String)[0].toUpperCase() : '?',
+                        style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    title: Text(c['name'] as String,
+                        style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                    subtitle: (c['spec'] as String).isNotEmpty
+                        ? Text(c['spec'] as String, style: const TextStyle(color: AppTheme.textMuted, fontSize: 11))
+                        : null,
+                    trailing: const Icon(Icons.chevron_right, color: AppTheme.textMuted),
+                    onTap: () => Navigator.of(context).pop(c),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Stat Bubble ─────────────────────────────────────────────────────────────
 
 class _StatBubble extends StatelessWidget {
   final String label;

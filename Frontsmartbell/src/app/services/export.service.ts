@@ -284,13 +284,15 @@ export class ExportService {
     const lines  = payments.map(p =>
       `${p.id},"${p.memberName ?? ''}",${p.amount},${this.formatDate(p.paymentDate)},${p.paymentMethod},${p.status},${p.transactionRef ?? ''}`
     );
-    const csv  = [header, ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv  = '﻿' + [header, ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
     a.download = this.filename('Paiements', 'csv');
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 }
